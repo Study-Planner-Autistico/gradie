@@ -18,8 +18,10 @@ Leggi in quest'ordine prima di lavorare:
 
 ## Struttura
 ```
-src/app/            route Expo Router (welcome, (tabs)/home|agenda|attivita|community|profilo, menu)
-src/components/     componenti condivisi (ui.tsx, TodayHeader, LessonCard, FloatingTabBar)
+src/app/            route Expo Router (welcome, (tabs)/home|agenda|attivita|community|profilo, ambienti, menu)
+                    (tabs)/_layout.tsx = NativeTabs (iOS/Android), _layout.web.tsx = tab bar flottante
+src/components/     ui.tsx, Glass.tsx (Liquid Glass + fallback), agenda.tsx, list.tsx, tabs.ts, FloatingTabBar
+src/state/          stato locale (ambiente attivo)
 src/theme/          token di design + useTheme()
 src/i18n/           testi IT/EN
 docs/               briefing e documenti di prodotto

@@ -1,188 +1,172 @@
-# DESIGN.md — Regole di design (v0, provvisorie)
+# DESIGN.md — Regole di design (v1)
 
-> Fonte: immagine di riferimento "Tesla Education" (Dribbble, A. Klimenkov) usata **solo come ispirazione** di stile.
-> Non copiare testi, logo, illustrazioni 3D o avatar Memoji dell'immagine.
-> Token in codice: `src/theme/tokens.ts`. Ogni valore qui sotto DEVE passare dai token: niente colori/spaziature hardcoded nei componenti.
+> Fonti di ispirazione (solo stile, nessun asset copiato): card wallet con gradiente, app di task "Today", app finanza con tab bar flottante, card profilo con gradiente verde, schermata impostazioni a liste raggruppate. Più **Liquid Glass di Apple (iOS 26)**.
+> Sostituisce la v0, ispirata a un'app con card blu piene. La nuova direzione è più vicina alla dec. 50 (minimal, Notion/Linear).
+> Token in codice: `src/theme/tokens.ts`. Ogni valore passa dai token: niente colori o spaziature scritti a mano nei componenti.
 
 ## 0. TL;DR (leggi questo per primo)
-- Sfondo grigio-chiarissimo `#F2F3F5`, superfici bianche, card **molto arrotondate** (24 px).
-- Un solo colore brand: **blu elettrico `#0A84FF`** (pieno) + **navy `#2B5BB8`** (variante "inattivo/passato").
-- Card evento colorate: fondo blu pieno, testo bianco, "pill" bianche per orari/azioni.
-- Tipografia di sistema (SF Pro su iOS), titoli **bold/heavy**, testo secondario grigio `#8A8F98`.
-- Barra inferiore **flottante**, pill traslucida con blur, voce attiva = quadrato blu arrotondato con icona+label bianche.
-- Tanto respiro: padding schermo 16, gap tra card 12, padding interno card 16.
-- Accenti caldi (arancio `#FFB020`) solo per un'azione rapida nell'header (es. calendario). Mai più di 1 accento caldo per schermo.
+- **Base neutra:** sfondo grigio chiaro `#F2F2F4`, card bianche molto arrotondate (28), poche ombre.
+- **Inchiostro:** testo e bottone primario quasi neri (`#16161A`). Il bottone primario è una **pill nera** a tutta larghezza.
+- **Un accento:** pervinca `#6E6BF0`, usato per selezione, checkbox, link e la voce attiva.
+- **Tinte per tipo:** ogni tipo di elemento in Agenda ha un fondo tenue e un testo saturo (lezione lilla, appuntamento rosa, attività ambra, evento ufficiale verde, festività grigio).
+- **Una card in evidenza per schermata** con gradiente "mesh" azzurro-lilla. Tutto il resto è bianco.
+- **Liquid Glass** per ciò che *galleggia* sopra i contenuti: tab bar, bottoni rotondi nell'header, bottoni flottanti, chip sopra il gradiente, sheet. **Mai** per le card di contenuto.
+- **Orari in cifre a larghezza fissa** (tabular), come in un'app di calendario.
+- Icone **outline monocromatiche** (Ionicons nel codice, SF Symbols nella tab bar nativa).
 
-## 1. Tensione con il briefing (da non risolvere da soli)
-Il briefing (dec. 50) chiede stile **minimal/professionale, riferimenti Notion e Linear**. L'immagine è più **colorata e "consumer"** (card blu piene, illustrazioni 3D).
-Regola provvisoria: usare la **struttura e la forma** dell'immagine (card arrotondate, pill, tab bar flottante, header saluto+settimana) ma con **densità cromatica contenuta**: il blu pieno è riservato agli elementi *Oggi/in evidenza*; il resto resta bianco/grigio. Decisione definitiva → aperta (vedi §12).
+## 1. Liquid Glass (dove e come)
+
+| Elemento | Glass? | Implementazione |
+|---|---|---|
+| Tab bar | ✅ | iOS e Android: `NativeTabs` di Expo Router (su iOS 26 è Liquid Glass di sistema, si riduce durante lo scroll). Web: tab bar flottante JS con blur |
+| Bottoni rotondi nell'header (ambiente, notifiche, impostazioni, +) | ✅ | `<GlassButton>`: `GlassView` interattivo |
+| Chip sopra la card a gradiente | ✅ | `<Glass>` con stile `clear` |
+| Sheet (selettore ambienti, menu) | ✅ | `presentation: 'formSheet'`: iOS 26 applica il glass da solo |
+| Card di contenuto, liste, moduli | ❌ | Superfici bianche (`surface`): il glass sopra il glass non si legge |
+| Testo lungo | ❌ | Mai su glass |
+
+**Fallback (componente `src/components/Glass.tsx`):**
+- iOS 26+ → `GlassView` di `expo-glass-effect`, verificato con `isLiquidGlassAvailable()`.
+- iOS precedenti, Android e web → `BlurView` di `expo-blur` + velo `glassFallback` + bordo 1 px `glassBorder`.
+- Expo Go: il glass nativo dipende dalla versione di iOS del telefono.
+
+**Regole:**
+- Il glass sta sempre sopra contenuti colorati o che scorrono: è lì che si vede.
+- Forme del glass: cerchio (bottoni da 44) o pill. Niente rettangoli con angoli piccoli.
+- Le icone sul glass usano `text`, mai colori di marca. L'accento solo se l'elemento è selezionato.
+- "Riduci trasparenza" del sistema → il fallback a colore pieno è gestito dal sistema e da `expo-blur`.
 
 ## 2. Colori
 
-### Light
-| Token | Hex | Uso |
+### 2.1 Base
+| Token | Light | Dark | Uso |
+|---|---|---|---|
+| `bg` | `#F2F2F4` | `#0C0C0F` | sfondo schermo |
+| `surface` | `#FFFFFF` | `#17171C` | card, liste |
+| `surfaceMuted` | `#F6F6F8` | `#1F1F26` | righe interne, celle giorno, input |
+| `border` | `#E6E6EA` | `#2A2A33` | separatori, bordo dei bottoni secondari |
+| `text` | `#16161A` | `#F4F4F6` | testo principale |
+| `textSecondary` | `#8B8B96` | `#9A9AA6` | metadati, sottotitoli |
+| `textTertiary` | `#B9B9C2` | `#5F5F6B` | placeholder, testo barrato |
+| `ink` / `onInk` | `#16161A` / bianco | invertiti | bottone primario |
+| `accent` | `#6E6BF0` | `#8C89FF` | selezione, checkbox, link |
+| `success` / `successBg` | `#24894F` / `#E2F5E9` | — | chip positive (es. media) |
+| `danger` | `#D93D52` | `#FF9AA8` | errori, scadenze superate |
+
+### 2.2 Regole
+- Contrasto minimo 4.5:1 per il testo. Le tinte §2.3 sono già scelte per rispettarlo (testo saturo su fondo tenue).
+- Un solo accento per schermata. Il verde solo per i dati positivi, il rosso solo per errori e ritardi.
+- Nessuna personalizzazione dei colori da parte dell'utente (dec. 49).
+
+### 2.3 Tinte per tipo di elemento (`tints`)
+| Tipo | Fondo / testo (light) | Dove |
 |---|---|---|
-| `bg` | `#F2F3F5` | sfondo schermo |
-| `surface` | `#FFFFFF` | card neutre, header, sheet |
-| `surfaceMuted` | `#F7F8FA` | celle giorno non selezionate, input |
-| `border` | `#E3E5E8` | bordi 1 px celle/input |
-| `text` | `#1C1F26` | titoli e testo primario |
-| `textSecondary` | `#8A8F98` | date, sottotitoli, label |
-| `textTertiary` | `#B4B8BF` | placeholder, disabilitato |
-| `primary` | `#0A84FF` | brand, card evidenziate, bottoni primari, tab attiva |
-| `primaryPressed` | `#0070E0` | stato premuto |
-| `primaryDeep` | `#2B5BB8` | card "passato/assente", variante secondaria piena |
-| `onPrimary` | `#FFFFFF` | testo/icone su blu |
-| `onPrimaryMuted` | `rgba(255,255,255,0.75)` | testo secondario su blu |
-| `pill` | `#FFFFFF` | pill su card blu (orario, CTA) |
-| `pillText` | `#0A84FF` | testo CTA nelle pill |
-| `accentWarm` | `#FFB020` | singola azione rapida header |
-| `success` | `#34C759` | spunta "fatto/presente" |
-| `danger` | `#FF3B30` | errori, scadenze superate |
-| `neutralBadge` | `rgba(0,0,0,0.25)` | badge "x" negativo su card |
-| `tabBar` | `rgba(255,255,255,0.72)` + blur | barra inferiore |
+| `lesson` | `#E9E8FF` / `#5451D6` | lezioni (orario) |
+| `appointment` | `#FFE9EC` / `#D93D52` | appuntamenti personali |
+| `activity` | `#FFF1D9` / `#B86E00` | compiti, verifiche, esami (dal modulo Attività) |
+| `official` | `#E2F5E9` / `#24894F` | eventi ufficiali di classe |
+| `holiday` | `#EEEEF1` / `#6B6B76` | festività, vacanze, chiusure |
+Il colore indica il **tipo**, non la materia (i colori per materia restano una decisione aperta).
 
-### Dark (dec. 48: chiaro/scuro/auto obbligatori)
-| Token | Hex |
-|---|---|
-| `bg` | `#0E1014` |
-| `surface` | `#181B21` |
-| `surfaceMuted` | `#20242B` |
-| `border` | `#2A2E36` |
-| `text` | `#F2F3F5` |
-| `textSecondary` | `#9AA0AA` |
-| `textTertiary` | `#5E636C` |
-| `primary` | `#3395FF` |
-| `primaryDeep` | `#24457F` |
-| `tabBar` | `rgba(24,27,33,0.72)` + blur |
-Gli altri token restano uguali. Testo su `primary` sempre bianco.
-
-### Regole colore
-- Contrasto minimo 4.5:1 per testo normale (bianco su `#0A84FF` = ~3.6:1 → usare **solo per testo ≥ 17 pt semibold** o bold; per testo piccolo su blu usare `onPrimary` bold 13+ e verificare).
-- Nessuna personalizzazione colore da parte dell'utente (dec. 49).
-- Colori per materia: **non definiti** (aperto). Non inventare palette per materia.
+### 2.4 Gradiente "mesh"
+- Light: `#C7D3FF → #E4D8FF → #F4F5FB` (diagonale), più un velo azzurro in basso a destra. Dark: indaco scuro.
+- Al massimo **una card a gradiente per schermata** (es. il riepilogo di oggi in Home, il profilo).
+- Testo sul gradiente: `text`. Chip sopra il gradiente: glass `clear`.
 
 ## 3. Tipografia
-Font di sistema (SF Pro iOS / Roboto Android). Niente font custom.
+Font di sistema (SF Pro / Roboto).
 
 | Token | Size/Line | Peso | Uso |
 |---|---|---|---|
-| `display` | 30/36 | 800 | titoli onboarding |
-| `title1` | 24/30 | 700 | nome nel saluto ("Anna!"), titoli schermata |
-| `title2` | 20/26 | 700 | titolo card evento (materia) |
-| `headline` | 17/22 | 600 | intestazioni sezione, nomi persona |
+| `hero` | 44/48 | 700, tracking −1 | numero grande nella card a gradiente (giorno, media) |
+| `display` | 30/36 | 700 | titoli dell'onboarding |
+| `title1` | 26/32 | 700 | titolo della schermata ("Agenda", "Profilo") |
+| `title2` | 20/26 | 600 | titolo della card |
+| `headline` | 17/22 | 600 | titoli delle righe, nomi |
 | `body` | 15/20 | 400 | testo |
-| `callout` | 14/19 | 500 | pill orario, CTA pill |
-| `caption` | 12/16 | 500 | label, metadati, stato ("Presente") |
-| `micro` | 10/13 | 600 | label tab bar |
+| `callout` | 14/19 | 500 | bottoni secondari, link |
+| `caption` | 12/16 | 500 | metadati, etichette |
+| `time` | 13/17 | 500, cifre tabular | orari ("09:30 – 10:00") |
 
-- Saluto header: riga 1 `body` secondario ("Buongiorno,"), riga 2 `title1` ("Anna!").
-- Data sotto il saluto: `body` `textSecondary`.
-- Mai più di 3 livelli tipografici in una card.
-- Testi sempre localizzati IT/EN (dec. 46): niente stringhe hardcoded nei componenti → `src/i18n`.
+- Il titolo della schermata è allineato a sinistra, a 16 dal bordo.
+- Testi sempre in `src/i18n` (italiano e inglese).
 
-## 4. Spaziatura e griglia
-Scala 4 pt: `xs 4 · sm 8 · md 12 · lg 16 · xl 20 · xxl 24 · xxxl 32`.
-- Margine laterale schermo: `lg` (16).
-- Gap verticale tra card: `md` (12).
-- Padding interno card: `lg` (16); header card grande: `xl` (20).
-- Gap tra righe interne di una card: `sm` (8).
-- Spazio sotto l'ultimo contenuto scrollabile: altezza tab bar + 24.
+## 4. Spaziatura, raggi, ombre
+- Spaziatura: `4 · 8 · 12 · 16 · 20 · 24 · 32`. Margine laterale 16, spazio tra card 12, padding delle card 20.
+- Raggi: `sm 10` (celle, chip piccole) · `md 16` (righe evento, input) · `lg 22` (card interne) · `xl 28` (card) · `pill`.
+- Annidamento: raggio interno = raggio esterno − padding (es. una card da 28 con padding 12 contiene righe da 16).
+- Ombre: solo `0 2 12 shadow` sulle card. Il glass non ha ombre aggiunte.
 
-## 5. Raggi, bordi, ombre
-| Token | Valore | Uso |
-|---|---|---|
-| `radius.sm` | 8 | celle giorno, badge numerici |
-| `radius.md` | 14 | avatar quadrato, bottoni icona (44×44) |
-| `radius.lg` | 24 | card, header card |
-| `radius.xl` | 28 | tab bar flottante |
-| `radius.pill` | 999 | pill, bottoni primari |
-- Card neutre: nessun bordo, ombra leggerissima `0 2 8 rgba(16,24,40,0.06)`.
-- Card blu: nessuna ombra (il colore basta).
-- Celle giorno: bordo 1 px `border`; selezionata = fondo `primary`, testo bianco, nessun bordo.
-- Bottoni icona header: quadrato 44, `radius.md`, fondo `accentWarm`, icona bianca.
+## 5. Componenti
 
-## 6. Componenti (anatomia)
+### 5.1 Header della schermata (`ScreenHeader`)
+- A sinistra: titolo `title1`, oppure l'avatar da 44 che apre il **selettore ambienti** (in Home).
+- A destra: fino a 2 `GlassButton` rotondi da 44 (es. notifiche, impostazioni, +).
+- Sotto, facoltativo: un sottotitolo `callout` secondario (es. il nome dell'ambiente attivo).
 
-### 6.1 Header "Oggi" (card bianca, `radius.lg`)
-1. Riga: avatar quadrato 48 (radius.md, bordo 2 px `primary`) · saluto 2 righe · spacer · bottone icona 44 (accentWarm).
-2. Data estesa (`body`, secondario), es. "21 novembre 2026".
-3. Week strip: 7 colonne, label giorno (`caption`, secondario, "Lun…Dom") sopra cella 36×36 (`radius.sm`).
-   - Oggi/selezionato: fondo `primary`, numero bianco bold.
-   - Altri: bordo `border`, numero `textSecondary`.
-   - Giorno con eventi: puntino 5 px `accentWarm` in alto a destra della cella.
+### 5.2 Card a gradiente (`GradientCard`)
+- Raggio 28, padding 20, gradiente §2.4.
+- Contenuto tipico: etichetta in `caption`, valore `hero`, riga di chip glass in basso.
 
-### 6.2 Card evento/lezione (piena, `radius.lg`)
-- Fondo `primary` (in corso/futura) o `primaryDeep` (già passata).
-- Riga 1: titolo materia `title2` bianco. **Nessuno stato di presenza** (dec. 97).
-- Riga 2: pill bianca con icona orologio + orario `callout` (`text` scuro).
-- Riga 3: dettaglio `caption` `onPrimaryMuted` (es. compito).
-- Riga 4 (opz.): persona — avatar 24 + nome `headline` bianco + sottotitolo `caption`; a destra CTA pill bianca con testo `pillText` + freccia "→".
-- Tutta la card è tappabile (feedback: opacity 0.85 / scale 0.98).
-- ⚠️ Non mostrare voti in card visibili ad altri: i voti sono solo dello studente (dec. 36-37).
+### 5.3 Riga evento (`EventRow`) — ispirata all'app "Today"
+- Fondo della tinta del tipo, raggio 16, padding 12×14.
+- Riga 1: titolo `headline` (colore `text`). Riga 2: orario `time` con il colore della tinta.
+- A destra: un elemento facoltativo (chip con l'aula, data di scadenza, icona del tipo).
+- Le lezioni del docente mostrano un lucchetto piccolo: non sono modificabili (dec. 102).
 
-### 6.3 Card neutra / blocco Home
-- Fondo `surface`, `radius.lg`, padding 16.
-- Titolo sezione `headline` + link "Vedi tutto" `callout` `primary` a destra.
-- I blocchi Home sono fissi e nell'ordine: **Oggi · Prossime scadenze · Andamento · Ultime attività · Aggiornamenti Community** (dec. 20-21). Nessun riordino/nascondimento.
+### 5.4 Riga lista (`ListRow`) — ispirata alla schermata impostazioni
+- Altezza minima 56, icona outline da 20 a sinistra, etichetta `body`, e a destra un bottone rotondo da 32 (`surfaceMuted`) con la freccia →.
+- Righe raggruppate in una card bianca, separatore da 1 px rientrato a 48.
 
-### 6.4 Tab bar flottante
-- Posizione: assoluta, margine 12 dai lati e dal fondo (sopra safe area), altezza 68, `radius.xl`, fondo `tabBar` + blur (`expo-blur` quando aggiunto; fallback colore pieno 95%).
-- 5 voci fisse (dec. 19): **Home · Agenda · Attività · Community · Profilo**.
-- Voce attiva: contenitore 64×56 `radius.lg` fondo `primary`, icona 22 + label `micro` bianche.
-- Voce inattiva: icona + label `primary` (o `textSecondary` in dark), nessun fondo.
-- Icone: Ionicons (`@expo/vector-icons`) — set unico, stile filled per attiva, outline per inattiva.
+### 5.5 Bottoni
+- **Primario:** pill nera (`ink`) alta 56, testo `headline` `onInk`. Facoltativo: un cerchio bianco con la freccia a sinistra, come in "Get in Touch".
+- **Secondario:** pill `surfaceMuted` con testo `text`, oppure con bordo `border`.
+- **Glass:** `GlassButton` rotondo da 44 con icona da 20.
+- Premuto: scala 0.97 e opacità 0.85 (il glass interattivo ha il suo feedback nativo).
 
-### 6.5 Bottone primario
-- Pill, altezza 52, larghezza piena (margine 16), fondo `primary`, testo `headline` bianco.
-- Premuto: `primaryPressed`. Disabilitato: opacità 0.4.
-- Secondario: fondo `surfaceMuted`, testo `primary`.
+### 5.6 Chip
+- Pill alta 28, padding 10, testo `caption`. Varianti: tinta (§2.3), `successBg` (dati positivi), glass (sopra il gradiente).
 
-### 6.6 Sidebar / menu secondario (dec. 18-19)
-- Aperto da bottone icona (menu) nell'header. Su telefono: sheet/modale a pieno schermo; su tablet: pannello laterale.
-- Lista righe 52 alte: icona in quadrato 32 (`surfaceMuted`, radius.sm) + label `body` + chevron.
-- Voci note: Materiali, Appunti, Registro voti, Messaggi, Classi e gruppi, Notifiche, Impostazioni. Moduli non ancora progettati → stato "In progettazione".
+### 5.7 Striscia della settimana (`WeekStrip`)
+- 7 colonne: in alto l'etichetta del giorno (`caption`), sotto una cella da 40 con raggio 12.
+- Selezionato: fondo `ink`, numero `onInk`. Oggi (se non selezionato): numero `accent`. Gli altri: `surfaceMuted`.
+- Un puntino da 4 sotto il numero se ci sono elementi in quel giorno.
 
-### 6.7 Avatar
-- Foto profilo utente reale; fallback = iniziali (nome+cognome, dec. 16) su `primary` 15% opacità, testo `primary` bold.
-- Quadrato arrotondato (radius.md) per l'utente nell'header; cerchio per persone in liste/card.
-- Niente Memoji/illustrazioni 3D come avatar.
+### 5.8 Avatar
+- Foto, oppure le iniziali di nome e cognome (dec. 16) su `surfaceMuted`. Cerchio.
 
-## 7. Onboarding / Welcome
-- Sfondo gradiente molto tenue (bianco → `#EEF4FF` → `#FFF4EC`).
-- Hero centrale: logo dentro cerchio bianco + orbite concentriche sottili (1 px, `border`) con icone materia (stile proprio, NON le illustrazioni dell'immagine). Il nome "Orbita" nasce da qui.
-- Nome app `headline` secondario, claim `display` centrato max 2 righe.
-- CTA primaria in basso ("Inizia"), margine 16, sopra safe area.
+## 6. Pagine (stato attuale del prototipo)
+- **Home:** header (avatar → ambienti, notifiche, impostazioni) → card a gradiente "Oggi" (giorno, riepilogo, chip glass) → card "Oggi" con le righe evento → "Prossime scadenze" → "Andamento" (media, **senza previsioni**: briefing dec. 26) → "Ultime attività" → "Community". Ordine fisso (dec. 20, 21).
+- **Agenda:** titolo + `GlassButton` "+" → mese e settimana → striscia della settimana → elenco del giorno con le righe evento → link "Calendario dell'anno". Le viste giorno/settimana/mese sono rinviate (dec. 95).
+- **Profilo:** card a gradiente con avatar, nome, email e ambiente attivo → gruppi di righe: Account, Ambienti, Sicurezza, Preferenze, Privacy e dati (modulo 01 §5).
+- **Selettore ambienti:** sheet con la lista degli istituti, una spunta su quello attivo e "Nuovo ambiente".
 
-## 8. Stati (sempre progettati)
-- **Vuoto**: icona 40 in cerchio `surfaceMuted`, titolo `headline`, testo `body` secondario, 1 CTA opzionale. Tono incoraggiante, nessuna colpa.
-- **Caricamento**: skeleton con la stessa forma della card (`surfaceMuted`, shimmer leggero). Niente spinner a schermo intero salvo primo avvio.
-- **Errore**: card neutra con bordo `danger` 1 px, messaggio + "Riprova".
-- **Offline** (dec. 54): banner sottile in alto `surfaceMuted` "Sei offline — contenuti in sola lettura".
-- **Privato**: icona lucchetto + "Visibile solo a te" (`caption`) dove serve chiarezza (voti, appunti).
+## 7. Stati
+- **Vuoto:** icona outline in un cerchio `surfaceMuted`, testo `body` secondario, al massimo una CTA.
+- **Caricamento:** skeleton con la stessa forma del contenuto.
+- **Errore:** riga con bordo `danger` e il link "Riprova".
+- **Offline** (dec. 54): chip glass "Offline · sola lettura" sotto l'header.
 
-## 9. Movimento
-- Durate: 150 ms (press), 250 ms (transizioni), easing standard iOS.
-- Press: scale 0.98 + opacity 0.85.
-- Cambio giorno nella week strip: cross-fade lista 200 ms.
-- Rispettare "Riduci movimento" del sistema (dec. 47).
+## 8. Movimento
+- 150 ms per il press, 250 ms per le transizioni, curve standard iOS. Rispettare "Riduci movimento".
+- Su iOS 26 la tab bar nativa si riduce scorrendo verso il basso (`minimizeBehavior="onScrollDown"`).
 
-## 10. Accessibilità (standard OS, dec. 47)
-- Target minimi 44×44.
-- Supporto Dynamic Type (non fissare altezze dei testi; le card crescono).
-- `accessibilityLabel` su ogni bottone icona; stato selezionato annunciato su tab e giorni.
-- Non affidare significato al solo colore (stato lezione = colore + testo + icona).
+## 9. Accessibilità (standard del sistema, dec. 47)
+- Aree tappabili ≥ 44×44 (i bottoni da 32 nelle righe hanno l'intera riga tappabile).
+- Dynamic Type: le altezze sono minime, mai fisse sul testo.
+- `accessibilityLabel` su ogni bottone glass. Lo stato selezionato viene annunciato.
+- Il significato non passa mai solo dal colore: tipo = tinta + icona o etichetta.
 
-## 11. Divieti
-- Niente gamification visiva: punti, badge-premio, streak, classifiche, coriandoli (dec. 57).
-- Niente widget personalizzabili / drag&drop in Home (dec. 21).
-- Niente temi colore utente (dec. 49).
-- Niente asset dell'immagine di riferimento (Memoji, 3D, logo, testi).
-- Niente emoji come icone di UI.
+## 10. Divieti
+- Niente gamification: punti, badge premio, streak, classifiche (dec. 57).
+- Niente widget riordinabili in Home (dec. 21). Niente temi utente (dec. 49).
+- Niente asset copiati dalle immagini di ispirazione (Memoji, illustrazioni, loghi, testi).
+- Niente emoji come icone. Niente glass sopra il glass. Niente glass dietro testo lungo.
+- Niente presenze sulle lezioni (dec. 97).
 
-## 12. Decisioni di design aperte
-1. Quanto blu pieno? (immagine "colorata" vs Notion/Linear "minimal").
-2. Colori per materia: sì/no, palette?
-3. Illustrazioni: stile proprio da commissionare o solo icone?
-4. Logo e nome definitivi (Orbita è provvisorio).
-5. Layout tablet/iPad (priorità alta per appunti, dec. 28): sidebar fissa?
+## 11. Decisioni di design aperte
+1. Colori per materia: sì o no?
+2. Illustrazioni: stile proprio o solo icone?
+3. Logo e nome definitivi ("Orbita" è provvisorio).
+4. Layout per iPad (priorità alta per gli appunti, dec. 28).
+5. A che ora arriva il promemoria "il giorno prima" (dec. 107).
