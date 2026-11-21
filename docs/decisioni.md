@@ -39,6 +39,14 @@
 | 93 | 2026-11-21 | 02 Agenda | Gli eventi ufficiali di classe/gruppo **compaiono da soli** nell'Agenda. L'organizzatore **vede le risposte** dei partecipanti. | Precisa dec. 24 |
 | 94 | 2026-11-21 | 02 Agenda | Promemoria anche tramite **notifiche locali del telefono**, oltre al centro notifiche interno. | **Modifica dec. 43** (solo per le notifiche locali; push da server ed email restano non confermate) |
 | 95 | 2026-11-21 | 02 Agenda | Viste del calendario (giorno, settimana, mese, lista): **rinviate**. | — |
-| 96 | 2026-11-21 | 02 Agenda | **Festività nazionali incluse**. Le vacanze regionali si ricavano dalla scuola, cioè dalla regione dell'istituto (interpretazione da confermare, vedi modulo 02 §8). | — |
+| 96 | 2026-11-21 | 02 Agenda | **Festività nazionali incluse**. Le vacanze regionali si ricavano dalla scuola, cioè dalla regione dell'istituto (confermato dalla dec. 101). | — |
 | 97 | 2026-11-21 | 02 Agenda | **Nessuna funzione di presenze** per lo studente. Il "Svolta/Non svolta" del prototipo va rimosso. | — |
 | 98 | 2026-11-21 | 02 Agenda | Le funzioni AI dell'Agenda si progettano nel **modulo AI**. | — |
+| 99 | 2026-11-22 | 02 Agenda | Le risposte a un invito sono solo **Sì / No**. | — |
+| 100 | 2026-11-22 | 02 Agenda | Gli eventi ufficiali li creano **solo il docente e gli amministratori** di classe o gruppo. | Precisa dec. 24, 35 |
+| 101 | 2026-11-22 | 02 Agenda | Le vacanze regionali **si ricavano dalla regione dell'istituto** e **le carica il team** ogni anno. | Conferma dec. 96 |
+| 102 | 2026-11-22 | 02 Agenda | L'**orario del docente è quello principale**: per le classi collegate gli studenti **non possono modificarlo**. | Precisa dec. 36, 90 |
+| 103 | 2026-11-22 | 02 Agenda | Gli eventi ufficiali **non si possono nascondere**. | Precisa dec. 93 |
+| 104 | 2026-11-22 | 02 Agenda | Promemoria predefinito: **il giorno prima** (ambito e orario da confermare, vedi modulo 02 §8). | — |
+| 105 | 2026-11-22 | 02 Agenda | Il divieto di inviti tra istituti diversi (dec. 92) **non vale per la Community**. | Precisa dec. 92 |
+| 106 | 2026-11-22 | 02 Agenda | La visibilità dell'elenco partecipanti la decide **l'organizzatore** (pubblico o privato). | Precisa dec. 93 |

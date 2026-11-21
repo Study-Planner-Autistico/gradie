@@ -1,6 +1,6 @@
 # Modulo 02 — Agenda ed eventi
 
-> Stato: **specifica v1**. Si basa sul briefing (dec. 1–61), sul modulo 01 e sulle decisioni 89–98 (`docs/decisioni.md`).
+> Stato: **specifica v2 — modulo chiuso** (restano R1 e R2, piccoli). Si basa sul briefing (dec. 1–61), sul modulo 01 e sulle decisioni 89–106 (`docs/decisioni.md`).
 > Legenda: ✅ confermato · 🔧 proposta da validare · ⏸ rinviato · ❓ domanda aperta (§8)
 
 ---
@@ -11,12 +11,12 @@
 |---|---|---|
 | A1 | Confine tra Agenda e Attività | ✅ Attività gestisce, l'Agenda mostra (dec. 89) |
 | A2 | Promemoria senza push | ✅ Notifiche locali del telefono più centro notifiche interno (dec. 94, modifica dec. 43) |
-| A3 | Inviti tra istituti diversi | ✅ Non permessi (dec. 92). Effetto sulla Community → §8 |
-| A4 | Eventi ufficiali e controllo personale | ✅ Compaiono da soli, l'organizzatore vede le risposte (dec. 93). Nascondere o annotare → §8 |
+| A3 | Inviti tra istituti diversi | ✅ Non permessi (dec. 92); la Community non è coinvolta (dec. 105) |
+| A4 | Eventi ufficiali e controllo personale | ✅ Compaiono da soli, l'organizzatore vede le risposte (dec. 93); non si possono nascondere (dec. 103) |
 | A5 | Orario delle lezioni | ✅ Modello diverso per superiori e università/AFAM (dec. 90) |
-| A6 | Festività e vacanze | ✅ Festività nazionali incluse, vacanze regionali dalla scuola (dec. 96, interpretazione → §8) |
+| A6 | Festività e vacanze | ✅ Festività nazionali incluse, vacanze regionali ricavate dalla regione dell'istituto e caricate dal team (dec. 96, 101) |
 | A7 | Presenze | ✅ Escluse (dec. 97) |
-| A8 | Orario del docente nell'Agenda dello studente | Aperta → §8 |
+| A8 | Orario del docente nell'Agenda dello studente | ✅ L'orario del docente è quello principale e lo studente non lo modifica (dec. 102) |
 | A9 | AI | ✅ Nel modulo AI (dec. 98) |
 
 ---
@@ -29,7 +29,7 @@ L'Agenda è la **vista nel tempo dell'ambiente attivo** (istituto), dove compaio
 |---|---|---|
 | **Lezione** (dall'orario) | Agenda | Si crea, modifica ed elimina qui |
 | **Appuntamento**, anche non scolastico (dec. 91) | Agenda | Si crea, modifica ed elimina qui; si possono invitare persone dello stesso istituto |
-| **Evento ufficiale** di classe o gruppo | Classi/Gruppi (chi lo crea → §8) | Compare da solo (dec. 93); lo studente risponde |
+| **Evento ufficiale** di classe o gruppo | Classi/Gruppi, creato da docente o amministratori (dec. 100) | Compare da solo (dec. 93); lo studente risponde |
 | **Compito, verifica, interrogazione, esame, progetto, consegna, scadenza** | **Attività** (dec. 89) | Solo visualizzazione con link al modulo Attività |
 | **Festività nazionali** e **vacanze regionali** | Dati caricati dal team (dec. 96) | Solo visualizzazione; le lezioni ricorrenti in quei giorni vengono sospese |
 
@@ -79,7 +79,7 @@ Tap sulla lezione → "Solo questa": annulla, sposta o cambia aula → oppure "D
 "+" → Appuntamento → titolo, data, ora o tutto il giorno, luogo e note facoltativi, materia facoltativa, promemoria → eventuali invitati (solo dello stesso istituto, dec. 92) → salva. Gli invitati ricevono una notifica.
 
 **J5 — Ricevere un invito**
-Notifica (locale e nel centro notifiche) → dettaglio → risposta (opzioni → §8) → se accettato, compare in Agenda. L'organizzatore vede la risposta (dec. 93).
+Notifica (locale e nel centro notifiche) → dettaglio → risposta **Sì / No** (dec. 99) → se accettato, compare in Agenda. L'organizzatore vede la risposta (dec. 93).
 
 **J6 — Evento ufficiale di classe o gruppo**
 Il creatore lo pubblica → compare **in automatico** nell'Agenda dei membri (dec. 93), con notifica. Se viene modificato o annullato, l'Agenda si aggiorna e arriva una notifica di modifica.
@@ -88,7 +88,7 @@ Il creatore lo pubblica → compare **in automatico** nell'Agenda dei membri (de
 Una verifica creata in Attività compare nel giorno giusto con un aspetto riconoscibile come "attività" → tap → si apre il dettaglio nel modulo Attività (dec. 89).
 
 **J8 — Promemoria**
-Si sceglie l'anticipo (valore predefinito → §8) → all'ora stabilita arriva la notifica locale e una voce nel centro notifiche. Se l'utente ha negato il permesso per le notifiche del telefono, il promemoria arriva solo nel centro, con un avviso che suggerisce di attivare il permesso.
+Valore predefinito: **il giorno prima** (dec. 104; ambito e orario → R1), modificabile → all'ora stabilita arriva la notifica locale e una voce nel centro notifiche. Se l'utente ha negato il permesso per le notifiche del telefono, il promemoria arriva solo nel centro, con un avviso che suggerisce di attivare il permesso.
 
 **J9 — Nuovo periodo o nuovo anno**
 Quando cambia il periodo (es. inizia il 2° quadrimestre) o l'anno (passaggio proposto con conferma, dec. 75), l'app propone di **ricopiare l'orario** con conferma 🔧, oppure di impostarne uno nuovo.
@@ -102,7 +102,9 @@ Si consulta l'Agenda già scaricata. Le azioni di creazione e modifica sono disa
 - Eventi sovrapposti: sono permessi e si vedono affiancati 🔧.
 - Evento ufficiale annullato dopo che lo studente l'aveva accettato: lo si vede barrato con "Annullato" per un periodo 🔧, poi sparisce.
 - Utente che lascia una classe: i suoi eventi ufficiali spariscono dalla sua Agenda 🔧.
-- Orario inserito a mano dallo studente e orario ufficiale del docente (A8) → §8.
+- Orario inserito a mano e poi collegamento al docente: le lezioni ufficiali sostituiscono quelle personali di quella materia, previa conferma (dec. 102).
+- Lo studente prova a modificare una lezione ufficiale: azione non disponibile, con il messaggio "Orario gestito dal docente" (dec. 102).
+- Lo studente prova a nascondere un evento ufficiale: non è possibile (dec. 103).
 
 ---
 
@@ -116,7 +118,7 @@ Si consulta l'Agenda già scaricata. Le azioni di creazione e modifica sono disa
 | **Invito / Partecipazione** | evento, persona, risposta, data della risposta | L'organizzatore la vede (dec. 93) |
 | **Promemoria** | evento o attività, anticipo, canali (notifica locale + centro) | dec. 94 |
 | **Festività** | data, nome, ambito (nazionale) | dec. 96 |
-| **Vacanza regionale** | regione, anno scolastico, periodo, nome | Fonte → §8 |
+| **Vacanza regionale** | regione, anno scolastico, periodo, nome | Caricata dal team ogni anno (dec. 101) |
 | **Riferimento attività** | id dell'attività, data, tipo | Letto dal modulo Attività |
 
 ---
@@ -133,7 +135,7 @@ Si consulta l'Agenda già scaricata. Le azioni di creazione e modifica sono disa
 | AG-06 | Modifica lezione | "Solo questa" / "Da qui in poi" |
 | AG-07 | Invita persone | Ricerca **solo nell'istituto** (dec. 92) |
 | AG-08 | Risposta all'invito | Dettaglio e opzioni di risposta |
-| AG-09 | Partecipanti (organizzatore) | Elenco con le risposte (dec. 93) |
+| AG-09 | Partecipanti | Elenco con le risposte. Sempre visibile all'organizzatore; agli altri solo se lui lo rende pubblico (dec. 106) |
 | AG-10 | Calendario dell'anno | Festività e vacanze regionali dell'istituto (consultazione) |
 
 - Il **"+"** propone: Appuntamento · Lezione · Attività (porta al modulo Attività, dec. 89).
@@ -149,7 +151,7 @@ Si consulta l'Agenda già scaricata. Le azioni di creazione e modifica sono disa
 | AG-01 Agenda | "Nessun impegno oggi" + "Imposta il tuo orario" se l'orario manca | Skeleton delle card | Errore di sincronizzazione + "Riprova" | Consultazione, "+" disattivato | Badge "Privato" sugli appuntamenti personali |
 | AG-04/05 Orario | Griglia vuota con suggerimento | — | Orari sovrapposti nella stessa ora (avviso, non blocco 🔧) | Non disponibile | — |
 | AG-07 Invita | "Nessuna persona trovata in questo istituto" | Ricerca | — | Non disponibile | Mostra solo nome e cognome (dec. 16, 37) |
-| AG-09 Partecipanti | "Nessuna risposta ancora" | Skeleton | — | Ultimo dato scaricato | Visibile solo all'organizzatore 🔧 |
+| AG-09 Partecipanti | "Nessuna risposta ancora" | Skeleton | — | Ultimo dato scaricato | Pubblico o privato secondo l'organizzatore (dec. 106) |
 | Promemoria | — | — | Permesso notifiche negato → avviso | Le notifiche locali funzionano anche offline 🔧 | — |
 
 ---
@@ -164,41 +166,37 @@ Si consulta l'Agenda già scaricata. Le azioni di creazione e modifica sono disa
 | **Notifiche** | Notifiche locali più centro notifiche (dec. 43, 94) |
 | **Home** | Blocchi "Oggi" e "Prossime scadenze" |
 | **AI** | Funzioni progettate nel modulo AI (dec. 98) |
-| **Community** | Effetto della dec. 92 da valutare → §8 |
+| **Community** | Non è soggetta alla dec. 92 (dec. 105) |
 
 ---
 
 ## 8. Decisioni aperte
 
-**H1 — Risposte a un invito.**
-- **A.** Sì / No.
-- **B.** Sì / No / Forse.
+| # | Tema | Esito |
+|---|---|---|
+| H1 | Risposte a un invito | ✅ Sì / No (dec. 99) |
+| H2 | Chi crea gli eventi ufficiali | ✅ Docente e amministratori (dec. 100) |
+| H3 | Vacanze regionali | ✅ Ricavate dalla regione dell'istituto, caricate dal team (dec. 101) |
+| H4 | Orario del docente | ✅ È quello principale, lo studente non lo modifica (dec. 102) |
+| H5 | Nascondere gli eventi ufficiali | ✅ Non si può (dec. 103) |
+| H6 | Promemoria predefinito | ✅ Il giorno prima (dec. 104). Dettagli → R1 |
+| H7 | Dec. 92 e Community | ✅ La Community non è coinvolta (dec. 105) |
+| H8 | Elenco partecipanti | ✅ Lo decide l'organizzatore: pubblico o privato (dec. 106) |
 
-**H2 — Chi crea gli eventi ufficiali?**
-- **A.** Solo il docente, nelle sue classi.
-- **B.** Il docente più gli amministratori dei gruppi (ruoli del modulo Classi).
-- **C.** Qualunque membro, con approvazione.
+**Conseguenze annotate**
+- **Orario misto (dec. 102).** Uno studente può avere alcune materie con il docente collegato (orario ufficiale, non modificabile) e altre senza (orario personale). La griglia AG-04 deve mostrare le due cose insieme, con le ore ufficiali bloccate e un'etichetta del tipo "Orario del docente" 🔧.
+- **Collegamento a una classe.** Se lo studente aveva già inserito a mano le lezioni di una materia, quando si collega al docente le lezioni personali di quella materia vengono **sostituite** da quelle ufficiali. Va chiesta una conferma, mostrando cosa viene rimosso 🔧.
+- **Community (dec. 105).** Le community pubbliche e tematiche possono riunire persone di istituti diversi, mentre gruppi ed eventi di classe restano dentro un istituto. Il rapporto tra Community e ambienti si definirà nel modulo Community.
 
-**H3 — Vacanze regionali "dalla scuola" (dec. 96).** Ho interpretato: la regione si ricava dall'istituto e il team carica ogni anno il calendario scolastico regionale. Le regioni lo pubblicano, ma non ho verificato in che formato. È corretto, oppure intendevi che le **vacanze le inserisce la scuola** (cioè il docente o l'istituto)? Va chiarito anche se si possono aggiungere i giorni decisi dal singolo istituto (ponti, chiusure).
+**Punti residui (piccoli, non bloccano l'MVP)**
 
-**H4 — Orario ufficiale del docente nell'Agenda dello studente** (A8). Se lo studente è collegato a una classe in cui il docente ha inserito le lezioni:
-- **A.** L'orario ufficiale **sostituisce** quello personale per quella classe.
-- **B.** Lo studente sceglie se usare l'orario ufficiale o il suo.
-- **C.** Nessun collegamento: l'orario resta sempre personale.
+**R1 — Ambito e orario del promemoria "il giorno prima" (dec. 104).**
+- Vale per attività, appuntamenti ed eventi ufficiali, ma **non per le lezioni ricorrenti**? Con le lezioni arriverebbe un promemoria al giorno per ogni ora di lezione.
+- A che ora del giorno prima? Per esempio un orario fisso (le 18:00) o la stessa ora dell'evento.
 
-**H5 — Lo studente può nascondere un evento ufficiale?** (A4)
-- **A.** No, si può solo rispondere.
-- **B.** Sì, lo nasconde dalla sua Agenda (l'organizzatore vede comunque la risposta).
-
-**H6 — Anticipo predefinito dei promemoria.**
-- **A.** Nessun promemoria predefinito: lo sceglie l'utente.
-- **B.** Valori predefiniti per tipo (es. 1 giorno prima per una verifica, 15 minuti prima di un appuntamento).
-
-**H7 — Effetto della dec. 92 sulla Community.** Gruppi e inviti sono limitati a un istituto. Il briefing però prevede anche **community pubbliche/tematiche** (dec. 14, 30) e un feed algoritmico (dec. 32), che per natura riuniscono persone di scuole diverse. La dec. 92 vale anche per la Community? (Basta una prima indicazione; il dettaglio va nel modulo Community.)
-
-**H8 — Elenco partecipanti visibile agli altri invitati?**
-- **A.** No, lo vede solo l'organizzatore (dec. 93).
-- **B.** Sì, tutti i partecipanti vedono chi ha accettato.
+**R2 — Chiusure decise dal singolo istituto** (ponti, chiusure straordinarie), che non compaiono nel calendario regionale:
+- **A.** Le inserisce il docente come evento ufficiale di tipo "chiusura", che sospende le lezioni.
+- **B.** Non sono gestite nell'MVP.
 
 ---
 
