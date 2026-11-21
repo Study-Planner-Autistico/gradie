@@ -1,6 +1,6 @@
 # Modulo 02 — Agenda ed eventi
 
-> Stato: **specifica v2 — modulo chiuso** (restano R1 e R2, piccoli). Si basa sul briefing (dec. 1–61), sul modulo 01 e sulle decisioni 89–106 (`docs/decisioni.md`).
+> Stato: **specifica v3 — modulo chiuso**. Si basa sul briefing (dec. 1–61), sul modulo 01 e sulle decisioni 89–108 (`docs/decisioni.md`).
 > Legenda: ✅ confermato · 🔧 proposta da validare · ⏸ rinviato · ❓ domanda aperta (§8)
 
 ---
@@ -88,7 +88,7 @@ Il creatore lo pubblica → compare **in automatico** nell'Agenda dei membri (de
 Una verifica creata in Attività compare nel giorno giusto con un aspetto riconoscibile come "attività" → tap → si apre il dettaglio nel modulo Attività (dec. 89).
 
 **J8 — Promemoria**
-Valore predefinito: **il giorno prima** (dec. 104; ambito e orario → R1), modificabile → all'ora stabilita arriva la notifica locale e una voce nel centro notifiche. Se l'utente ha negato il permesso per le notifiche del telefono, il promemoria arriva solo nel centro, con un avviso che suggerisce di attivare il permesso.
+Valore predefinito: **il giorno prima** per attività, appuntamenti ed eventi ufficiali; nessuno per le lezioni (dec. 104, 107). Modificabile → all'ora stabilita arriva la notifica locale e una voce nel centro notifiche. Se l'utente ha negato il permesso per le notifiche del telefono, il promemoria arriva solo nel centro, con un avviso che suggerisce di attivare il permesso.
 
 **J9 — Nuovo periodo o nuovo anno**
 Quando cambia il periodo (es. inizia il 2° quadrimestre) o l'anno (passaggio proposto con conferma, dec. 75), l'app propone di **ricopiare l'orario** con conferma 🔧, oppure di impostarne uno nuovo.
@@ -98,7 +98,7 @@ Si consulta l'Agenda già scaricata. Le azioni di creazione e modifica sono disa
 
 **Casi limite**
 - Invito a una persona di un altro istituto: non possibile, perché la ricerca degli invitati mostra solo persone dello stesso ambiente (dec. 92).
-- Lezione ricorrente in un giorno di festa: viene sospesa e compare un'etichetta "Festività" o "Vacanza".
+- Lezione ricorrente in un giorno di festa, di vacanza o di **chiusura dell'istituto** (inserita dal docente, dec. 108): viene sospesa e compare un'etichetta "Festività", "Vacanza" o "Chiusura".
 - Eventi sovrapposti: sono permessi e si vedono affiancati 🔧.
 - Evento ufficiale annullato dopo che lo studente l'aveva accettato: lo si vede barrato con "Annullato" per un periodo 🔧, poi sparisce.
 - Utente che lascia una classe: i suoi eventi ufficiali spariscono dalla sua Agenda 🔧.
@@ -179,7 +179,7 @@ Si consulta l'Agenda già scaricata. Le azioni di creazione e modifica sono disa
 | H3 | Vacanze regionali | ✅ Ricavate dalla regione dell'istituto, caricate dal team (dec. 101) |
 | H4 | Orario del docente | ✅ È quello principale, lo studente non lo modifica (dec. 102) |
 | H5 | Nascondere gli eventi ufficiali | ✅ Non si può (dec. 103) |
-| H6 | Promemoria predefinito | ✅ Il giorno prima (dec. 104). Dettagli → R1 |
+| H6 | Promemoria predefinito | ✅ Il giorno prima, escluse le lezioni (dec. 104, 107) |
 | H7 | Dec. 92 e Community | ✅ La Community non è coinvolta (dec. 105) |
 | H8 | Elenco partecipanti | ✅ Lo decide l'organizzatore: pubblico o privato (dec. 106) |
 
@@ -188,15 +188,12 @@ Si consulta l'Agenda già scaricata. Le azioni di creazione e modifica sono disa
 - **Collegamento a una classe.** Se lo studente aveva già inserito a mano le lezioni di una materia, quando si collega al docente le lezioni personali di quella materia vengono **sostituite** da quelle ufficiali. Va chiesta una conferma, mostrando cosa viene rimosso 🔧.
 - **Community (dec. 105).** Le community pubbliche e tematiche possono riunire persone di istituti diversi, mentre gruppi ed eventi di classe restano dentro un istituto. Il rapporto tra Community e ambienti si definirà nel modulo Community.
 
-**Punti residui (piccoli, non bloccano l'MVP)**
+**Punti residui**
 
-**R1 — Ambito e orario del promemoria "il giorno prima" (dec. 104).**
-- Vale per attività, appuntamenti ed eventi ufficiali, ma **non per le lezioni ricorrenti**? Con le lezioni arriverebbe un promemoria al giorno per ogni ora di lezione.
-- A che ora del giorno prima? Per esempio un orario fisso (le 18:00) o la stessa ora dell'evento.
-
-**R2 — Chiusure decise dal singolo istituto** (ponti, chiusure straordinarie), che non compaiono nel calendario regionale:
-- **A.** Le inserisce il docente come evento ufficiale di tipo "chiusura", che sospende le lezioni.
-- **B.** Non sono gestite nell'MVP.
+| # | Tema | Esito |
+|---|---|---|
+| R1 | Ambito del promemoria "il giorno prima" | ✅ Attività, appuntamenti ed eventi ufficiali, non le lezioni (dec. 107). A che ora arriva il giorno prima: da definire in fase di design |
+| R2 | Chiusure del singolo istituto | ✅ Le decide il docente, con un evento ufficiale "chiusura" che sospende le lezioni (dec. 108) |
 
 ---
 
