@@ -29,3 +29,6 @@
 | 83 | 2026-11-21 | 01 Fondazioni | Contenuto, fonti, momento e uso dell'AI per l'importazione: **rinviati**. L'importazione resta nell'MVP (dec. 72). | — |
 | 84 | 2026-11-21 | 01 Fondazioni | **Nessuna protezione aggiuntiva** dopo un blocco per età: chi mente si gestisce con segnalazioni e sospensione (dec. 66). | — |
 | 85 | 2026-11-21 | 01 Fondazioni | Codici di recupero persi: recupero **tramite assistenza**. Il processo è **rinviato**. | Precisa dec. 77 |
+| 86 | 2026-11-21 | 01 Fondazioni | Fonti dell'elenco istituti **confermate**: Portale Unico dei Dati della Scuola (Ministero dell'Istruzione e del Merito) per le superiori, USTAT (Ministero dell'Università) per atenei, corsi e AFAM. Il team le **carica una volta all'anno** in un elenco interno; l'app non consulta le fonti mentre è in uso. | Precisa dec. 76 |
+| 87 | 2026-11-21 | 01 Fondazioni | Le istituzioni **AFAM** (conservatori, accademie, ISIA) rientrano nel perimetro "università". | Precisa dec. 2 |
+| 88 | 2026-11-21 | 01 Fondazioni | Dopo la registrazione la data di nascita si modifica **solo tramite assistenza**. | Precisa dec. 74 |

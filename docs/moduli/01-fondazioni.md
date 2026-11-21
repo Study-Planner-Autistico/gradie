@@ -1,6 +1,6 @@
 # Modulo 01 — Fondazioni di dominio e configurazione dell'ambiente
 
-> Stato: **specifica v3**. Si basa sul briefing (dec. 1–61) e sulle decisioni 62–85 (`docs/decisioni.md`).
+> Stato: **specifica v4 — modulo chiuso**. Si basa sul briefing (dec. 1–61) e sulle decisioni 62–88 (`docs/decisioni.md`).
 > Legenda: ✅ confermato · 🔧 proposta da validare · ⏸ rinviato · ❓ domanda aperta (§8)
 
 **Perché si parte da qui:** Agenda, Attività, Registro voti, Home, Classi e permessi dipendono tutti da *chi è l'utente*, *in quale ambiente si trova* e *quale percorso segue*.
@@ -131,7 +131,7 @@ Credenziali → 2FA (codice via email per lo studente, se l'ha attivata (dec. 79
 - Offline durante la registrazione o l'onboarding: non si può procedere, compare un messaggio chiaro (offline solo in lettura, dec. 54).
 - Istituto non presente nell'elenco → l'utente non può proseguire (dec. 76). Cosa vede e cosa può fare → §8 Q2.
 - Ruolo scelto per errore: si corregge fino alla fine dell'onboarding, dopo serve un nuovo account (dec. 63, 81).
-- Data di nascita modificata dopo la registrazione → §8 Q4.
+- Data di nascita da modificare dopo la registrazione → solo tramite assistenza (dec. 88).
 - Docente che perde l'app autenticatore → codice di recupero (dec. 77). Se perde anche i codici → §8 Q5.
 - Due ambienti con lo stesso istituto (es. due corsi di laurea nello stesso ateneo): consentito 🔧, distinti dal corso di studio.
 
@@ -230,26 +230,27 @@ Credenziali → 2FA (codice via email per lo studente, se l'ha attivata (dec. 79
 
 | # | Tema | Stato |
 |---|---|---|
-| Q1 | Fonti dell'elenco istituti | 🔧 **Proposta da confermare**, vedi sotto |
+| Q1 | Fonti dell'elenco istituti | ✅ Confermate (dec. 86), vedi sotto. AFAM nel perimetro (dec. 87) |
 | Q2 | Istituto non trovato | ✅ Blocco più modulo "Segnala il tuo istituto" (dec. 82) |
 | Q3 | Importazione | ⏸ Rinviata (dec. 83). La schermata ON-15 resta come segnaposto |
-| Q4 | Protezioni dopo il blocco età | ✅ Nessuna (dec. 84). **Resta aperto:** la data di nascita si può modificare da soli dopo la registrazione, o solo tramite assistenza? |
+| Q4 | Protezioni dopo il blocco età | ✅ Nessuna (dec. 84). La data di nascita si modifica solo tramite assistenza (dec. 88) |
 | Q5 | Codici di recupero persi | ✅ Tramite assistenza, processo rinviato (dec. 85) |
 
-### Q1 — Fonti consigliate (da confermare)
+### Q1 — Fonti confermate (dec. 86)
 
 | Percorso | Fonte | Cosa contiene | Formato e licenza |
 |---|---|---|---|
 | **Superiori** | **Portale Unico dei Dati della Scuola**, Ministero dell'Istruzione e del Merito (`dati.istruzione.it/opendata`, sezione "Scuole") | Anagrafica delle scuole **statali** e **paritarie**: codice meccanografico, denominazione, indirizzo, comune, provincia, tipo di istituto. Aggiornata per anno scolastico | CSV, licenza **IODL 2.0** (riuso consentito anche commerciale, citando la fonte) |
 | **Università (atenei)** | **USTAT – Open data del Ministero dell'Università e della Ricerca** (`dati-ustat.mur.gov.it`), dataset "Atenei" e tabella dei codici `cod_atenei.csv` | Elenco degli atenei con codice, nome e caratteristiche | CSV. Licenza da verificare sul portale |
 | **Università (corsi)** | USTAT, dataset "Offerta formativa" | Corsi di laurea dall'a.a. 2010/2011 | CSV. Licenza e copertura degli ultimi anni da verificare |
+| **AFAM** (dec. 87) | USTAT, file "AFAM Istituti Codifiche" (`AFAM_ISTITUTI-CODIFICHE.csv`) | Codice, tipo di istituto, regione, provincia, sito web, stato di attività (conservatori, accademie, ISIA) | CSV, pubblico dominio secondo il portale. Corsi AFAM e aggiornamento da verificare |
 
 **Uso consigliato:** il team scarica i file a ogni anno scolastico o accademico e li carica in un elenco interno all'app (opzione A del giro precedente). L'app **non** consulta i portali mentre è in uso, quindi non serve nessuna integrazione esterna (coerente con la dec. 58). Le segnalazioni del modulo "Segnala il tuo istituto" (dec. 82) servono a correggere i dati mancanti.
 
 **Da verificare prima di adottarle:**
 - Che nei file del Ministero ci siano anche le scuole delle province autonome di Trento e Bolzano e della Valle d'Aosta, che hanno sistemi scolastici propri.
 - La licenza dei dati USTAT e il loro aggiornamento: alcuni dataset si fermano ad anni passati.
-- **Conservatori e accademie (AFAM)** non sono atenei e non compaiono nei dati USTAT degli atenei. Fanno parte del perimetro "università" (dec. 2)? Se sì, serve una fonte in più.
+- Per le AFAM: struttura dei percorsi (diplomi accademici di I e II livello, CFA invece di CFU) da gestire nel contesto Università 🔧.
 - La citazione della fonte richiesta dalla licenza IODL 2.0: dove mostrarla nell'app (es. Profilo → Informazioni).
 
 ---
@@ -260,11 +261,12 @@ Credenziali → 2FA (codice via email per lo studente, se l'ha attivata (dec. 79
 - Richiesta della data di nascita e blocco sotto i 14 anni, prima di creare l'account.
 - Registrazione e accesso con email/password, Google e Apple; verifica dell'email con codice a 6 cifre.
 - Ruolo legato all'account, correggibile fino alla fine dell'onboarding.
+- Elenco istituti (superiori, atenei, AFAM) caricato una volta all'anno dalle fonti ufficiali, con modulo "Segnala il tuo istituto".
 - 2FA: app autenticatore obbligatoria per i docenti, codice via email facoltativo per gli studenti, codici di recupero per entrambi.
 - Onboarding con configurazione completa: percorso, istituto dall'elenco, dettagli, periodo, materie, importazione, moduli.
 - Un ambiente per istituto, sia per studenti sia per docenti: creazione, cambio, eliminazione (tranne l'ultimo ⏸), passaggio d'anno proposto con conferma.
 - Profilo: account, sicurezza (dispositivi collegati e revoca), lingua e tema, esportazione ed eliminazione dei dati (dec. 60).
 
-**In attesa:** conferma delle fonti (Q1), modifica della data di nascita (Q4); rinviati: contenuto dell'importazione (dec. 83), moduli disattivabili (dec. 65), processo di assistenza (dec. 85).
+**Rinviati:** contenuto dell'importazione (dec. 83), moduli disattivabili (dec. 65), processo di assistenza (dec. 85).
 
 **Fasi successive:** nessuna nuova funzione proposta. Restano escluse la vista aggregata (dec. 64) e le integrazioni funzionali (dec. 58).
