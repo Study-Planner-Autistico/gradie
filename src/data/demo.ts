@@ -8,11 +8,11 @@ export type DemoLesson = {
   end: string;
   note?: string;
   teacher?: string;
-  status: 'upcoming' | 'attended' | 'missed';
+  status: 'upcoming' | 'past';
 };
 
 export const demoLessons: DemoLesson[] = [
-  { id: '1', subject: 'Matematica', start: '08:00', end: '09:00', note: 'Compito: esercizi pag. 112', teacher: 'Prof. Bianchi', status: 'attended' },
-  { id: '2', subject: 'Storia', start: '09:00', end: '10:00', status: 'missed' },
+  { id: '1', subject: 'Matematica', start: '08:00', end: '09:00', note: 'Compito: esercizi pag. 112', teacher: 'Prof. Bianchi', status: 'past' },
+  { id: '2', subject: 'Storia', start: '09:00', end: '10:00', status: 'past' },
   { id: '3', subject: 'Inglese', start: '10:15', end: '11:15', teacher: 'Prof.ssa Verdi', status: 'upcoming' },
 ];

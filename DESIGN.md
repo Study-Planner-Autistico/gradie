@@ -113,8 +113,8 @@ Scala 4 pt: `xs 4 · sm 8 · md 12 · lg 16 · xl 20 · xxl 24 · xxxl 32`.
    - Giorno con eventi: puntino 5 px `accentWarm` in alto a destra della cella.
 
 ### 6.2 Card evento/lezione (piena, `radius.lg`)
-- Fondo `primary` (in corso/futuro) o `primaryDeep` (passato/non svolto).
-- Riga 1: titolo materia `title2` bianco · a destra stato `caption` + badge circolare 16 (verde ✓ / neutro ✕).
+- Fondo `primary` (in corso/futura) o `primaryDeep` (già passata).
+- Riga 1: titolo materia `title2` bianco. **Nessuno stato di presenza** (dec. 97).
 - Riga 2: pill bianca con icona orologio + orario `callout` (`text` scuro).
 - Riga 3: dettaglio `caption` `onPrimaryMuted` (es. compito).
 - Riga 4 (opz.): persona — avatar 24 + nome `headline` bianco + sottotitolo `caption`; a destra CTA pill bianca con testo `pillText` + freccia "→".

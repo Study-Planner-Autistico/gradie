@@ -32,3 +32,13 @@
 | 86 | 2026-11-21 | 01 Fondazioni | Fonti dell'elenco istituti **confermate**: Portale Unico dei Dati della Scuola (Ministero dell'Istruzione e del Merito) per le superiori, USTAT (Ministero dell'Università) per atenei, corsi e AFAM. Il team le **carica una volta all'anno** in un elenco interno; l'app non consulta le fonti mentre è in uso. | Precisa dec. 76 |
 | 87 | 2026-11-21 | 01 Fondazioni | Le istituzioni **AFAM** (conservatori, accademie, ISIA) rientrano nel perimetro "università". | Precisa dec. 2 |
 | 88 | 2026-11-21 | 01 Fondazioni | Dopo la registrazione la data di nascita si modifica **solo tramite assistenza**. | Precisa dec. 74 |
+| 89 | 2026-11-21 | 02 Agenda | Compiti, verifiche, interrogazioni, esami e scadenze sono **gestiti dal modulo Attività**. L'Agenda li **mostra** e non ne tiene una copia. | Precisa dec. 22, 25 |
+| 90 | 2026-11-21 | 02 Agenda | Orario delle lezioni con **modello diverso** per superiori e per università/AFAM. | — |
+| 91 | 2026-11-21 | 02 Agenda | Gli appuntamenti comprendono anche **impegni non scolastici**. | Precisa dec. 22 |
+| 92 | 2026-11-21 | 02 Agenda | **Non sono permessi gruppi o eventi con persone di istituti diversi**: inviti ed eventi condivisi restano dentro un unico ambiente (istituto). | Precisa dec. 14, 24 |
+| 93 | 2026-11-21 | 02 Agenda | Gli eventi ufficiali di classe/gruppo **compaiono da soli** nell'Agenda. L'organizzatore **vede le risposte** dei partecipanti. | Precisa dec. 24 |
+| 94 | 2026-11-21 | 02 Agenda | Promemoria anche tramite **notifiche locali del telefono**, oltre al centro notifiche interno. | **Modifica dec. 43** (solo per le notifiche locali; push da server ed email restano non confermate) |
+| 95 | 2026-11-21 | 02 Agenda | Viste del calendario (giorno, settimana, mese, lista): **rinviate**. | — |
+| 96 | 2026-11-21 | 02 Agenda | **Festività nazionali incluse**. Le vacanze regionali si ricavano dalla scuola, cioè dalla regione dell'istituto (interpretazione da confermare, vedi modulo 02 §8). | — |
+| 97 | 2026-11-21 | 02 Agenda | **Nessuna funzione di presenze** per lo studente. Il "Svolta/Non svolta" del prototipo va rimosso. | — |
+| 98 | 2026-11-21 | 02 Agenda | Le funzioni AI dell'Agenda si progettano nel **modulo AI**. | — |

@@ -17,7 +17,7 @@ const it = {
     emptyRecent: 'Le tue attività recenti appariranno qui',
     emptyCommunity: 'Gli aggiornamenti della Community appariranno qui',
   },
-  lesson: { attended: 'Svolta', missed: 'Non svolta', details: 'Dettagli' },
+  lesson: { details: 'Dettagli' },
   menu: {
     title: 'Altro',
     materials: 'Materiali',
@@ -57,7 +57,7 @@ const en: Dict = {
     emptyRecent: 'Your recent activity will show up here',
     emptyCommunity: 'Community updates will show up here',
   },
-  lesson: { attended: 'Done', missed: 'Not done', details: 'Details' },
+  lesson: { details: 'Details' },
   menu: {
     title: 'More',
     materials: 'Materials',

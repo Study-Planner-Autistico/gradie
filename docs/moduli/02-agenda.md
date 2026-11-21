@@ -1,135 +1,219 @@
 # Modulo 02 — Agenda ed eventi
 
-> Stato: **apertura del modulo** (vincoli, tensioni, piano, domande). Nessuna decisione nuova è stata presa qui.
-> Legenda: ✅ confermato · 🔧 da progettare · ⏸ rinviato · ❓ domanda aperta (§4)
-> Si basa sul modulo 01 (ambiente = istituto, periodo didattico, materie), che fornisce gli elementi di partenza.
-
-**Perché viene subito dopo Fondazioni:** l'Agenda è la vista temporale di tutto il resto. Attività, verifiche, esami, eventi di classe e la sezione "Oggi" della Home si appoggiano su di lei.
+> Stato: **specifica v1**. Si basa sul briefing (dec. 1–61), sul modulo 01 e sulle decisioni 89–98 (`docs/decisioni.md`).
+> Legenda: ✅ confermato · 🔧 proposta da validare · ⏸ rinviato · ❓ domanda aperta (§8)
 
 ---
 
-## 1. Vincoli recepiti (✅)
+## 0. Esito delle tensioni del primo giro
 
-**Cosa contiene l'Agenda**
-- È un calendario accademico che riunisce lezioni e orari, compiti, verifiche e interrogazioni, esami, scadenze e appuntamenti (dec. 22).
-- È una delle 5 voci fisse della barra inferiore (dec. 19). La Home mostra "Oggi" e "Prossime scadenze" (dec. 17, 20).
-
-**Inserimento e condivisione**
-- Gli eventi si inseriscono **a mano**, oppure arrivano da **inviti e condivisioni** di classi, gruppi e chat (dec. 23).
-- Nessuna importazione automatica obbligatoria da calendari o documenti (dec. 23).
-- Siri, assistenti vocali e calendari esterni sono esclusi (dec. 58, 67).
-- Gli eventi condivisi seguono un sistema ibrido: eventi personali con inviti, ed eventi ufficiali di classe o gruppo. La partecipazione è gestita e gli eventi compaiono nell'Agenda personale (dec. 24).
-- Classi e gruppi hanno un loro calendario di eventi (dec. 35). Il docente gestisce lezioni e orari (dec. 36).
-
-**Ambienti e periodo**
-- L'Agenda vive **dentro l'ambiente**, cioè l'istituto. Non esiste una vista che unisca più ambienti (dec. 62, 64).
-- Usa il periodo didattico e le materie configurati in onboarding (dec. 69). Il passaggio d'anno viene proposto con conferma (dec. 75).
-
-**Automazioni, AI e notifiche**
-- Le automazioni sono semi-automatiche: l'utente conferma (dec. 6). L'AI è Premium e disponibile anche in Agenda, sempre con conferma (dec. 38, 39).
-- Le notifiche passano **solo dal centro notifiche interno**: niente push, niente email (dec. 43). Ogni categoria si può disattivare (dec. 44).
-
-**Dati e privacy**
-- Offline: l'Agenda già caricata si può consultare, ma non modificare (dec. 54). Sincronizzazione automatica, gestione dei conflitti ⏸ (dec. 55).
-- Eventi personali privati per default (dec. 15). I docenti vedono solo lo stretto necessario (dec. 37).
-
----
-
-## 2. Ambiguità e tensioni reali
-
-| # | Tensione | Perché conta |
+| # | Tensione | Esito |
 |---|---|---|
-| A1 | **Confine tra Agenda e Attività.** La dec. 22 mette compiti, verifiche, esami e scadenze *nell'Agenda*. La dec. 25 crea un *sistema dedicato* per gli stessi tipi. | Se non si decide chi è il "proprietario" dei dati, ci sono doppioni o elementi che non coincidono. |
-| A2 | **Promemoria senza notifiche push.** Con il solo centro notifiche interno (dec. 43), l'utente scopre un promemoria solo se apre l'app. | Un'agenda senza avvisi ad app chiusa è molto meno utile. Le notifiche locali del telefono non sono un servizio di terze parti, ma la dec. 43 dice "nessuna push confermata". |
-| A3 | **Eventi condivisi e ambienti isolati.** Un gruppo di studio privato o una community può riunire studenti di istituti diversi (dec. 14). In quale ambiente finisce un invito? | Con ambiente = istituto (dec. 62) e nessuna vista aggregata (dec. 64), un invito "trasversale" non ha un posto ovvio. |
-| A4 | **Eventi ufficiali contro controllo personale.** Gli eventi di classe vengono "visualizzati nell'Agenda personale" (dec. 24). Lo studente li può nascondere, annotare o rifiutare? | Riguarda autonomia e privacy: le risposte dello studente ("non partecipo") sono visibili al docente? (dec. 37) |
-| A5 | **Orario delle lezioni.** Alle superiori è settimanale e ricorrente; all'università varia per semestre e insegnamento, e per le AFAM ancora di più. | Serve un modello di ricorrenza adatto a entrambi i percorsi. |
-| A6 | **Calendario scolastico e festività.** Vacanze e festività cambiano da regione a regione. Senza saperle, le lezioni ricorrenti compaiono anche nei giorni di vacanza. | O si usano dati esterni caricati periodicamente (come per gli istituti, dec. 86), o li inserisce l'utente. |
-| A7 | **Presenze sulla lezione.** L'immagine di riferimento e il prototipo mostrano "Svolta/Non svolta" sulle card. Le presenze sono confermate **solo come strumento del docente** (dec. 36). | Non va inventata una funzione "presenze personali" dello studente: va decisa. |
-| A8 | **Lezioni del docente nell'Agenda dello studente.** Il docente gestisce lezioni e orari (dec. 36). Se lo studente è collegato, quell'orario entra nella sua Agenda? E se ha già inserito il suo a mano? | Rischio di doppioni e di conflitti tra orario personale e orario ufficiale. |
-| A9 | **AI in Agenda.** Prevista (dec. 38), ma è Premium e i contenuti dell'offerta sono rinviati (dec. 42). | Va deciso se la si progetta in questo modulo o nel modulo AI. |
+| A1 | Confine tra Agenda e Attività | ✅ Attività gestisce, l'Agenda mostra (dec. 89) |
+| A2 | Promemoria senza push | ✅ Notifiche locali del telefono più centro notifiche interno (dec. 94, modifica dec. 43) |
+| A3 | Inviti tra istituti diversi | ✅ Non permessi (dec. 92). Effetto sulla Community → §8 |
+| A4 | Eventi ufficiali e controllo personale | ✅ Compaiono da soli, l'organizzatore vede le risposte (dec. 93). Nascondere o annotare → §8 |
+| A5 | Orario delle lezioni | ✅ Modello diverso per superiori e università/AFAM (dec. 90) |
+| A6 | Festività e vacanze | ✅ Festività nazionali incluse, vacanze regionali dalla scuola (dec. 96, interpretazione → §8) |
+| A7 | Presenze | ✅ Escluse (dec. 97) |
+| A8 | Orario del docente nell'Agenda dello studente | Aperta → §8 |
+| A9 | AI | ✅ Nel modulo AI (dec. 98) |
 
 ---
 
-## 3. Piano del modulo
+## 1. Confine del modulo e requisiti confermati
 
-### 3.1 Confine proposto 🔧
-**Dentro:**
-- Viste del calendario.
-- Lezioni e orario (personale e, se collegato, ufficiale).
-- Eventi e appuntamenti personali.
-- Visualizzazione degli elementi di Attività (secondo la risposta a G1).
-- Eventi condivisi: inviti, eventi ufficiali, partecipazione.
-- Promemoria (secondo la risposta a G6).
-- Calendario scolastico e festività (secondo la risposta a G8).
-- Comportamento offline.
-- Blocchi "Oggi" e "Prossime scadenze" della Home.
+L'Agenda è la **vista nel tempo dell'ambiente attivo** (istituto), dove compaiono:
 
-**Fuori:**
-- Gestione dettagliata di compiti, verifiche ed esami (modulo Attività).
+| Elemento | Chi lo gestisce | In Agenda |
+|---|---|---|
+| **Lezione** (dall'orario) | Agenda | Si crea, modifica ed elimina qui |
+| **Appuntamento**, anche non scolastico (dec. 91) | Agenda | Si crea, modifica ed elimina qui; si possono invitare persone dello stesso istituto |
+| **Evento ufficiale** di classe o gruppo | Classi/Gruppi (chi lo crea → §8) | Compare da solo (dec. 93); lo studente risponde |
+| **Compito, verifica, interrogazione, esame, progetto, consegna, scadenza** | **Attività** (dec. 89) | Solo visualizzazione con link al modulo Attività |
+| **Festività nazionali** e **vacanze regionali** | Dati caricati dal team (dec. 96) | Solo visualizzazione; le lezioni ricorrenti in quei giorni vengono sospese |
+
+**Fuori dal modulo:**
+- Gestione delle attività (modulo Attività).
 - Creazione di classi e gruppi (modulo Classi).
 - Chat (modulo Messaggi).
-- AI (modulo AI, salvo diversa risposta a G10).
-- Importazione (rinviata, dec. 83).
+- AI (modulo AI, dec. 98).
+- Importazione (dec. 83).
+- Viste del calendario (rinviate, dec. 95).
+- Presenze (escluse, dec. 97).
 
-### 3.2 Cosa produrrò dopo le risposte
-Gli stessi 9 punti del modulo 01:
-1. confine;
-2. utenti;
-3. percorsi d'uso, per esempio inserire l'orario, aggiungere un appuntamento, ricevere e accettare un invito, evento ufficiale modificato o annullato, cambio di periodo o anno, consultazione offline;
-4. dati concettuali, per esempio evento, ricorrenza ed eccezioni, lezione, invito e partecipazione, promemoria, periodo di vacanza;
-5. mappa delle schermate, per esempio Agenda giorno/settimana/mese, dettaglio evento, nuovo evento, configurazione dell'orario;
-6. stati;
-7. dipendenze;
-8. decisioni residue;
-9. priorità MVP.
+**Requisiti:**
+- AG-R1 — Tutto quello che compare in Agenda appartiene **a un solo ambiente**. Gli inviti si possono mandare solo a persone dello stesso istituto (dec. 62, 64, 92).
+- AG-R2 — Un elemento di Attività non viene mai duplicato: l'Agenda mostra sempre la versione aggiornata (dec. 89).
+- AG-R3 — I promemoria arrivano sia come **notifica locale del telefono** sia nel **centro notifiche** (dec. 94). Ogni categoria si può disattivare (dec. 44).
+- AG-R4 — Offline: consultazione dell'Agenda già scaricata, nessuna modifica (dec. 54).
+- AG-R5 — Eventi e appuntamenti personali sono privati per default. Il docente vede solo le risposte agli eventi che ha organizzato lui (dec. 15, 37, 93).
 
 ---
 
-## 4. Domande necessarie
+## 2. Utenti e responsabilità
 
-**G1 — Chi possiede compiti, verifiche ed esami?** (A1)
-- **A.** Li possiede il modulo **Attività**; l'Agenda li **mostra** nel calendario. *Pro:* una sola fonte, niente doppioni. *Contro:* l'Agenda dipende da Attività.
-- **B.** L'Agenda gestisce date e scadenze; Attività aggiunge solo i dettagli (svolgimento, materiali). *Contro:* un elemento è diviso tra due moduli.
-- **C.** Sono due cose separate: un evento in Agenda e un'attività possono esistere senza legame. *Contro:* l'utente rischia di inserire tutto due volte.
+| Attore | Cosa fa |
+|---|---|
+| **Studente superiori** | Inserisce l'orario settimanale, aggiunge appuntamenti, risponde agli inviti, vede attività ed eventi ufficiali |
+| **Studente università/AFAM** | Inserisce le lezioni per insegnamento con il loro periodo, appuntamenti, ricevimenti 🔧 |
+| **Docente** | Ha la sua Agenda in ogni ambiente (scuola, dec. 73): le lezioni che tiene e gli eventi che organizza |
+| **Organizzatore** (chiunque inviti, o il creatore di un evento ufficiale) | Crea l'evento, invita, vede le risposte (dec. 93), lo modifica o annulla |
+| **Partecipante** | Riceve, risponde, vede l'evento nella propria Agenda |
+| **Team interno** | Carica ogni anno festività e calendari regionali (dec. 96) |
 
-**G2 — Come si inserisce l'orario delle lezioni?** (A5)
-- **A.** Orario settimanale ricorrente valido per un periodo (es. il quadrimestre), con eccezioni sulle singole lezioni (spostata, annullata).
-- **B.** Solo lezioni singole, eventualmente ripetute a mano.
-- **C.** Orario ricorrente per le superiori, lezioni per insegnamento con date di inizio e fine per università e AFAM.
+---
 
-**G3 — Che tipi di evento esistono in Agenda, oltre agli elementi di Attività?**
-- Proposta da confermare: *Lezione*, *Appuntamento personale*, *Evento di classe/gruppo*.
-- "Appuntamenti" (dec. 22) comprende anche impegni **non scolastici** (sport, visite mediche) o solo appuntamenti di studio (ricevimento, ripetizioni)?
+## 3. User journey essenziali
 
-**G4 — Inviti da gruppi con persone di istituti diversi** (A3)
-- **A.** Un gruppo appartiene sempre a un istituto: solo chi ha quell'ambiente può partecipare. *Pro:* coerente con l'isolamento. *Contro:* niente gruppi tra scuole diverse.
-- **B.** Chi accetta l'invito sceglie in quale dei suoi ambienti salvarlo. *Pro:* flessibile. *Contro:* l'evento esiste in un solo ambiente dell'invitato.
-- **C.** I gruppi trasversali hanno un posto fuori dagli ambienti. *Contro:* in parte modifica le dec. 62 e 64.
+**J1 — Configurare l'orario (superiori, dec. 90)**
+Agenda → "Imposta orario" → griglia settimanale (Lun–Sab 🔧) → per ogni ora: materia (dall'elenco del modulo 01), inizio e fine, aula e docente facoltativi (testo libero 🔧) → valido per il **periodo didattico** corrente → salva. Le lezioni si ripetono ogni settimana, tranne nelle festività e nelle vacanze.
 
-**G5 — Come funziona la partecipazione** (dec. 24, A4)
-- Gli **eventi ufficiali** di classe compaiono:
-  - **A.** in automatico, senza bisogno di accettarli;
-  - **B.** dopo che lo studente li accetta.
-- Per gli **inviti**, quali risposte? Sì/No, oppure Sì/No/Forse?
-- Il docente o l'organizzatore vede le risposte di ciascuno?
+**J2 — Inserire le lezioni (università/AFAM, dec. 90)**
+Agenda → "Aggiungi lezioni" → insegnamento → giorni e orari della settimana → data di inizio e fine (es. il semestre) → aula facoltativa → salva. Si ripete per ogni insegnamento.
 
-**G6 — Promemoria** (A2)
-- **A.** Solo nel centro notifiche interno e nel blocco "Oggi" della Home, come dice la dec. 43.
-- **B.** Rivedere la dec. 43 per i soli **promemoria locali** del telefono: niente server, niente email, nessun servizio di terze parti. *Pro:* l'Agenda diventa davvero utile. *Contro:* va cambiata una decisione confermata.
+**J3 — Eccezione su una lezione**
+Tap sulla lezione → "Solo questa": annulla, sposta o cambia aula → oppure "Da qui in poi": modifica tutte le lezioni successive.
 
-**G7 — Viste del calendario nell'MVP**
-- Giorno, Settimana, Mese, Lista ("Prossimi"): quali servono subito? (Il prototipo ha già la striscia della settimana nella Home.)
+**J4 — Nuovo appuntamento** (anche non scolastico, dec. 91)
+"+" → Appuntamento → titolo, data, ora o tutto il giorno, luogo e note facoltativi, materia facoltativa, promemoria → eventuali invitati (solo dello stesso istituto, dec. 92) → salva. Gli invitati ricevono una notifica.
 
-**G8 — Calendario scolastico e festività** (A6)
-- **A.** Le inserisce l'utente (periodi di vacanza).
-- **B.** Festività nazionali già incluse; vacanze regionali aggiunte dall'utente.
-- **C.** Calendari regionali caricati ogni anno dal team da fonti ufficiali, come per gli istituti.
+**J5 — Ricevere un invito**
+Notifica (locale e nel centro notifiche) → dettaglio → risposta (opzioni → §8) → se accettato, compare in Agenda. L'organizzatore vede la risposta (dec. 93).
 
-**G9 — Presenze personali sulle lezioni** (A7)
-- **A.** Esclusa: le card mostrano solo orario e dettagli.
-- **B.** Lo studente può segnare per conto suo "presente/assente" (dato privato, mai visibile al docente). *Nota:* sarebbe una **funzione nuova**, non presente nel briefing.
+**J6 — Evento ufficiale di classe o gruppo**
+Il creatore lo pubblica → compare **in automatico** nell'Agenda dei membri (dec. 93), con notifica. Se viene modificato o annullato, l'Agenda si aggiorna e arriva una notifica di modifica.
 
-**G10 — AI in Agenda** (A9)
-- **A.** Si progetta nel modulo AI. Qui si lascia solo lo spazio nell'interfaccia.
-- **B.** Si progettano già qui le azioni AI dell'Agenda (es. "pianifica lo studio per la verifica"), sempre con conferma.
+**J7 — Elemento di Attività in Agenda**
+Una verifica creata in Attività compare nel giorno giusto con un aspetto riconoscibile come "attività" → tap → si apre il dettaglio nel modulo Attività (dec. 89).
+
+**J8 — Promemoria**
+Si sceglie l'anticipo (valore predefinito → §8) → all'ora stabilita arriva la notifica locale e una voce nel centro notifiche. Se l'utente ha negato il permesso per le notifiche del telefono, il promemoria arriva solo nel centro, con un avviso che suggerisce di attivare il permesso.
+
+**J9 — Nuovo periodo o nuovo anno**
+Quando cambia il periodo (es. inizia il 2° quadrimestre) o l'anno (passaggio proposto con conferma, dec. 75), l'app propone di **ricopiare l'orario** con conferma 🔧, oppure di impostarne uno nuovo.
+
+**J10 — Offline**
+Si consulta l'Agenda già scaricata. Le azioni di creazione e modifica sono disattivate e compare il banner "Sei offline" (dec. 54).
+
+**Casi limite**
+- Invito a una persona di un altro istituto: non possibile, perché la ricerca degli invitati mostra solo persone dello stesso ambiente (dec. 92).
+- Lezione ricorrente in un giorno di festa: viene sospesa e compare un'etichetta "Festività" o "Vacanza".
+- Eventi sovrapposti: sono permessi e si vedono affiancati 🔧.
+- Evento ufficiale annullato dopo che lo studente l'aveva accettato: lo si vede barrato con "Annullato" per un periodo 🔧, poi sparisce.
+- Utente che lascia una classe: i suoi eventi ufficiali spariscono dalla sua Agenda 🔧.
+- Orario inserito a mano dallo studente e orario ufficiale del docente (A8) → §8.
+
+---
+
+## 4. Inventario concettuale dei dati
+
+| Entità | Campi concettuali | Note |
+|---|---|---|
+| **Evento** | ambiente, tipo (lezione/appuntamento/ufficiale), titolo, inizio, fine, tutto il giorno, luogo, note, materia, organizzatore, stato (attivo/annullato) | Gli elementi di Attività **non** sono eventi: sono riferimenti (dec. 89) |
+| **Ricorrenza** | regola settimanale, giorni, data di inizio e fine (o periodo didattico), eccezioni | Superiori: legata al periodo. Università: legata all'insegnamento (dec. 90) |
+| **Eccezione** | data, tipo (annullata/spostata/modificata), nuovi valori | — |
+| **Invito / Partecipazione** | evento, persona, risposta, data della risposta | L'organizzatore la vede (dec. 93) |
+| **Promemoria** | evento o attività, anticipo, canali (notifica locale + centro) | dec. 94 |
+| **Festività** | data, nome, ambito (nazionale) | dec. 96 |
+| **Vacanza regionale** | regione, anno scolastico, periodo, nome | Fonte → §8 |
+| **Riferimento attività** | id dell'attività, data, tipo | Letto dal modulo Attività |
+
+---
+
+## 5. Mappa delle schermate (mobile-first)
+
+| ID | Schermata | Contenuto |
+|---|---|---|
+| AG-01 | **Agenda** (voce della barra) | Vista del calendario (tipo ⏸ dec. 95), elenco degli elementi del giorno, "+" |
+| AG-02 | Dettaglio evento | Dati, materia, promemoria, partecipanti (se organizzatore), azioni |
+| AG-03 | Nuovo / modifica appuntamento | Modulo del J4 |
+| AG-04 | Imposta orario (superiori) | Griglia settimanale per periodo |
+| AG-05 | Lezioni per insegnamento (università/AFAM) | Elenco insegnamenti → orari ricorrenti con date |
+| AG-06 | Modifica lezione | "Solo questa" / "Da qui in poi" |
+| AG-07 | Invita persone | Ricerca **solo nell'istituto** (dec. 92) |
+| AG-08 | Risposta all'invito | Dettaglio e opzioni di risposta |
+| AG-09 | Partecipanti (organizzatore) | Elenco con le risposte (dec. 93) |
+| AG-10 | Calendario dell'anno | Festività e vacanze regionali dell'istituto (consultazione) |
+
+- Il **"+"** propone: Appuntamento · Lezione · Attività (porta al modulo Attività, dec. 89).
+- **Home**: "Oggi" mostra lezioni, appuntamenti, eventi ufficiali e attività del giorno; "Prossime scadenze" mostra le attività (dati del modulo Attività).
+- **Prototipo da correggere:** togliere "Svolta/Non svolta" dalle card delle lezioni (dec. 97).
+
+---
+
+## 6. Stati
+
+| Schermata | Vuoto | Caricamento | Errore | Offline | Privacy |
+|---|---|---|---|---|---|
+| AG-01 Agenda | "Nessun impegno oggi" + "Imposta il tuo orario" se l'orario manca | Skeleton delle card | Errore di sincronizzazione + "Riprova" | Consultazione, "+" disattivato | Badge "Privato" sugli appuntamenti personali |
+| AG-04/05 Orario | Griglia vuota con suggerimento | — | Orari sovrapposti nella stessa ora (avviso, non blocco 🔧) | Non disponibile | — |
+| AG-07 Invita | "Nessuna persona trovata in questo istituto" | Ricerca | — | Non disponibile | Mostra solo nome e cognome (dec. 16, 37) |
+| AG-09 Partecipanti | "Nessuna risposta ancora" | Skeleton | — | Ultimo dato scaricato | Visibile solo all'organizzatore 🔧 |
+| Promemoria | — | — | Permesso notifiche negato → avviso | Le notifiche locali funzionano anche offline 🔧 | — |
+
+---
+
+## 7. Dipendenze
+
+| Modulo | Rapporto |
+|---|---|
+| **01 Fondazioni** | Fornisce ambiente, periodo didattico, materie e insegnamenti, regione dell'istituto (per le vacanze) |
+| **Attività** | L'Agenda legge e mostra le sue attività (dec. 89) |
+| **Classi / Gruppi** | Fornisce gli eventi ufficiali e i membri (all'interno di un solo istituto, dec. 92) |
+| **Notifiche** | Notifiche locali più centro notifiche (dec. 43, 94) |
+| **Home** | Blocchi "Oggi" e "Prossime scadenze" |
+| **AI** | Funzioni progettate nel modulo AI (dec. 98) |
+| **Community** | Effetto della dec. 92 da valutare → §8 |
+
+---
+
+## 8. Decisioni aperte
+
+**H1 — Risposte a un invito.**
+- **A.** Sì / No.
+- **B.** Sì / No / Forse.
+
+**H2 — Chi crea gli eventi ufficiali?**
+- **A.** Solo il docente, nelle sue classi.
+- **B.** Il docente più gli amministratori dei gruppi (ruoli del modulo Classi).
+- **C.** Qualunque membro, con approvazione.
+
+**H3 — Vacanze regionali "dalla scuola" (dec. 96).** Ho interpretato: la regione si ricava dall'istituto e il team carica ogni anno il calendario scolastico regionale. Le regioni lo pubblicano, ma non ho verificato in che formato. È corretto, oppure intendevi che le **vacanze le inserisce la scuola** (cioè il docente o l'istituto)? Va chiarito anche se si possono aggiungere i giorni decisi dal singolo istituto (ponti, chiusure).
+
+**H4 — Orario ufficiale del docente nell'Agenda dello studente** (A8). Se lo studente è collegato a una classe in cui il docente ha inserito le lezioni:
+- **A.** L'orario ufficiale **sostituisce** quello personale per quella classe.
+- **B.** Lo studente sceglie se usare l'orario ufficiale o il suo.
+- **C.** Nessun collegamento: l'orario resta sempre personale.
+
+**H5 — Lo studente può nascondere un evento ufficiale?** (A4)
+- **A.** No, si può solo rispondere.
+- **B.** Sì, lo nasconde dalla sua Agenda (l'organizzatore vede comunque la risposta).
+
+**H6 — Anticipo predefinito dei promemoria.**
+- **A.** Nessun promemoria predefinito: lo sceglie l'utente.
+- **B.** Valori predefiniti per tipo (es. 1 giorno prima per una verifica, 15 minuti prima di un appuntamento).
+
+**H7 — Effetto della dec. 92 sulla Community.** Gruppi e inviti sono limitati a un istituto. Il briefing però prevede anche **community pubbliche/tematiche** (dec. 14, 30) e un feed algoritmico (dec. 32), che per natura riuniscono persone di scuole diverse. La dec. 92 vale anche per la Community? (Basta una prima indicazione; il dettaglio va nel modulo Community.)
+
+**H8 — Elenco partecipanti visibile agli altri invitati?**
+- **A.** No, lo vede solo l'organizzatore (dec. 93).
+- **B.** Sì, tutti i partecipanti vedono chi ha accettato.
+
+---
+
+## 9. Priorità
+
+**MVP** (confermato):
+- Orario superiori (griglia per periodo) e lezioni per insegnamento per università/AFAM, con eccezioni.
+- Appuntamenti personali, anche non scolastici, con inviti nello stesso istituto e risposte visibili all'organizzatore.
+- Eventi ufficiali che compaiono da soli.
+- Elementi di Attività mostrati in Agenda.
+- Festività nazionali e vacanze regionali.
+- Promemoria con notifiche locali più centro notifiche.
+- Consultazione offline.
+- Blocchi "Oggi" e "Prossime scadenze" della Home.
+
+**Rinviati:** viste del calendario (dec. 95), AI (dec. 98), importazione (dec. 83).
+
+**Esclusi:** presenze (dec. 97), gruppi tra istituti diversi (dec. 92), calendari esterni (dec. 58).
