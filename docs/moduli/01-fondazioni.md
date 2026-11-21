@@ -1,6 +1,6 @@
 # Modulo 01 — Fondazioni di dominio e configurazione dell'ambiente
 
-> Stato: **specifica v1**. Si basa sul briefing (dec. 1–61) e sulle decisioni 62–71 (`docs/decisioni.md`).
+> Stato: **specifica v2**. Si basa sul briefing (dec. 1–61) e sulle decisioni 62–81 (`docs/decisioni.md`).
 > Legenda: ✅ confermato · 🔧 proposta da validare · ⏸ rinviato · ❓ domanda aperta (§8)
 
 **Perché si parte da qui:** Agenda, Attività, Registro voti, Home, Classi e permessi dipendono tutti da *chi è l'utente*, *in quale ambiente si trova* e *quale percorso segue*.
@@ -15,10 +15,10 @@
 | T2 | Cos'è un ambiente | ✅ Spazio privato per scuola o facoltà (dec. 62) |
 | T3 | Studente e docente nello stesso account | ✅ No, account separati (dec. 63) |
 | T4 | Moduli disattivabili contro Home e barra fisse | ⏸ Rinviato (dec. 65) |
-| T5 | Minorenni | ✅ Minimo 14 anni, altrimenti sospensione (dec. 66). Come rilevare l'età → ❓ N3 |
+| T5 | Minorenni | ✅ Minimo 14 anni (dec. 66). Data di nascita chiesta alla registrazione, blocco prima di creare l'account (dec. 74) |
 | T6 | Nome reale dei 14-17enni in Community | Resta aperta: si decide nel modulo Community |
 | T7 | Docenti non verificati | Resta aperta: si decide nel modulo Classi. La TOTP obbligatoria (dec. 71) protegge l'account, ma non verifica l'identità |
-| T8 | Istituti | ✅ Elenco interno (dec. 68). Istituto mancante → ❓ N5 |
+| T8 | Istituti | ✅ Elenco preso da fonti online (dec. 76). Chi non trova l'istituto non prosegue. Conseguenze → §8 (Q1, Q2) |
 | T9 | Periodo didattico | ✅ Rientra nella configurazione completa (dec. 69) |
 | T10 | Stile visivo | Resta aperta (`DESIGN.md` §12) |
 
@@ -38,13 +38,13 @@
 - Preferenze di lingua e tema (dec. 46, 48).
 - Esportazione e cancellazione dei dati, solo come flusso (dec. 60).
 - Privacy di default del profilo (dec. 15).
+- **Importazione** nell'MVP (dec. 72): qui c'è solo il suo posto nel flusso; fonti e formati restano aperti → §8 Q3.
 
 **Fuori:**
 - Profilo social e Community.
 - Collegamento a classi e docenti.
 - Contenuti di Agenda, Attività e voti.
 - Piani e pagamenti (dec. 42).
-- Importazione (in attesa di ❓ N1).
 - Vista aggregata (eliminata con la dec. 64).
 - Backend e schema tecnico (dec. 53).
 
@@ -53,6 +53,7 @@
 - R2 — Gli ambienti di uno stesso account sono **isolati**: dati e impostazioni non si mescolano (dec. 10), e nessuna schermata mostra più ambienti insieme (dec. 64).
 - R3 — Senza email verificata ed età ≥ 14 dichiarata non si entra nell'app.
 - R4 — Un account docente non entra nell'app senza aver configurato la TOTP.
+- R5 — Ogni ambiente è legato a **un istituto** dell'elenco, sia per gli studenti sia per i docenti (dec. 62, 73, 76).
 
 ---
 
@@ -63,8 +64,8 @@
 | **Studente superiori** (14+) | Crea l'account e uno o più ambienti di tipo *Superiori*, configura classe, materie e periodo | Può essere minorenne (14-17): si applicano le protezioni per i minori (dec. 15, 61) |
 | **Studente universitario** | Crea ambienti di tipo *Università* (corso, insegnamenti, CFU, sessioni) | Stesso tipo di account dello studente superiori (dec. 63) |
 | **Studente con più ambienti** | Cambia scuola, si iscrive all'università, segue due corsi di studio | Un ambiente per scuola o facoltà (dec. 62) |
-| **Docente** | Account separato, TOTP obbligatoria, ambiente docente (istituto e materie insegnate) | Più ambienti docente (es. due scuole)? → ❓ N2 |
-| **Team interno** 🔧 | Mantiene l'elenco interno di istituti e corsi (dec. 68), gestisce le sospensioni (dec. 66) | Ruoli e strumenti interni da definire nel modulo Moderazione (dec. 61) |
+| **Docente** | Account separato, TOTP obbligatoria, un ambiente per ogni scuola (istituto e materie insegnate) | dec. 63, 71, 73 |
+| **Team interno** 🔧 | Carica e aggiorna l'elenco degli istituti dalle fonti online (dec. 76), gestisce le sospensioni (dec. 66) | Ruoli e strumenti interni da definire nel modulo Moderazione (dec. 61) |
 
 ---
 
@@ -73,31 +74,35 @@
 ### J1 — Registrazione studente con email
 1. Benvenuto → "Inizia".
 2. Metodo di accesso → Email.
-3. Email e password → invio del codice o link di verifica (❓ N7).
-4. Verifica email.
-5. **Dati personali**: nome, cognome e data di nascita (🔧, vedi N3).
-   - Età < 14 → blocco (J9).
-6. **Ruolo**: Studente / Docente, con l'avviso che la scelta è definitiva per questo account.
-7. **Crea il primo ambiente**:
+3. **Data di nascita** (dec. 74). Età < 14 → blocco, **nessun account creato** (J9).
+4. Email e password → invio del **codice a 6 cifre** (dec. 78).
+5. Verifica email → l'account viene creato.
+6. **Dati personali**: nome e cognome.
+7. **Ruolo**: Studente / Docente. Si può correggere fino alla fine dell'onboarding (dec. 81).
+8. **Crea il primo ambiente** (= istituto, dec. 62):
    1. percorso (Superiori / Università);
-   2. istituto dall'elenco (ricerca);
+   2. istituto dall'elenco (ricerca). Se manca → blocco (dec. 76);
    3. dettagli del percorso (§4);
    4. periodo didattico;
    5. materie o insegnamenti;
-   6. moduli (contenuto ⏸ dec. 65).
-8. Riepilogo → "Entra" → Home dell'ambiente.
+   6. **importazione** (dec. 72; posizione nel flusso e contenuto → Q3);
+   7. moduli (contenuto ⏸ dec. 65).
+9. Invito ad attivare la 2FA via email: facoltativa ma consigliata (dec. 79).
+10. Riepilogo, dove il ruolo è ancora modificabile → "Entra": il ruolo diventa definitivo → Home dell'ambiente.
+
+> 🔧 La data di nascita viene chiesta **prima** di email e password: così chi ha meno di 14 anni viene fermato senza che si crei un account o si raccolga la sua email (dec. 74).
 
 ### J2 — Registrazione con Google o Apple
 Come J1, con queste differenze:
 - Si salta la password.
 - Nome e cognome sono precompilati se il provider li fornisce, altrimenti si inseriscono a mano.
-- La data di nascita va chiesta comunque.
-- Apple può fornire un'**email nascosta** (relay): ❓ N7, se basta come email verificata.
+- La data di nascita si chiede comunque, **prima** di collegare il provider (dec. 74).
+- L'email del provider, anche quella nascosta di Apple, conta come verificata: si salta il codice (dec. 78).
 
 ### J3 — Registrazione docente
 Come J1 fino al ruolo, poi:
-1. **Configurazione TOTP obbligatoria**: QR code, inserimento del primo codice, codici di recupero (❓ N6).
-2. Ambiente docente: istituto dall'elenco e materie insegnate.
+1. **Configurazione TOTP obbligatoria**: QR code, inserimento del primo codice, **codici di recupero** da salvare (dec. 77).
+2. Ambiente docente: istituto dall'elenco e materie insegnate. Per un'altra scuola si crea un altro ambiente (dec. 73).
 3. Le classi si gestiscono nel modulo Classi.
 
 ### J4 — Nuovo ambiente (cambio scuola, iscrizione all'università)
@@ -107,27 +112,27 @@ Profilo → Ambienti → "Nuovo ambiente" → stessa configurazione del passo 7 
 Tap sull'avatar o sul nome dell'ambiente nell'header della Home → sheet con l'elenco degli ambienti (nome, istituto, percorso) → selezione → l'app si ricarica sull'ambiente scelto. L'ultimo ambiente usato si riapre all'avvio 🔧.
 
 ### J6 — Passaggio d'anno nello stesso ambiente (es. da 4ª a 5ª)
-L'anno scolastico o accademico finisce, ma l'ambiente resta lo stesso. Come avanzare anno e periodo → ❓ N4.
+A fine periodo l'app **propone** il passaggio all'anno successivo (es. "Passi alla 5ª?") e l'utente conferma, rimanda o modifica (dec. 75). Restano da definire, nel modulo voti, quando scatta la proposta e cosa succede a materie e storico dell'anno precedente 🔧.
 
 ### J7 — Accesso da un nuovo dispositivo
-Credenziali → 2FA (codice via email per lo studente, se attivo ❓ N8; TOTP per il docente) → il dispositivo compare in Profilo → Sicurezza → Dispositivi, dove si può revocare.
+Credenziali → 2FA (codice via email per lo studente, se l'ha attivata (dec. 79); TOTP per il docente, oppure un codice di recupero (dec. 77)) → il dispositivo compare in Profilo → Sicurezza → Dispositivi, dove si può revocare.
 
 ### J8 — Eliminazione di un ambiente o dell'account
-- **Ambiente**: conferma esplicita, proposta di esportare prima i dati, eliminazione. Si può eliminare l'ultimo ambiente? → ❓ N9.
+- **Ambiente**: conferma esplicita, proposta di esportare prima i dati, eliminazione. L'eliminazione dell'ultimo ambiente è ⏸ (dec. 80).
 - **Account**: Profilo → Dati → Esporta / Elimina account → conferma e verifica (2FA) → eliminazione (tempi e eventuale periodo di ripensamento ⏸).
 
 ### J9 — Utente sotto i 14 anni (dec. 66)
-- **Alla registrazione**: data di nascita < 14 anni → schermata di blocco, l'account non viene creato o resta sospeso (❓ N3).
+- **Alla registrazione**: data di nascita < 14 anni → schermata di blocco, **l'account non viene creato** (dec. 74). Va deciso se impedire un nuovo tentativo con un'altra data → §8 Q4.
 - **Dopo**: se emerge in seguito (es. segnalazione) → il team sospende l'account (processo nel modulo Moderazione).
 
 ### Casi limite
 - Email mai verificata: l'utente resta sulla schermata "Controlla la tua email", con "Reinvia" e "Cambia email".
 - Onboarding interrotto (app chiusa a metà): alla riapertura si riprende dal passo in cui ci si era fermati 🔧.
 - Offline durante la registrazione o l'onboarding: non si può procedere, compare un messaggio chiaro (offline solo in lettura, dec. 54).
-- Istituto non presente nell'elenco → ❓ N5.
-- Ruolo scelto per errore: serve un nuovo account (dec. 63). Va chiarito se si può correggere prima di completare l'onboarding → ❓ N10.
-- Data di nascita modificata dopo la registrazione → ❓ N3.
-- Docente che perde l'app autenticatore → codici di recupero (❓ N6).
+- Istituto non presente nell'elenco → l'utente non può proseguire (dec. 76). Cosa vede e cosa può fare → §8 Q2.
+- Ruolo scelto per errore: si corregge fino alla fine dell'onboarding, dopo serve un nuovo account (dec. 63, 81).
+- Data di nascita modificata dopo la registrazione → §8 Q4.
+- Docente che perde l'app autenticatore → codice di recupero (dec. 77). Se perde anche i codici → §8 Q5.
 - Due ambienti con lo stesso istituto (es. due corsi di laurea nello stesso ateneo): consentito 🔧, distinti dal corso di studio.
 
 ---
@@ -136,12 +141,13 @@ Credenziali → 2FA (codice via email per lo studente, se attivo ❓ N8; TOTP pe
 
 | Entità | Campi concettuali | Appartiene a | Note |
 |---|---|---|---|
-| **Account** | email, email verificata, nome, cognome, data di nascita (🔧 N3), ruolo (studente/docente, immutabile), stato (attivo/sospeso/in cancellazione), lingua, tema | utente | Ruolo immutabile (dec. 63) |
+| **Account** | email, email verificata, nome, cognome, data di nascita (dec. 74), ruolo (studente/docente, immutabile), stato (attivo/sospeso/in cancellazione), lingua, tema | utente | Ruolo immutabile (dec. 63) |
 | **Metodo di accesso** | tipo (password/Google/Apple), identificativo presso il provider | Account | Più metodi sullo stesso account? 🔧 |
-| **Sicurezza** | tipo di 2FA (email/TOTP), stato, codici di recupero (❓ N6) | Account | TOTP obbligatoria per i docenti (dec. 71) |
+| **Sicurezza** | tipo di 2FA (email/TOTP), stato, codici di recupero monouso | Account | TOTP obbligatoria per i docenti (dec. 71); 2FA facoltativa per gli studenti (dec. 79); codici di recupero (dec. 77) |
 | **Sessione / Dispositivo** | nome, piattaforma, ultimo accesso, revocata | Account | dec. 56 |
 | **Ambiente** | nome (predefinito: nome dell'istituto), tipo (Superiori/Università/Docente), istituto, contesto, periodo corrente, configurazione moduli, data di creazione, ultimo utilizzo | Account | Isolato (R2) |
-| **Istituto** (elenco interno) | nome, tipo (scuola superiore/ateneo), comune, provincia, indirizzi o corsi offerti 🔧 | Team interno | dec. 68. Contenuto e fonte → ❓ N5 |
+| **Istituto** (elenco) | nome, tipo (scuola superiore/ateneo), comune, provincia, codice ufficiale 🔧, indirizzi o corsi offerti 🔧, fonte e data di aggiornamento | Team interno | Preso da fonti online (dec. 76). Quali fonti → §8 Q1 |
+| **Importazione** 🔧 | origine, contenuto importato, data, esito | Ambiente | dec. 72; contenuto → §8 Q3 |
 | **Contesto Superiori** | indirizzo di studio, anno (1–5), sezione 🔧 | Ambiente | — |
 | **Contesto Università** | corso di studio, tipo (triennale/magistrale/ciclo unico) 🔧, anno, CFU totali previsti 🔧 | Ambiente | — |
 | **Periodo didattico** | anno scolastico/accademico, suddivisione (trimestri/quadrimestri oppure semestri/sessioni), date di inizio e fine | Ambiente | Serve ad Agenda e voti |
@@ -158,22 +164,26 @@ Credenziali → 2FA (codice via email per lo studente, se attivo ❓ N8; TOTP pe
 | ID | Schermata | Contenuto principale |
 |---|---|---|
 | ON-01 | Benvenuto | Hero, claim, "Inizia", "Ho già un account" |
-| ON-02 | Metodo di accesso | Apple, Google, Email (ordine 🔧) |
-| ON-03 | Email e password | Campi, requisiti della password, consensi |
-| ON-04 | Verifica email | Codice o link (❓ N7), reinvio, cambio email |
-| ON-05 | Dati personali | Nome, cognome, data di nascita |
-| ON-06 | Blocco età | Messaggio < 14 anni, nessuna azione possibile |
-| ON-07 | Ruolo | Studente / Docente, avviso "definitivo" |
-| ON-08 | Configura TOTP (solo docenti) | QR code, codice di verifica, codici di recupero |
-| ON-09 | Percorso | Superiori / Università (per i docenti: istituto e materie) |
-| ON-10 | Istituto | Ricerca nell'elenco interno, istituto mancante (❓ N5) |
-| ON-11 | Dettagli percorso | Superiori: indirizzo, anno, sezione. Università: corso, tipo, anno |
-| ON-12 | Periodo didattico | Anno, suddivisione, date |
-| ON-13 | Materie / Insegnamenti | Lista modificabile (ci sono suggerimenti in base all'indirizzo? 🔧) |
-| ON-14 | Moduli | Interruttori (elenco ⏸ dec. 65) |
-| ON-15 | Riepilogo | Tutto modificabile, "Entra" |
-| ON-16 | Accesso | Email/password, Apple, Google, password dimenticata |
-| ON-17 | Verifica 2FA | Codice via email (studente) o TOTP (docente) |
+| ON-02 | Data di nascita | Selettore data, nota sull'uso del dato (dec. 74) |
+| ON-03 | Blocco età | Messaggio < 14 anni, nessun account creato, nessuna azione possibile |
+| ON-04 | Metodo di accesso | Apple, Google, Email (ordine 🔧) |
+| ON-05 | Email e password | Campi, requisiti della password, consensi |
+| ON-06 | Verifica email | Codice a 6 cifre (dec. 78), reinvio, cambio email. Saltata con Google o Apple |
+| ON-07 | Dati personali | Nome, cognome |
+| ON-08 | Ruolo | Studente / Docente, nota "modificabile fino alla fine della configurazione" (dec. 81) |
+| ON-09 | Configura TOTP (solo docenti) | QR code, codice di verifica, codici di recupero da salvare (dec. 77) |
+| ON-10 | Percorso | Superiori / Università (per i docenti: materie insegnate) |
+| ON-11 | Istituto | Ricerca nell'elenco; se non c'è → ON-11b |
+| ON-11b | Istituto non trovato | Blocco (dec. 76); messaggio e azioni → §8 Q2 |
+| ON-12 | Dettagli percorso | Superiori: indirizzo, anno, sezione. Università: corso, tipo, anno |
+| ON-13 | Periodo didattico | Anno, suddivisione, date |
+| ON-14 | Materie / Insegnamenti | Lista modificabile (ci sono suggerimenti in base all'indirizzo? 🔧) |
+| ON-15 | Importa | Dec. 72; contenuto e posizione → §8 Q3 |
+| ON-16 | Moduli | Interruttori (elenco ⏸ dec. 65) |
+| ON-17 | Proteggi l'account (solo studenti) | Invito ad attivare la 2FA via email, "Più tardi" (dec. 79) |
+| ON-18 | Riepilogo | Tutto modificabile, ruolo compreso; "Entra" rende il ruolo definitivo |
+| ON-19 | Accesso | Email/password, Apple, Google, password dimenticata |
+| ON-20 | Verifica 2FA | Codice via email (studente) o TOTP (docente), "Usa un codice di recupero" |
 
 **Dentro l'app:**
 - Header della Home → **selettore ambienti** (sheet): elenco degli ambienti e "Nuovo ambiente".
@@ -187,12 +197,13 @@ Credenziali → 2FA (codice via email per lo studente, se attivo ❓ N8; TOTP pe
 
 | Schermata | Vuoto | Caricamento | Errore | Offline | Privacy |
 |---|---|---|---|---|---|
-| ON-03/16 Accesso | — | Bottone in caricamento | Credenziali errate, email già usata, password debole | "Serve una connessione per accedere" | I testi dei consensi sono sempre visibili |
-| ON-04 Verifica | — | Invio in corso | Codice errato o scaduto, troppi tentativi | Come sopra | — |
-| ON-05 Dati personali | — | — | Campi obbligatori mancanti | Come sopra | Nota: "La data di nascita serve solo a verificare l'età minima" 🔧 |
-| ON-10 Istituto | Nessun risultato → percorso N5 | Ricerca in corso | Errore di caricamento dell'elenco + "Riprova" | Come sopra | — |
-| ON-13 Materie | "Aggiungi la tua prima materia" | — | Nome duplicato | Come sopra | — |
-| Selettore ambienti | Impossibile (c'è sempre almeno un ambiente, salvo N9) | Skeleton | Cambio ambiente non riuscito | Si possono aprire solo gli ambienti già scaricati (dec. 54) 🔧 | Badge "Privato" |
+| ON-05/19 Accesso | — | Bottone in caricamento | Credenziali errate, email già usata, password debole | "Serve una connessione per accedere" | I testi dei consensi sono sempre visibili |
+| ON-02 Data di nascita | — | — | Data non valida o nel futuro | Come sopra | Nota: "La data di nascita serve a verificare l'età minima" 🔧 |
+| ON-06 Verifica | — | Invio in corso | Codice errato o scaduto, troppi tentativi | Come sopra | — |
+| ON-07 Dati personali | — | — | Campi obbligatori mancanti | Come sopra | — |
+| ON-11 Istituto | Nessun risultato → ON-11b | Ricerca in corso | Errore di caricamento dell'elenco + "Riprova" | Come sopra | — |
+| ON-14 Materie | "Aggiungi la tua prima materia" | — | Nome duplicato | Come sopra | — |
+| Selettore ambienti | Impossibile finché c'è almeno un ambiente (dec. 80 ⏸) | Skeleton | Cambio ambiente non riuscito | Si possono aprire solo gli ambienti già scaricati (dec. 54) 🔧 | Badge "Privato" |
 | Sicurezza → Dispositivi | Solo il dispositivo corrente | Skeleton | Revoca non riuscita | Sola lettura | — |
 | Privacy e dati | — | Esportazione in preparazione | Esportazione non riuscita | Non disponibile | Conferme forti per l'eliminazione |
 
@@ -211,68 +222,50 @@ Credenziali → 2FA (codice via email per lo studente, se attivo ❓ N8; TOTP pe
 | **AI** | Ambiente attivo come confine del contesto autorizzato (dec. 39) |
 | **Impostazioni / Moderazione** | Stato dell'account (sospeso), sessioni, esportazione ed eliminazione |
 
-**Da cosa dipende Fondazioni:** elenco interno degli istituti (dati e processo), testi legali (privacy, termini, consensi), scelta del backend (dec. 53).
+**Da cosa dipende Fondazioni:** elenco degli istituti dalle fonti online (dati e processo di aggiornamento), definizione dell'importazione, testi legali (privacy, termini, consensi), scelta del backend (dec. 53).
 
 ---
 
-## 8. Decisioni aperte (domande nuove)
+## 8. Decisioni aperte
 
-**N1 — Importazione (dec. 70).** Hai risposto "per ora lascialo MVP". Intendi:
-- **A.** Importazione **esclusa** dall'MVP; oppure
-- **B.** Importazione **inclusa** nell'MVP? In questo caso servono fonti e formati, e ci sono vincoli con la dec. 58.
+Le domande N1–N10 hanno avuto risposta (dec. 72–81). Restano questi punti, emersi dalle risposte stesse.
 
-**N2 — Docente con più scuole.**
-- **A.** Un ambiente per scuola, come per gli studenti. *Pro:* coerente con la dec. 62.
-- **B.** Un solo ambiente docente con più istituti. *Pro:* una vista unica sull'orario.
+**Q1 — Fonti online per l'elenco degli istituti (dec. 76).** Esistono dati pubblici, per esempio gli open data del Ministero su scuole e atenei. Come si usano?
+- **A.** Il team li carica periodicamente in un elenco interno all'app. *Pro:* nessuna integrazione mentre l'app è in uso, quindi coerente con la dec. 58. *Contro:* l'elenco può restare indietro rispetto alla fonte.
+- **B.** L'app consulta la fonte esterna direttamente durante l'onboarding. *Contro:* è un'integrazione funzionale esterna, in tensione con la dec. 58, e richiederebbe una nuova eccezione.
 
-**N3 — Come si accerta l'età.**
-- **A.** Data di nascita obbligatoria in registrazione, poi modificabile solo con assistenza. *Pro:* applica la dec. 66. *Contro:* dato personale in più.
-- **B.** Una semplice dichiarazione "Ho almeno 14 anni" (checkbox). *Pro:* minimizzazione dei dati. *Contro:* non permette di distinguere i 14-17enni per le protezioni dei minori.
-- E inoltre: chi dichiara meno di 14 anni viene **bloccato prima di creare l'account** o l'account viene creato e **sospeso**? Una sospensione è recuperabile, o porta alla cancellazione dopo un certo tempo?
+**Q2 — Cosa vede chi non trova il proprio istituto (dec. 76).** ⚠️ *Conseguenza:* uno studente di una scuola assente dall'elenco (nuova, estera, paritaria non censita) non può usare l'app per niente. Questo va contro la regola 8 ("utile anche senza docente"). Il blocco resta valido; qui si sceglie solo cosa mostrare:
+- **A.** Solo un messaggio di blocco.
+- **B.** Un messaggio più un modulo "Segnala il tuo istituto" al team, in attesa che venga aggiunto.
 
-**N4 — Passaggio d'anno nello stesso ambiente.**
-- **A.** Proposta automatica a fine periodo con conferma dell'utente (stile semi-automatico, dec. 6). Lo storico dell'anno precedente resta consultabile.
-- **B.** Solo manuale, da Profilo → Ambiente.
+**Q3 — Importazione nell'MVP (dec. 72).** Per progettarla servono queste risposte:
+- **Cosa** si importa: orario, materie, calendario, voti, materiali?
+- **Da dove**: file caricati dall'utente (PDF, foto dell'orario, CSV) oppure servizi esterni (registro elettronico, calendari)? *Attenzione:* i servizi esterni sono integrazioni funzionali, escluse dalla dec. 58. I file caricati dall'utente no.
+- **Quando**: solo durante l'onboarding (ON-15) o anche dopo, dal Profilo?
+- **Con l'AI?** Leggere automaticamente un PDF dell'orario richiederebbe l'AI, che è Premium (dec. 38). In quel caso l'importazione sarebbe a pagamento?
 
-**N5 — Istituto non presente nell'elenco.**
-- **A.** Richiesta di aggiunta al team, mentre l'utente prosegue con un nome provvisorio.
-- **B.** Blocco finché il team non lo aggiunge.
-- E inoltre: cosa contiene l'elenco? Tutte le superiori statali e paritarie, tutti gli atenei e i corsi? Chi lo aggiorna?
+**Q4 — Data di nascita dopo il blocco.**
+- **A.** Nessuna protezione in più: chi mente sull'età viene gestito con segnalazioni e sospensione (dec. 66).
+- **B.** Dopo un blocco, lo stesso dispositivo non può riprovare per un certo periodo. *Contro:* bisogna memorizzare un dato sul dispositivo di un minore di 14 anni.
+- E inoltre: dopo la registrazione l'utente può modificare da solo la data di nascita, o solo tramite assistenza?
 
-**N6 — Recupero dell'accesso con la 2FA.**
-- **A.** Codici di recupero monouso, generati alla configurazione.
-- **B.** Recupero tramite assistenza.
-- **C.** Entrambi.
-
-**N7 — Verifica email.**
-- **A.** Codice a 6 cifre da inserire nell'app.
-- **B.** Link da aprire.
-- E inoltre: l'email di Google o Apple (anche quella nascosta di Apple) conta già come verificata?
-
-**N8 — 2FA per gli studenti: facoltativa od obbligatoria?**
-- **A.** Facoltativa, con invito ad attivarla.
-- **B.** Obbligatoria dal primo accesso su un nuovo dispositivo.
-
-**N9 — Ultimo ambiente.**
-- **A.** Non si può eliminare: serve sempre almeno un ambiente.
-- **B.** Si può eliminare, e l'app riparte dalla creazione di un ambiente.
-
-**N10 — Ruolo sbagliato durante l'onboarding.**
-- **A.** Modificabile fino al riepilogo (ON-15), poi definitivo.
-- **B.** Definitivo appena confermato.
+**Q5 — Codici di recupero persi (dec. 77).** Un docente perde sia l'app autenticatore sia i codici di recupero:
+- **A.** L'account non si può più recuperare.
+- **B.** Si recupera tramite assistenza, con una verifica manuale.
 
 ---
 
 ## 9. Priorità
 
-**MVP** (tutto già confermato dal briefing o dalle dec. 62–71):
-- Registrazione e accesso con email/password, Google e Apple, verifica email.
-- Soglia d'età di 14 anni.
-- Ruolo per account; TOTP obbligatoria per i docenti; codice via email per gli studenti.
-- Onboarding con configurazione completa: percorso, istituto dall'elenco, dettagli, periodo, materie, moduli.
-- Ambienti multipli: creazione, cambio ed eliminazione.
-- Profilo: account, sicurezza (dispositivi e revoca), preferenze di lingua e tema, esportazione ed eliminazione (dec. 60).
+**MVP** (tutto confermato dal briefing o dalle dec. 62–81):
+- Richiesta della data di nascita e blocco sotto i 14 anni, prima di creare l'account.
+- Registrazione e accesso con email/password, Google e Apple; verifica dell'email con codice a 6 cifre.
+- Ruolo legato all'account, correggibile fino alla fine dell'onboarding.
+- 2FA: app autenticatore obbligatoria per i docenti, codice via email facoltativo per gli studenti, codici di recupero per entrambi.
+- Onboarding con configurazione completa: percorso, istituto dall'elenco, dettagli, periodo, materie, importazione, moduli.
+- Un ambiente per istituto, sia per studenti sia per docenti: creazione, cambio, eliminazione (tranne l'ultimo ⏸), passaggio d'anno proposto con conferma.
+- Profilo: account, sicurezza (dispositivi collegati e revoca), lingua e tema, esportazione ed eliminazione dei dati (dec. 60).
 
-**In attesa di risposta:** importazione (N1), contenuto del passo Moduli (dec. 65).
+**In attesa di risposta:** cosa si importa (Q3), quali moduli si possono spegnere (dec. 65), fonti dell'elenco istituti (Q1).
 
 **Fasi successive:** nessuna nuova funzione proposta. Restano escluse la vista aggregata (dec. 64) e le integrazioni funzionali (dec. 58).
