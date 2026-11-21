@@ -1,6 +1,6 @@
 # Modulo 01 — Fondazioni di dominio e configurazione dell'ambiente
 
-> Stato: **specifica v2**. Si basa sul briefing (dec. 1–61) e sulle decisioni 62–81 (`docs/decisioni.md`).
+> Stato: **specifica v3**. Si basa sul briefing (dec. 1–61) e sulle decisioni 62–85 (`docs/decisioni.md`).
 > Legenda: ✅ confermato · 🔧 proposta da validare · ⏸ rinviato · ❓ domanda aperta (§8)
 
 **Perché si parte da qui:** Agenda, Attività, Registro voti, Home, Classi e permessi dipendono tutti da *chi è l'utente*, *in quale ambiente si trova* e *quale percorso segue*.
@@ -174,11 +174,11 @@ Credenziali → 2FA (codice via email per lo studente, se l'ha attivata (dec. 79
 | ON-09 | Configura TOTP (solo docenti) | QR code, codice di verifica, codici di recupero da salvare (dec. 77) |
 | ON-10 | Percorso | Superiori / Università (per i docenti: materie insegnate) |
 | ON-11 | Istituto | Ricerca nell'elenco; se non c'è → ON-11b |
-| ON-11b | Istituto non trovato | Blocco (dec. 76); messaggio e azioni → §8 Q2 |
+| ON-11b | Istituto non trovato | Blocco (dec. 76) più modulo "Segnala il tuo istituto" (nome, comune, tipo) inviato al team (dec. 82) |
 | ON-12 | Dettagli percorso | Superiori: indirizzo, anno, sezione. Università: corso, tipo, anno |
 | ON-13 | Periodo didattico | Anno, suddivisione, date |
 | ON-14 | Materie / Insegnamenti | Lista modificabile (ci sono suggerimenti in base all'indirizzo? 🔧) |
-| ON-15 | Importa | Dec. 72; contenuto e posizione → §8 Q3 |
+| ON-15 | Importa | Segnaposto: l'importazione è nell'MVP (dec. 72) ma il contenuto è rinviato (dec. 83) |
 | ON-16 | Moduli | Interruttori (elenco ⏸ dec. 65) |
 | ON-17 | Proteggi l'account (solo studenti) | Invito ad attivare la 2FA via email, "Più tardi" (dec. 79) |
 | ON-18 | Riepilogo | Tutto modificabile, ruolo compreso; "Entra" rende il ruolo definitivo |
@@ -228,30 +228,29 @@ Credenziali → 2FA (codice via email per lo studente, se l'ha attivata (dec. 79
 
 ## 8. Decisioni aperte
 
-Le domande N1–N10 hanno avuto risposta (dec. 72–81). Restano questi punti, emersi dalle risposte stesse.
+| # | Tema | Stato |
+|---|---|---|
+| Q1 | Fonti dell'elenco istituti | 🔧 **Proposta da confermare**, vedi sotto |
+| Q2 | Istituto non trovato | ✅ Blocco più modulo "Segnala il tuo istituto" (dec. 82) |
+| Q3 | Importazione | ⏸ Rinviata (dec. 83). La schermata ON-15 resta come segnaposto |
+| Q4 | Protezioni dopo il blocco età | ✅ Nessuna (dec. 84). **Resta aperto:** la data di nascita si può modificare da soli dopo la registrazione, o solo tramite assistenza? |
+| Q5 | Codici di recupero persi | ✅ Tramite assistenza, processo rinviato (dec. 85) |
 
-**Q1 — Fonti online per l'elenco degli istituti (dec. 76).** Esistono dati pubblici, per esempio gli open data del Ministero su scuole e atenei. Come si usano?
-- **A.** Il team li carica periodicamente in un elenco interno all'app. *Pro:* nessuna integrazione mentre l'app è in uso, quindi coerente con la dec. 58. *Contro:* l'elenco può restare indietro rispetto alla fonte.
-- **B.** L'app consulta la fonte esterna direttamente durante l'onboarding. *Contro:* è un'integrazione funzionale esterna, in tensione con la dec. 58, e richiederebbe una nuova eccezione.
+### Q1 — Fonti consigliate (da confermare)
 
-**Q2 — Cosa vede chi non trova il proprio istituto (dec. 76).** ⚠️ *Conseguenza:* uno studente di una scuola assente dall'elenco (nuova, estera, paritaria non censita) non può usare l'app per niente. Questo va contro la regola 8 ("utile anche senza docente"). Il blocco resta valido; qui si sceglie solo cosa mostrare:
-- **A.** Solo un messaggio di blocco.
-- **B.** Un messaggio più un modulo "Segnala il tuo istituto" al team, in attesa che venga aggiunto.
+| Percorso | Fonte | Cosa contiene | Formato e licenza |
+|---|---|---|---|
+| **Superiori** | **Portale Unico dei Dati della Scuola**, Ministero dell'Istruzione e del Merito (`dati.istruzione.it/opendata`, sezione "Scuole") | Anagrafica delle scuole **statali** e **paritarie**: codice meccanografico, denominazione, indirizzo, comune, provincia, tipo di istituto. Aggiornata per anno scolastico | CSV, licenza **IODL 2.0** (riuso consentito anche commerciale, citando la fonte) |
+| **Università (atenei)** | **USTAT – Open data del Ministero dell'Università e della Ricerca** (`dati-ustat.mur.gov.it`), dataset "Atenei" e tabella dei codici `cod_atenei.csv` | Elenco degli atenei con codice, nome e caratteristiche | CSV. Licenza da verificare sul portale |
+| **Università (corsi)** | USTAT, dataset "Offerta formativa" | Corsi di laurea dall'a.a. 2010/2011 | CSV. Licenza e copertura degli ultimi anni da verificare |
 
-**Q3 — Importazione nell'MVP (dec. 72).** Per progettarla servono queste risposte:
-- **Cosa** si importa: orario, materie, calendario, voti, materiali?
-- **Da dove**: file caricati dall'utente (PDF, foto dell'orario, CSV) oppure servizi esterni (registro elettronico, calendari)? *Attenzione:* i servizi esterni sono integrazioni funzionali, escluse dalla dec. 58. I file caricati dall'utente no.
-- **Quando**: solo durante l'onboarding (ON-15) o anche dopo, dal Profilo?
-- **Con l'AI?** Leggere automaticamente un PDF dell'orario richiederebbe l'AI, che è Premium (dec. 38). In quel caso l'importazione sarebbe a pagamento?
+**Uso consigliato:** il team scarica i file a ogni anno scolastico o accademico e li carica in un elenco interno all'app (opzione A del giro precedente). L'app **non** consulta i portali mentre è in uso, quindi non serve nessuna integrazione esterna (coerente con la dec. 58). Le segnalazioni del modulo "Segnala il tuo istituto" (dec. 82) servono a correggere i dati mancanti.
 
-**Q4 — Data di nascita dopo il blocco.**
-- **A.** Nessuna protezione in più: chi mente sull'età viene gestito con segnalazioni e sospensione (dec. 66).
-- **B.** Dopo un blocco, lo stesso dispositivo non può riprovare per un certo periodo. *Contro:* bisogna memorizzare un dato sul dispositivo di un minore di 14 anni.
-- E inoltre: dopo la registrazione l'utente può modificare da solo la data di nascita, o solo tramite assistenza?
-
-**Q5 — Codici di recupero persi (dec. 77).** Un docente perde sia l'app autenticatore sia i codici di recupero:
-- **A.** L'account non si può più recuperare.
-- **B.** Si recupera tramite assistenza, con una verifica manuale.
+**Da verificare prima di adottarle:**
+- Che nei file del Ministero ci siano anche le scuole delle province autonome di Trento e Bolzano e della Valle d'Aosta, che hanno sistemi scolastici propri.
+- La licenza dei dati USTAT e il loro aggiornamento: alcuni dataset si fermano ad anni passati.
+- **Conservatori e accademie (AFAM)** non sono atenei e non compaiono nei dati USTAT degli atenei. Fanno parte del perimetro "università" (dec. 2)? Se sì, serve una fonte in più.
+- La citazione della fonte richiesta dalla licenza IODL 2.0: dove mostrarla nell'app (es. Profilo → Informazioni).
 
 ---
 
@@ -266,6 +265,6 @@ Le domande N1–N10 hanno avuto risposta (dec. 72–81). Restano questi punti, e
 - Un ambiente per istituto, sia per studenti sia per docenti: creazione, cambio, eliminazione (tranne l'ultimo ⏸), passaggio d'anno proposto con conferma.
 - Profilo: account, sicurezza (dispositivi collegati e revoca), lingua e tema, esportazione ed eliminazione dei dati (dec. 60).
 
-**In attesa di risposta:** cosa si importa (Q3), quali moduli si possono spegnere (dec. 65), fonti dell'elenco istituti (Q1).
+**In attesa:** conferma delle fonti (Q1), modifica della data di nascita (Q4); rinviati: contenuto dell'importazione (dec. 83), moduli disattivabili (dec. 65), processo di assistenza (dec. 85).
 
 **Fasi successive:** nessuna nuova funzione proposta. Restano escluse la vista aggregata (dec. 64) e le integrazioni funzionali (dec. 58).

@@ -25,3 +25,7 @@
 | 79 | 2026-11-21 | 01 Fondazioni | 2FA per gli studenti **facoltativa ma consigliata**. | Precisa dec. 71 |
 | 80 | 2026-11-21 | 01 Fondazioni | Eliminazione dell'ultimo ambiente: **rinviata**. | — |
 | 81 | 2026-11-21 | 01 Fondazioni | Il ruolo si può **correggere fino alla fine dell'onboarding**, poi è definitivo. | Precisa dec. 63 |
+| 82 | 2026-11-21 | 01 Fondazioni | Chi non trova il proprio istituto vede il blocco **e il modulo "Segnala il tuo istituto"**, che invia la segnalazione al team. | Precisa dec. 76 |
+| 83 | 2026-11-21 | 01 Fondazioni | Contenuto, fonti, momento e uso dell'AI per l'importazione: **rinviati**. L'importazione resta nell'MVP (dec. 72). | — |
+| 84 | 2026-11-21 | 01 Fondazioni | **Nessuna protezione aggiuntiva** dopo un blocco per età: chi mente si gestisce con segnalazioni e sospensione (dec. 66). | — |
+| 85 | 2026-11-21 | 01 Fondazioni | Codici di recupero persi: recupero **tramite assistenza**. Il processo è **rinviato**. | Precisa dec. 77 |
