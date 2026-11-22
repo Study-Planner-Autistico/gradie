@@ -201,6 +201,10 @@ export function duplicateNote(id: string, meta: Omit<NoteMeta, 'id' | 'created'>
 
 /** Elimina una nota con tutto il suo contenuto. */
 export function deleteNote(id: string) {
+  favorites.delete(id);
+  statuses.delete(id);
+  if (lastOpened === id) lastOpened = null;
+  refreshExtras();
   boards.delete(id);
   metas.delete(id);
   viewports.delete(id);
@@ -215,3 +219,41 @@ export function useHidden() {
 }
 
 export const getBoardItems = (id: string) => boards.get(id) ?? EMPTY;
+
+// Preferiti, stato di studio e ultima nota aperta (dec. 119).
+export type StudyStatus = 'todo' | 'doing' | 'done';
+export type NoteExtras = { favorites: string[]; statuses: Record<string, StudyStatus>; lastOpened: string | null };
+const favorites = new Set<string>();
+const statuses = new Map<string, StudyStatus>();
+let lastOpened: string | null = null;
+let extras: NoteExtras = { favorites: [], statuses: {}, lastOpened: null };
+function refreshExtras() {
+  extras = { favorites: [...favorites], statuses: Object.fromEntries(statuses), lastOpened };
+}
+
+/** Mette o toglie la nota dai preferiti (sezione In evidenza). */
+export function toggleFavorite(id: string) {
+  if (favorites.has(id)) favorites.delete(id);
+  else favorites.add(id);
+  refreshExtras();
+  emit();
+}
+
+/** Stato di studio: da studiare, in corso, ripassata. */
+export function setStudyStatus(id: string, status: StudyStatus) {
+  statuses.set(id, status);
+  refreshExtras();
+  emit();
+}
+
+/** Ricorda l'ultima nota aperta, per la scheda Riprendi da qui. */
+export function markOpened(id: string) {
+  if (lastOpened === id) return;
+  lastOpened = id;
+  refreshExtras();
+  emit();
+}
+
+export function useNoteExtras() {
+  return useSyncExternalStore(subscribe, () => extras, () => extras);
+}

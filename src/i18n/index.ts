@@ -265,6 +265,15 @@ const it = {
   activitiesHub: {
     actions: { importFile: 'Importa file', youtube: 'Video di YouTube' },
     notes: 'Note',
+    resume: 'Riprendi da qui',
+    favorites: 'In evidenza',
+    favorite: 'Metti in evidenza',
+    unfavorite: 'Togli da In evidenza',
+    status: { todo: 'Da studiare', doing: 'In corso', done: 'Ripassata' },
+    statusHint: 'Tocca per cambiare stato',
+    cardHint: 'Tieni premuto per altre azioni, scorri a sinistra per duplicare o eliminare',
+    open: 'Apri',
+    edit: 'Modifica nome, copertina e carta',
   },
   whiteboard: {
     untitled: 'Nuova pagina',
@@ -628,6 +637,15 @@ const en: Dict = {
   activitiesHub: {
     actions: { importFile: 'Import file', youtube: 'YouTube video' },
     notes: 'Notes',
+    resume: 'Pick up where you left off',
+    favorites: 'Pinned',
+    favorite: 'Pin',
+    unfavorite: 'Unpin',
+    status: { todo: 'To study', doing: 'In progress', done: 'Reviewed' },
+    statusHint: 'Tap to change status',
+    cardHint: 'Long press for more actions, swipe left to duplicate or delete',
+    open: 'Open',
+    edit: 'Edit name, cover and paper',
   },
   whiteboard: {
     untitled: 'New page',

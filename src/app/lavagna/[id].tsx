@@ -14,6 +14,7 @@ import { t } from '../../i18n';
 import {
   getNoteMeta,
   getViewport,
+  markOpened,
   newId,
   redoBoard,
   revertGroup,
@@ -94,6 +95,7 @@ export default function Lavagna() {
   view.current = { offset, size, scale };
   useEffect(() => {
     const key = id ?? 'new';
+    markOpened(key);
     return () => {
       const v = view.current;
       saveViewport(key, { x: -v.offset.x / v.scale, y: -v.offset.y / v.scale, w: v.size.w / v.scale, h: v.size.h / v.scale });
