@@ -23,7 +23,7 @@ export type BoardItem = Stroke | TextItem | ImageItem | StickerItem | NoteItem |
 export type Viewport = { x: number; y: number; w: number; h: number };
 
 /** Nota creata dal + (dec. 112): nome, copertina e carta. */
-export type PaperTemplate = 'blank' | 'lined' | 'margin' | 'grid' | 'dots';
+export type PaperTemplate = 'blank' | 'lined' | 'narrow' | 'wide' | 'margin' | 'cornell' | 'grid' | 'smallGrid' | 'dots' | 'music';
 export type PageSize = 'a4' | 'letter';
 export type Paper = { template: PaperTemplate; color: string; dark: boolean; size: PageSize; landscape: boolean };
 export type NoteMeta = { id: string; title: string; cover: string | null; paper: Paper; created: number };
@@ -110,3 +110,43 @@ export function useNotes() {
 
 /** Momento dell'ultima modifica di una lavagna, se c'è. */
 export const getEdited = (id: string) => edited.get(id);
+
+/** Note dimostrative eliminate (non hanno una lavagna propria da togliere). */
+const hidden = new Set<string>();
+let hiddenSnap: string[] = [];
+
+/** Modifica nome, copertina e carta (dec. 113). Se la nota non ha ancora dati propri, li crea. */
+export function saveNoteMeta(id: string, meta: Omit<NoteMeta, 'id' | 'created'>) {
+  metas.set(id, { ...meta, id, created: metas.get(id)?.created ?? Date.now() });
+  emit();
+}
+
+/** Duplica una nota: contenuto, visuale e dati, con un nuovo id. */
+export function duplicateNote(id: string, meta: Omit<NoteMeta, 'id' | 'created'>): string {
+  const copy = newId('nota');
+  const items = boards.get(id);
+  if (items) boards.set(copy, items.map((i) => ({ ...i, id: newId('i') })));
+  const vp = viewports.get(id);
+  if (vp) viewports.set(copy, vp);
+  metas.set(copy, { ...meta, id: copy, created: Date.now() });
+  edited.set(copy, Date.now());
+  emit();
+  return copy;
+}
+
+/** Elimina una nota con tutto il suo contenuto. */
+export function deleteNote(id: string) {
+  boards.delete(id);
+  metas.delete(id);
+  viewports.delete(id);
+  edited.delete(id);
+  hidden.add(id);
+  hiddenSnap = [...hidden];
+  emit();
+}
+
+export function useHidden() {
+  return useSyncExternalStore(subscribe, () => hiddenSnap, () => hiddenSnap);
+}
+
+export const getBoardItems = (id: string) => boards.get(id) ?? EMPTY;

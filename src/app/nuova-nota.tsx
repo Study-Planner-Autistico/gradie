@@ -1,37 +1,47 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState, type ReactNode } from 'react';
 import { Platform, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
 import { CoverThumb, PaperThumb } from '../components/whiteboard/Paper';
 import { t } from '../i18n';
-import { createNote, type PageSize, type PaperTemplate } from '../state/whiteboard';
+import { demoNotes } from '../data/demo';
+import { createNote, getNoteMeta, saveNoteMeta, type PageSize, type PaperTemplate } from '../state/whiteboard';
 import { covers, paperColors, useTheme } from '../theme';
 
-const TEMPLATES: PaperTemplate[] = ['blank', 'lined', 'margin', 'grid', 'dots'];
+const TEMPLATES: PaperTemplate[] = ['blank', 'lined', 'narrow', 'wide', 'margin', 'cornell', 'grid', 'smallGrid', 'dots', 'music'];
 const SIZES: PageSize[] = ['a4', 'letter'];
 
-/** Nuova nota (dec. 112): nome, copertina e carta. */
+/** Nuova nota (dec. 112) o modifica di una nota esistente (dec. 113, con `?id=`): nome, copertina e carta. */
 export default function NuovaNota() {
   const { colors, typography, spacing, radius } = useTheme();
-  const [title, setTitle] = useState('');
-  const [hasCover, setHasCover] = useState(true);
-  const [tab, setTab] = useState<'cover' | 'paper'>('cover');
-  const [cover, setCover] = useState<string>(covers[0].id);
-  const [template, setTemplate] = useState<PaperTemplate>('lined');
-  const [paperId, setPaperId] = useState<string>(paperColors[0].id);
-  const [size, setSize] = useState<PageSize>('a4');
-  const [landscape, setLandscape] = useState(false);
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const editing = !!id;
+  const meta = id ? getNoteMeta(id) : undefined;
+  const fallbackTitle = id ? (demoNotes.find((n) => n.id === id)?.title ?? '') : '';
+  const [title, setTitle] = useState(meta?.title ?? fallbackTitle);
+  const [hasCover, setHasCover] = useState(editing ? !!meta?.cover : true);
+  const [tab, setTab] = useState<'cover' | 'paper'>(editing && !meta?.cover ? 'paper' : 'cover');
+  const [cover, setCover] = useState<string>(covers.find((c) => c.color === meta?.cover)?.id ?? covers[0].id);
+  const [template, setTemplate] = useState<PaperTemplate>(meta?.paper.template ?? (editing ? 'blank' : 'lined'));
+  const [paperId, setPaperId] = useState<string>(paperColors.find((p) => p.color === meta?.paper.color)?.id ?? paperColors[0].id);
+  const [size, setSize] = useState<PageSize>(meta?.paper.size ?? 'a4');
+  const [landscape, setLandscape] = useState(meta?.paper.landscape ?? false);
 
   const paper = paperColors.find((p) => p.id === paperId) ?? paperColors[0];
   const coverColor = covers.find((c) => c.id === cover)?.color ?? covers[0].color;
 
   const create = () => {
-    const id = createNote({
+    const data = {
       title: title.trim() || t.newNote.defaultTitle,
       cover: hasCover ? coverColor : null,
       paper: { template, color: paper.color, dark: paper.dark, size, landscape },
-    });
-    router.replace(`/lavagna/${id}`);
+    };
+    if (id) {
+      saveNoteMeta(id, data);
+      router.back();
+      return;
+    }
+    router.replace(`/lavagna/${createNote(data)}`);
   };
 
   const ring = (on: boolean) => ({ borderWidth: 2, borderColor: on ? colors.accent : 'transparent', borderRadius: radius.sm, padding: 3 });
@@ -42,9 +52,9 @@ export default function NuovaNota() {
         <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel={t.a11y.close}>
           <Ionicons name="close" size={26} color={colors.text} />
         </Pressable>
-        <Text style={[typography.headline, { color: colors.text, flex: 1, textAlign: 'center' }]}>{t.newNote.title}</Text>
-        <Pressable onPress={create} hitSlop={12} accessibilityRole="button" accessibilityLabel={t.newNote.create}>
-          <Text style={[typography.headline, { color: colors.accent }]}>{t.newNote.create}</Text>
+        <Text style={[typography.headline, { color: colors.text, flex: 1, textAlign: 'center' }]}>{editing ? t.newNote.editTitle : t.newNote.title}</Text>
+        <Pressable onPress={create} hitSlop={12} accessibilityRole="button" accessibilityLabel={editing ? t.newNote.save : t.newNote.create}>
+          <Text style={[typography.headline, { color: colors.accent }]}>{editing ? t.newNote.save : t.newNote.create}</Text>
         </Pressable>
       </View>
 

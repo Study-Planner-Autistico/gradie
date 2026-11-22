@@ -1,14 +1,29 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { Chip, Screen, ScreenHeader, SectionHeader, type IconName } from '../../components/ui';
-import { GlassButton } from '../../components/Glass';
+import { Glass, GlassButton } from '../../components/Glass';
+import { downloadNotes } from '../../components/whiteboard/exportPdf';
 import { BoardPreview } from '../../components/whiteboard/BoardPreview';
 import { CoverThumb } from '../../components/whiteboard/Paper';
 import { demoNotes, type DemoNote } from '../../data/demo';
 import { locale, t } from '../../i18n';
 import { useEnvironment } from '../../state/environment';
-import { getEdited, getViewport, useBoards, useNotes, usePages, type BoardItem } from '../../state/whiteboard';
+import {
+  deleteNote,
+  duplicateNote,
+  getBoardItems,
+  getEdited,
+  getNoteMeta,
+  getViewport,
+  useBoards,
+  useHidden,
+  useNotes,
+  usePages,
+  type BoardItem,
+  type NoteMeta,
+} from '../../state/whiteboard';
 import { useTheme } from '../../theme';
 
 type QuickAction = { key: keyof typeof t.activitiesHub.actions; icon: IconName; brand?: boolean; opensBoard?: boolean };
@@ -23,11 +38,14 @@ const ACTIONS: QuickAction[] = [
 
 /** Attività: azioni rapide e note (dec. 109, modifica dec. 25). */
 export default function Attivita() {
-  const { colors, spacing } = useTheme();
+  const { colors, spacing, layout } = useTheme();
   const { active } = useEnvironment();
   const pages = usePages();
   const metas = useNotes();
+  const hidden = useHidden();
   const itemsOf = useBoards();
+  const [managing, setManaging] = useState(false);
+  const [picked, setPicked] = useState<string[]>([]);
   // Note create dal + (dec. 112), poi pagine nuove con contenuto, poi le note dimostrative.
   const fromPlus: CardNote[] = metas.map((m) => ({
     id: m.id,
@@ -38,16 +56,61 @@ export default function Attivita() {
     cover: m.cover,
   }));
   const loose: CardNote[] = pages
-    .filter((p) => !demoNotes.some((n) => n.id === p.id) && !metas.some((m) => m.id === p.id))
+    .filter((p) => !demoNotes.some((n) => n.id === p.id) && !metas.some((m) => m.id === p.id) && !hidden.includes(p.id))
     .map((p) => ({ id: p.id, title: t.whiteboard.untitled, subject: '', edited: editedLabel(p.edited), tint: 'lesson' }));
-  const notes: CardNote[] = [...fromPlus, ...loose, ...demoNotes];
+  // Le note dimostrative modificate compaiono tra quelle con dati propri; quelle eliminate spariscono.
+  const demos = demoNotes.filter((n) => !hidden.includes(n.id) && !metas.some((m) => m.id === n.id));
+  const notes: CardNote[] = [...fromPlus, ...loose, ...demos];
+
+  const toggleManage = () => {
+    setManaging((m) => !m);
+    setPicked([]);
+  };
+  const toggle = (id: string) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
+  const chosen = notes.filter((n) => picked.includes(n.id));
+
+  /** Dati della nota per duplicarla: quelli propri, o predefiniti per le note senza copertina e carta. */
+  const metaOf = (n: CardNote): Omit<NoteMeta, 'id' | 'created'> => {
+    const m = getNoteMeta(n.id);
+    return m
+      ? { title: m.title, cover: m.cover, paper: m.paper }
+      : { title: n.title, cover: null, paper: { template: 'blank', color: '#FFFFFF', dark: false, size: 'a4', landscape: false } };
+  };
+
+  const duplicate = () => {
+    chosen.forEach((n) => {
+      const m = metaOf(n);
+      duplicateNote(n.id, { ...m, title: `${m.title} ${t.manage.copySuffix}` });
+    });
+    setPicked([]);
+  };
+
+  const download = async () => {
+    try {
+      await downloadNotes(chosen.map((n) => ({ title: n.title, items: getBoardItems(n.id), meta: getNoteMeta(n.id) })));
+    } catch {
+      notify(t.manage.downloadFailed);
+    }
+  };
+
+  const remove = () =>
+    confirm(t.manage.confirmDelete(chosen.length), t.manage.delete, () => {
+      chosen.forEach((n) => deleteNote(n.id));
+      setPicked([]);
+    });
 
   return (
+    <View style={{ flex: 1 }}>
     <Screen>
       <ScreenHeader
         title={t.tabs.activities}
-        subtitle={active.name}
-        right={<GlassButton icon="add" label={t.newNote.add} onPress={() => router.push('/nuova-nota')} />}
+        subtitle={managing ? (picked.length ? t.manage.selected(picked.length) : t.manage.select) : active.name}
+        right={
+          <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+            <GlassButton icon={managing ? 'checkmark' : 'pencil'} label={managing ? t.manage.done : t.manage.edit} onPress={toggleManage} />
+            {!managing && <GlassButton icon="add" label={t.newNote.add} onPress={() => router.push('/nuova-nota')} />}
+          </View>
+        }
       />
 
       <ScrollView
@@ -72,14 +135,66 @@ export default function Attivita() {
       </View>
       <View style={{ gap: spacing.md }}>
         {notes.map((n) => (
-          <NoteCard key={n.id} note={n} items={itemsOf(n.id)} />
+          <NoteCard key={n.id} note={n} items={itemsOf(n.id)} managing={managing} picked={picked.includes(n.id)} onPick={() => toggle(n.id)} />
         ))}
       </View>
       <View style={{ alignItems: 'flex-start' }}>
         <Chip label={t.demo} variant="muted" />
       </View>
+      {managing && <View style={{ height: 72 }} />}
     </Screen>
+    {managing && (
+      <View pointerEvents="box-none" style={{ position: 'absolute', left: spacing.lg, right: spacing.lg, bottom: layout.tabBarClearance - 18 }}>
+        <Glass style={{ borderRadius: 22, flexDirection: 'row', padding: spacing.xs }}>
+          <BarButton icon="copy-outline" label={t.manage.duplicate} disabled={!chosen.length} onPress={duplicate} />
+          <BarButton icon="download-outline" label={t.manage.download} disabled={!chosen.length} onPress={download} />
+          <BarButton
+            icon="create-outline"
+            label={t.manage.modify}
+            disabled={chosen.length !== 1}
+            onPress={() => router.push({ pathname: '/nuova-nota', params: { id: chosen[0].id } })}
+          />
+          <BarButton icon="trash-outline" label={t.manage.delete} disabled={!chosen.length} danger onPress={remove} />
+        </Glass>
+      </View>
+    )}
+    </View>
   );
+}
+
+function BarButton({ icon, label, onPress, disabled, danger }: { icon: IconName; label: string; onPress: () => void; disabled?: boolean; danger?: boolean }) {
+  const { colors, typography } = useTheme();
+  const color = disabled ? colors.textTertiary : danger ? colors.danger : colors.text;
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled }}
+      style={({ pressed }) => ({ flex: 1, alignItems: 'center', gap: 2, paddingVertical: 6, opacity: pressed ? 0.6 : 1 })}
+    >
+      <Ionicons name={icon} size={22} color={color} />
+      <Text style={[typography.caption, { color }]}>{label}</Text>
+    </Pressable>
+  );
+}
+
+/** Conferma prima di un'azione irreversibile; sul web Alert non mostra pulsanti. */
+function confirm(message: string, action: string, onYes: () => void) {
+  if (Platform.OS === 'web') {
+    if (globalThis.confirm?.(message)) onYes();
+    return;
+  }
+  Alert.alert(message, undefined, [
+    { text: t.manage.cancel, style: 'cancel' },
+    { text: action, style: 'destructive', onPress: onYes },
+  ]);
+}
+
+function notify(message: string) {
+  if (Platform.OS === 'web') globalThis.alert?.(message);
+  else Alert.alert(message);
 }
 
 function ActionButton({ icon, label, iconColor, onPress }: { icon: IconName; label: string; iconColor: string; onPress?: () => void }) {
@@ -113,14 +228,27 @@ type CardNote = DemoNote & { cover?: string | null };
 const THUMB = { w: 84, h: 120 };
 
 /** Riga nota: a sinistra la visuale dell'ultima volta (o un'anteprima decorativa), a destra titolo e data. */
-function NoteCard({ note, items }: { note: CardNote; items: BoardItem[] }) {
+function NoteCard({
+  note,
+  items,
+  managing,
+  picked,
+  onPick,
+}: {
+  note: CardNote;
+  items: BoardItem[];
+  managing: boolean;
+  picked: boolean;
+  onPick: () => void;
+}) {
   const { colors, typography, radius, spacing } = useTheme();
   const tint = colors.tints[note.tint];
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={note.title}
-      onPress={() => router.push(`/lavagna/${note.id}`)}
+      accessibilityState={managing ? { selected: picked } : undefined}
+      onPress={managing ? onPick : () => router.push(`/lavagna/${note.id}`)}
       style={({ pressed }) => ({
         flexDirection: 'row',
         alignItems: 'center',
@@ -128,6 +256,8 @@ function NoteCard({ note, items }: { note: CardNote; items: BoardItem[] }) {
         padding: spacing.sm,
         borderRadius: radius.lg,
         backgroundColor: colors.surface,
+        borderWidth: 2,
+        borderColor: managing && picked ? colors.accent : 'transparent',
         shadowColor: colors.shadow,
         shadowOpacity: 1,
         shadowRadius: 12,
@@ -158,7 +288,11 @@ function NoteCard({ note, items }: { note: CardNote; items: BoardItem[] }) {
         {!!note.subject && <Text style={[typography.caption, { color: tint.fg }]}>{note.subject}</Text>}
         <Text style={[typography.caption, { color: colors.textSecondary }]}>{note.edited}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
+      {managing ? (
+        <Ionicons name={picked ? 'checkmark-circle' : 'ellipse-outline'} size={24} color={picked ? colors.accent : colors.textTertiary} />
+      ) : (
+        <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
+      )}
     </Pressable>
   );
 }
