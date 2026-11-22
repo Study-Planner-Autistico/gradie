@@ -97,3 +97,34 @@ export const layout = {
 } as const;
 
 export const motion = { press: 150, transition: 250 } as const;
+
+/**
+ * Inchiostri della lavagna (dec. 110). Per ogni strumento: 3 colori principali + altri colori dal "+".
+ * Il primo colore della penna segue il tema: nero sul chiaro, bianco sullo scuro.
+ */
+export const ink = {
+  pen: {
+    light: ['#16161A', '#1F6FEB', '#D93025'],
+    dark: ['#FFFFFF', '#3B8BFF', '#FF453A'],
+    extra: ['#24894F', '#B86E00', '#8E44AD', '#E91E63', '#00A3A3', '#6B4F2A'],
+  },
+  pencil: {
+    light: ['#2B2B2F', '#5E5E66', '#8E8E97'],
+    dark: ['#E4E4E8', '#B4B4BC', '#85858E'],
+    extra: ['#1A1A1D', '#45454C', '#75757E', '#A5A5AE', '#C8C8CF', '#E0E0E5'],
+  },
+  highlighter: {
+    light: ['#FFE14D', '#7CF29A', '#FF8AD8'],
+    dark: ['#FFE14D', '#7CF29A', '#FF8AD8'],
+    extra: ['#7FD4FF', '#FFB86B', '#C9A2FF', '#FF7A7A'],
+  },
+  widths: { pen: [2, 4, 7], pencil: [1.5, 3, 5], highlighter: [12, 18, 26] },
+  /** Opacità dell'evidenziatore: lascia leggere ciò che sta sotto. */
+  highlighterOpacity: 0.4,
+  pencilOpacity: 0.85,
+  /** Canvas della lavagna: foglio chiaro o scuro secondo il tema. */
+  paper: { light: '#FFFFFF', dark: '#0C0C0F' },
+  sticky: '#FFF3B0',
+  onSticky: '#3A3200',
+  selection: '#1F6FEB',
+} as const;

@@ -16,6 +16,7 @@ export default function RootLayout() {
           name="ambienti"
           options={{ presentation: 'formSheet', sheetAllowedDetents: [0.5, 1], sheetGrabberVisible: true, contentStyle: { backgroundColor: 'transparent' } }}
         />
+        <Stack.Screen name="lavagna/[id]" options={{ gestureEnabled: false, animation: 'fade' }} />
         <Stack.Screen name="menu" options={{ presentation: 'formSheet', sheetAllowedDetents: [0.7, 1], sheetGrabberVisible: true }} />
       </Stack>
     </EnvironmentProvider>

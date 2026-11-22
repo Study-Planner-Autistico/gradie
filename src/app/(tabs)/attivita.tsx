@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { router } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Chip, Screen, ScreenHeader, SectionHeader, type IconName } from '../../components/ui';
 import { demoNotes, type DemoNote } from '../../data/demo';
@@ -6,14 +7,14 @@ import { t } from '../../i18n';
 import { useEnvironment } from '../../state/environment';
 import { useTheme } from '../../theme';
 
-type QuickAction = { key: keyof typeof t.activitiesHub.actions; icon: IconName; brand?: boolean };
+type QuickAction = { key: keyof typeof t.activitiesHub.actions; icon: IconName; brand?: boolean; opensBoard?: boolean };
 
-/** Azioni rapide (dec. 109). Per ora senza flusso: il comportamento è ancora da definire. */
+/** Azioni rapide (dec. 109). Appunti e lavagna aprono una nuova pagina (dec. 110); le altre sono da definire. */
 const ACTIONS: QuickAction[] = [
-  { key: 'takeNotes', icon: 'create-outline' },
+  { key: 'takeNotes', icon: 'create-outline', opensBoard: true },
   { key: 'importFile', icon: 'download-outline' },
   { key: 'youtube', icon: 'logo-youtube', brand: true },
-  { key: 'whiteboard', icon: 'grid-outline' },
+  { key: 'whiteboard', icon: 'grid-outline', opensBoard: true },
 ];
 
 /** Attività: azioni rapide e note (dec. 109, modifica dec. 25). */
@@ -39,6 +40,7 @@ export default function Attivita() {
             icon={a.icon}
             label={t.activitiesHub.actions[a.key]}
             iconColor={a.brand ? colors.danger : colors.textSecondary}
+            onPress={a.opensBoard ? () => router.push(`/lavagna/new-${Date.now().toString(36)}`) : undefined}
           />
         ))}
       </ScrollView>
@@ -63,12 +65,13 @@ export default function Attivita() {
   );
 }
 
-function ActionButton({ icon, label, iconColor }: { icon: IconName; label: string; iconColor: string }) {
+function ActionButton({ icon, label, iconColor, onPress }: { icon: IconName; label: string; iconColor: string; onPress?: () => void }) {
   const { colors, typography, radius, spacing } = useTheme();
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
+      onPress={onPress}
       style={({ pressed }) => ({
         flexDirection: 'row',
         alignItems: 'center',
@@ -96,6 +99,7 @@ function NoteCard({ note }: { note: DemoNote }) {
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={note.title}
+      onPress={() => router.push(`/lavagna/${note.id}`)}
       style={({ pressed }) => ({
         flex: 1,
         borderRadius: radius.lg,

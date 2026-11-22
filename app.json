@@ -23,7 +23,21 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Il microfono serve per registrare note audio nella lavagna."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Le foto servono per aggiungere immagini alla lavagna."
+        }
+      ],
+      "expo-font",
+      "expo-asset"
     ],
     "scheme": "orbita"
   }
