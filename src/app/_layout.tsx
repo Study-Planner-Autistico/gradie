@@ -9,7 +9,7 @@ export default function RootLayout() {
     <EnvironmentProvider>
       <StatusBar style="auto" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
-        <Stack.Screen name="welcome" />
+        <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
         <Stack.Screen name="(tabs)" />
         {/* Su iOS 26 i form sheet hanno il Liquid Glass di sistema (DESIGN.md §1). */}
         <Stack.Screen

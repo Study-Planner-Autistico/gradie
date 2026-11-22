@@ -15,7 +15,7 @@ export function FloatingTabBar({ state, emitter, navigateToTab }: BottomTabBarPr
   const insets = useSafeAreaInsets();
   return (
     <View pointerEvents="box-none" style={[styles.wrap, { bottom: Math.max(insets.bottom, 12) }]}>
-      <Glass style={[styles.bar, { borderRadius: radius.pill, shadowColor: colors.shadow }]}>
+      <Glass style={[styles.bar, { borderRadius: radius.pill, boxShadow: colors.shadowOverlay }]}>
         {state.routes.map((route, i) => {
           const cfg = TABS.find((x) => x.name === route.name);
           if (!cfg) return null;

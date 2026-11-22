@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 import { addDays, EventRow, isoWeek, WeekStrip } from '../../components/agenda';
-import { GlassButton } from '../../components/Glass';
 import { ListGroup, ListRow } from '../../components/list';
-import { Card, Chip, EmptyState, Screen, ScreenHeader } from '../../components/ui';
+import { Card, Chip, EmptyState, Screen, ScreenHeader, IconButton } from '../../components/ui';
 import { demoAgenda } from '../../data/demo';
 import { locale, t } from '../../i18n';
 import { useEnvironment } from '../../state/environment';
@@ -30,7 +29,7 @@ export default function Agenda() {
       <ScreenHeader
         title={t.agenda.title}
         subtitle={active.name}
-        right={<GlassButton icon="add" label={t.agenda.add} />}
+        right={<IconButton icon="add" label={t.agenda.add} />}
       />
 
       <Card>

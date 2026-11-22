@@ -25,9 +25,11 @@ export function EventRow({ item, onPress }: { item: DemoAgendaItem; onPress?: ()
       accessibilityLabel={`${t.agenda.kind[item.kind]}: ${item.title}, ${time}`}
       style={({ pressed }) => ({
         backgroundColor: tint.bg,
-        borderRadius: radius.md,
+        borderRadius: radius.lg,
+        borderLeftWidth: 3,
+        borderLeftColor: tint.fg,
         paddingVertical: spacing.md,
-        paddingHorizontal: 14,
+        paddingHorizontal: spacing.md,
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.md,
@@ -111,10 +113,10 @@ export function WeekStrip({
               style={{
                 width: layout.dayCell,
                 height: layout.dayCell,
-                borderRadius: 12,
+                borderRadius: 8,
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: isSel ? colors.ink : colors.surfaceMuted,
+                backgroundColor: isSel ? colors.accent : colors.surfaceMuted,
               }}
             >
               <Text
@@ -122,7 +124,7 @@ export function WeekStrip({
                   typography.callout,
                   {
                     fontWeight: '600',
-                    color: isSel ? colors.onInk : isToday ? colors.accent : colors.text,
+                    color: isSel ? colors.onAccent : isToday ? colors.accent : colors.text,
                   },
                 ]}
               >

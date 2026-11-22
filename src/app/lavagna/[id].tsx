@@ -2,7 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { GlassButton } from '../../components/Glass';
+import { IconButton } from '../../components/ui';
 import { Canvas, type Brush, type SelectMode, type ShapeStyle, type Tool } from '../../components/whiteboard/Canvas';
 import { CM, type Ruler } from '../../components/whiteboard/geometry';
 import { AddPanel, AudioPanel, RecordPanel, type Picked } from '../../components/whiteboard/Sheets';
@@ -128,7 +128,7 @@ export default function Lavagna() {
 
       <SafeAreaView edges={['top']} pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, top: 0 }}>
         <View pointerEvents="box-none" style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg, paddingTop: spacing.sm }}>
-          <GlassButton icon="chevron-back" label={t.whiteboard.back} onPress={() => (router.canGoBack() ? router.back() : router.replace('/attivita'))} />
+          <IconButton icon="chevron-back" label={t.whiteboard.back} onPress={() => (router.canGoBack() ? router.back() : router.replace('/attivita'))} />
           <Text style={[typography.headline, { color: colors.text, flex: 1 }]} numberOfLines={1}>
             {title}
           </Text>

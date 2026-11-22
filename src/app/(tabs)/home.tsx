@@ -2,8 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 import { EventRow, KIND_ICON } from '../../components/agenda';
-import { GlassButton } from '../../components/Glass';
-import { Avatar, Card, Chip, EmptyState, GradientCard, Screen, ScreenHeader, SectionHeader } from '../../components/ui';
+import { Avatar, Card, Chip, EmptyState, GradientCard, Screen, ScreenHeader, SectionHeader, IconButton } from '../../components/ui';
 import { demoAgenda, demoGrades, demoUser } from '../../data/demo';
 import { locale, t } from '../../i18n';
 import { useEnvironment } from '../../state/environment';
@@ -37,8 +36,8 @@ export default function Home() {
         subtitle={active.name}
         right={
           <>
-            <GlassButton icon="notifications-outline" label={t.a11y.notifications} />
-            <GlassButton icon="grid-outline" label={t.a11y.openMenu} onPress={() => router.push('/menu')} />
+            <IconButton icon="notifications-outline" label={t.a11y.notifications} />
+            <IconButton icon="grid-outline" label={t.a11y.openMenu} onPress={() => router.push('/menu')} />
           </>
         }
       />

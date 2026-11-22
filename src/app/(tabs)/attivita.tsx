@@ -2,8 +2,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, Text, View } from 'react-native';
-import { Chip, Screen, ScreenHeader, SectionHeader, type IconName } from '../../components/ui';
-import { Glass, GlassButton } from '../../components/Glass';
+import { Chip, IconButton, Screen, ScreenHeader, SectionHeader, type IconName } from '../../components/ui';
+import { Glass } from '../../components/Glass';
 import { downloadNotes } from '../../components/whiteboard/exportPdf';
 import { BoardPreview } from '../../components/whiteboard/BoardPreview';
 import { CoverThumb } from '../../components/whiteboard/Paper';
@@ -107,8 +107,8 @@ export default function Attivita() {
         subtitle={managing ? (picked.length ? t.manage.selected(picked.length) : t.manage.select) : active.name}
         right={
           <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-            <GlassButton icon={managing ? 'checkmark' : 'pencil'} label={managing ? t.manage.done : t.manage.edit} onPress={toggleManage} />
-            {!managing && <GlassButton icon="add" label={t.newNote.add} onPress={() => router.push('/nuova-nota')} />}
+            <IconButton icon={managing ? 'checkmark' : 'pencil'} label={managing ? t.manage.done : t.manage.edit} onPress={toggleManage} />
+            {!managing && <IconButton icon="add" label={t.newNote.add} onPress={() => router.push('/nuova-nota')} />}
           </View>
         }
       />
@@ -258,10 +258,7 @@ function NoteCard({
         backgroundColor: colors.surface,
         borderWidth: 2,
         borderColor: managing && picked ? colors.accent : 'transparent',
-        shadowColor: colors.shadow,
-        shadowOpacity: 1,
-        shadowRadius: 12,
-        shadowOffset: { width: 0, height: 2 },
+        boxShadow: colors.shadowRaised,
         opacity: pressed ? 0.8 : 1,
       })}
     >
