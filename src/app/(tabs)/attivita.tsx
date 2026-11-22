@@ -6,7 +6,7 @@ import { BoardPreview } from '../../components/whiteboard/BoardPreview';
 import { demoNotes, type DemoNote } from '../../data/demo';
 import { locale, t } from '../../i18n';
 import { useEnvironment } from '../../state/environment';
-import { useBoards, usePages, type BoardItem } from '../../state/whiteboard';
+import { getViewport, useBoards, usePages, type BoardItem } from '../../state/whiteboard';
 import { useTheme } from '../../theme';
 
 type QuickAction = { key: keyof typeof t.activitiesHub.actions; icon: IconName; brand?: boolean; opensBoard?: boolean };
@@ -30,8 +30,6 @@ export default function Attivita() {
     .filter((p) => !demoNotes.some((n) => n.id === p.id))
     .map((p) => ({ id: p.id, title: t.whiteboard.untitled, subject: '', edited: editedLabel(p.edited), tint: 'lesson' }));
   const notes = [...created, ...demoNotes];
-  const rows: DemoNote[][] = [];
-  for (let i = 0; i < notes.length; i += 2) rows.push(notes.slice(i, i + 2));
 
   return (
     <Screen>
@@ -58,13 +56,8 @@ export default function Attivita() {
         <SectionHeader title={t.activitiesHub.notes} />
       </View>
       <View style={{ gap: spacing.md }}>
-        {rows.map((row) => (
-          <View key={row[0].id} style={{ flexDirection: 'row', gap: spacing.md }}>
-            {row.map((n) => (
-              <NoteCard key={n.id} note={n} items={itemsOf(n.id)} />
-            ))}
-            {row.length === 1 && <View style={{ flex: 1 }} />}
-          </View>
+        {notes.map((n) => (
+          <NoteCard key={n.id} note={n} items={itemsOf(n.id)} />
         ))}
       </View>
       <View style={{ alignItems: 'flex-start' }}>
@@ -100,7 +93,9 @@ function ActionButton({ icon, label, iconColor, onPress }: { icon: IconName; lab
   );
 }
 
-/** Scheda nota: anteprima stilizzata della pagina + titolo. */
+const THUMB = { w: 84, h: 120 };
+
+/** Riga nota: a sinistra la visuale dell'ultima volta (o un'anteprima decorativa), a destra titolo e data. */
 function NoteCard({ note, items }: { note: DemoNote; items: BoardItem[] }) {
   const { colors, typography, radius, spacing } = useTheme();
   const tint = colors.tints[note.tint];
@@ -110,10 +105,12 @@ function NoteCard({ note, items }: { note: DemoNote; items: BoardItem[] }) {
       accessibilityLabel={note.title}
       onPress={() => router.push(`/lavagna/${note.id}`)}
       style={({ pressed }) => ({
-        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+        padding: spacing.sm,
         borderRadius: radius.lg,
         backgroundColor: colors.surface,
-        overflow: 'hidden',
         shadowColor: colors.shadow,
         shadowOpacity: 1,
         shadowRadius: 12,
@@ -121,36 +118,28 @@ function NoteCard({ note, items }: { note: DemoNote; items: BoardItem[] }) {
         opacity: pressed ? 0.8 : 1,
       })}
     >
-      {items.length > 0 ? (
-        // Anteprima reale della lavagna.
-        <View style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}>
-          <BoardPreview items={items} height={120} />
-        </View>
-      ) : (
-        <View
-          style={{
-            height: 120,
-            backgroundColor: tint.bg,
-            padding: spacing.md,
-            gap: 6,
-            borderBottomWidth: 1,
-            borderBottomColor: colors.border,
-          }}
-        >
-          <Text style={[typography.caption, { color: tint.fg }]} numberOfLines={1}>
-            {note.subject}
-          </Text>
-          {[0.9, 0.75, 0.85, 0.6, 0.7].map((w, i) => (
-            <View key={i} style={{ height: 4, width: `${w * 100}%`, borderRadius: 2, backgroundColor: tint.fg, opacity: 0.25 }} />
-          ))}
-        </View>
-      )}
-      <View style={{ padding: spacing.md, gap: 2 }}>
+      <View style={{ width: THUMB.w, height: THUMB.h, borderRadius: radius.sm, overflow: 'hidden', borderWidth: 1, borderColor: colors.border }}>
+        {items.length > 0 ? (
+          <BoardPreview items={items} height={THUMB.h} viewport={getViewport(note.id)} />
+        ) : (
+          <View style={{ flex: 1, backgroundColor: tint.bg, padding: spacing.sm, gap: 5 }}>
+            <Text style={[typography.caption, { color: tint.fg, fontSize: 10 }]} numberOfLines={1}>
+              {note.subject}
+            </Text>
+            {[0.9, 0.75, 0.85, 0.6, 0.7, 0.8].map((w, i) => (
+              <View key={i} style={{ height: 3, width: `${w * 100}%`, borderRadius: 2, backgroundColor: tint.fg, opacity: 0.25 }} />
+            ))}
+          </View>
+        )}
+      </View>
+      <View style={{ flex: 1, gap: 2 }}>
         <Text style={[typography.headline, { color: colors.text }]} numberOfLines={2}>
           {note.title}
         </Text>
+        {!!note.subject && <Text style={[typography.caption, { color: tint.fg }]}>{note.subject}</Text>}
         <Text style={[typography.caption, { color: colors.textSecondary }]}>{note.edited}</Text>
       </View>
+      <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
     </Pressable>
   );
 }

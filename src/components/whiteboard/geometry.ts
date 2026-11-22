@@ -1,4 +1,4 @@
-import type { BoardItem, Pt, Stabilization, Stroke } from '../../state/whiteboard';
+import type { BoardItem, Pt, ShapeKind, Stabilization, Stroke } from '../../state/whiteboard';
 
 export type Rect = { x: number; y: number; w: number; h: number };
 
@@ -99,6 +99,11 @@ export function bounds(item: BoardItem): Rect {
       return { x: item.x, y: item.y, w: item.w, h: Math.max(item.w * 0.8, 40 + item.text.split('\n').length * 20) };
     case 'audio':
       return { x: item.x, y: item.y, w: 44, h: 44 };
+    case 'shape': {
+      const pad = item.strokeWidth / 2 + (item.shape === 'arrow' ? 8 : 0);
+      const r = rectFrom({ x: item.x, y: item.y }, { x: item.x + item.w, y: item.y + item.h });
+      return { x: r.x - pad, y: r.y - pad, w: r.w + pad * 2, h: r.h + pad * 2 };
+    }
   }
 }
 
@@ -142,4 +147,126 @@ export function hitsStroke(s: Stroke, p: Pt, radius: number) {
 export function moveItem(item: BoardItem, dx: number, dy: number): BoardItem {
   if (item.kind === 'stroke') return { ...item, points: item.points.map((p) => ({ x: p.x + dx, y: p.y + dy })) };
   return { ...item, x: item.x + dx, y: item.y + dy };
+}
+
+/** Infittisce i punti perché la gomma possa tagliare anche i segmenti lunghi (linee dritte). */
+function densify(points: Pt[], step: number): Pt[] {
+  if (points.length < 2) return points;
+  const out: Pt[] = [points[0]];
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1];
+    const b = points[i];
+    const n = Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / step);
+    for (let k = 1; k <= n; k++) out.push({ x: a.x + ((b.x - a.x) * k) / n, y: a.y + ((b.y - a.y) * k) / n });
+  }
+  return out;
+}
+
+/** Gomma: toglie solo la parte di tratto sotto la gomma, dividendo il tratto in pezzi. */
+export function eraseStroke(s: Stroke, p: Pt, radius: number, makeId: () => string): Stroke[] {
+  if (!hitsStroke(s, p, radius)) return [s];
+  const r = radius + s.width / 2;
+  const pieces: Pt[][] = [];
+  let run: Pt[] = [];
+  for (const q of densify(s.points, 2)) {
+    if (Math.hypot(q.x - p.x, q.y - p.y) <= r) {
+      if (run.length > 1) pieces.push(run);
+      run = [];
+    } else run.push(q);
+  }
+  if (run.length > 1) pieces.push(run);
+  return pieces.map((points, i) => ({ ...s, id: i === 0 ? s.id : makeId(), points }));
+}
+
+export function pointInPolygon(p: Pt, poly: Pt[]) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const a = poly[i];
+    const b = poly[j];
+    if (a.y > p.y !== b.y > p.y && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) inside = !inside;
+  }
+  return inside;
+}
+
+/** Selezione libera: basta che una parte dell'elemento sia dentro il contorno. */
+export function inLasso(item: BoardItem, poly: Pt[]) {
+  if (poly.length < 3) return false;
+  if (item.kind === 'stroke') return item.points.some((q) => pointInPolygon(q, poly));
+  const b = bounds(item);
+  const probes = [
+    { x: b.x, y: b.y },
+    { x: b.x + b.w, y: b.y },
+    { x: b.x, y: b.y + b.h },
+    { x: b.x + b.w, y: b.y + b.h },
+    { x: b.x + b.w / 2, y: b.y + b.h / 2 },
+  ];
+  return probes.some((q) => pointInPolygon(q, poly)) || poly.some((q) => contains(b, q));
+}
+
+/** Punti del contorno di una forma chiusa, inscritta nel rettangolo. */
+export function shapePoints(shape: ShapeKind, r: Rect): Pt[] {
+  const cx = r.x + r.w / 2;
+  const cy = r.y + r.h / 2;
+  const regular = (n: number, start: number) =>
+    Array.from({ length: n }, (_, i) => {
+      const a = start + (i * 2 * Math.PI) / n;
+      return { x: cx + (r.w / 2) * Math.cos(a), y: cy + (r.h / 2) * Math.sin(a) };
+    });
+  switch (shape) {
+    case 'triangle':
+      return [{ x: cx, y: r.y }, { x: r.x + r.w, y: r.y + r.h }, { x: r.x, y: r.y + r.h }];
+    case 'rhombus':
+      return [{ x: cx, y: r.y }, { x: r.x + r.w, y: cy }, { x: cx, y: r.y + r.h }, { x: r.x, y: cy }];
+    case 'hexagon':
+      return regular(6, 0);
+    case 'octagon':
+      return regular(8, Math.PI / 8);
+    case 'decagon':
+      return regular(10, 0);
+    case 'star':
+      return Array.from({ length: 10 }, (_, i) => {
+        const a = -Math.PI / 2 + (i * Math.PI) / 5;
+        const k = i % 2 === 0 ? 1 : 0.42;
+        return { x: cx + (r.w / 2) * k * Math.cos(a), y: cy + (r.h / 2) * k * Math.sin(a) };
+      });
+    default:
+      return [];
+  }
+}
+
+/** Righello (dec. 111): 1 cm in punti dello schermo (riferimento 160 punti per pollice). */
+export const CM = 160 / 2.54;
+export type Ruler = { cx: number; cy: number; angle: number; length: number; thickness: number };
+
+/** Proietta p sul bordo del righello più vicino; null se p è lontano dal righello. */
+export function snapToRuler(p: Pt, r: Ruler, reach = 28): Pt | null {
+  const ux = Math.cos(r.angle);
+  const uy = Math.sin(r.angle);
+  const dx = p.x - r.cx;
+  const dy = p.y - r.cy;
+  const along = dx * ux + dy * uy;
+  const across = -dx * uy + dy * ux;
+  if (Math.abs(along) > r.length / 2) return null;
+  const half = r.thickness / 2;
+  const dist = Math.abs(across) - half;
+  if (dist < -half + 6 || dist > reach) return null;
+  const edge = across < 0 ? -half : half;
+  return { x: r.cx + along * ux - edge * uy, y: r.cy + along * uy + edge * ux };
+}
+
+/** Vero se p cade sul corpo del righello (per spostarlo o ruotarlo). */
+export function onRuler(p: Pt, r: Ruler) {
+  const dx = p.x - r.cx;
+  const dy = p.y - r.cy;
+  const along = dx * Math.cos(r.angle) + dy * Math.sin(r.angle);
+  const across = -dx * Math.sin(r.angle) + dy * Math.cos(r.angle);
+  return Math.abs(along) <= r.length / 2 && Math.abs(across) <= r.thickness / 2 - 6;
+}
+
+/** Proiezione di p sulla retta del bordo indicato dal punto 'anchor' (già sul bordo). */
+export function projectOnEdge(p: Pt, anchor: Pt, r: Ruler): Pt {
+  const ux = Math.cos(r.angle);
+  const uy = Math.sin(r.angle);
+  const t = (p.x - anchor.x) * ux + (p.y - anchor.y) * uy;
+  return { x: anchor.x + t * ux, y: anchor.y + t * uy };
 }

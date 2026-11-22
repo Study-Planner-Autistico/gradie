@@ -1,14 +1,15 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GlassButton } from '../../components/Glass';
-import { Canvas, type Brush, type Tool } from '../../components/whiteboard/Canvas';
+import { Canvas, type Brush, type SelectMode, type ShapeStyle, type Tool } from '../../components/whiteboard/Canvas';
+import { CM, type Ruler } from '../../components/whiteboard/geometry';
 import { AddPanel, AudioPanel, RecordPanel, type Picked } from '../../components/whiteboard/Sheets';
 import { isStrokeTool, Toolbar, type Panel } from '../../components/whiteboard/Toolbar';
 import { demoNotes } from '../../data/demo';
 import { t } from '../../i18n';
-import { newId, useBoard, type BoardItem, type Pt, type StrokeTool } from '../../state/whiteboard';
+import { getViewport, newId, saveViewport, useBoard, type BoardItem, type Pt, type StrokeTool } from '../../state/whiteboard';
 import { ink, useTheme } from '../../theme';
 
 type Sheet = { kind: 'none' } | { kind: 'add' } | { kind: 'record' } | { kind: 'audio'; id: string };
@@ -33,8 +34,31 @@ export default function Lavagna() {
   }));
   const [panel, setPanel] = useState<Panel>('none');
   const [sheet, setSheet] = useState<Sheet>({ kind: 'none' });
-  const [offset, setOffset] = useState<Pt>({ x: 0, y: 0 });
+  // Si riparte dalla visuale con cui si era lasciata la pagina.
+  const [offset, setOffset] = useState<Pt>(() => {
+    const vp = getViewport(id ?? 'new');
+    return vp ? { x: -vp.x, y: -vp.y } : { x: 0, y: 0 };
+  });
   const [size, setSize] = useState({ w: 0, h: 0 });
+  const [ruler, setRuler] = useState<Ruler | null>(null);
+  const [selectMode, setSelectMode] = useState<SelectMode>('rect');
+  const [shapeStyle, setShapeStyle] = useState<ShapeStyle>(() => ({
+    shape: 'square',
+    fill: null,
+    stroke: (isDark ? ink.pen.dark : ink.pen.light)[0],
+    strokeWidth: 2,
+  }));
+
+  // All'uscita salva la visuale: l'anteprima in Note mostra proprio questa parte di pagina.
+  const view = useRef({ offset, size });
+  view.current = { offset, size };
+  useEffect(() => {
+    const key = id ?? 'new';
+    return () => saveViewport(key, { x: -view.current.offset.x, y: -view.current.offset.y, w: view.current.size.w, h: view.current.size.h });
+  }, [id]);
+
+  const toggleRuler = () =>
+    setRuler((r) => (r ? null : { cx: size.w / 2, cy: size.h / 2.4, angle: 0, length: 12 * CM, thickness: 64 }));
   const [selected, setSelected] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -72,6 +96,10 @@ export default function Lavagna() {
         tool={tool}
         brush={brush ?? brushes.pen}
         textColor={ink0}
+        selectMode={selectMode}
+        shapeStyle={shapeStyle}
+        ruler={ruler}
+        setRuler={setRuler}
         offset={offset}
         setOffset={setOffset}
         selected={selected}
@@ -139,6 +167,15 @@ export default function Lavagna() {
             setBrush={(b) => isStrokeTool(tool) && setBrushes((prev) => ({ ...prev, [tool]: { ...prev[tool], ...b } }))}
             panel={panel}
             setPanel={setPanel}
+            rulerOn={ruler !== null}
+            onRuler={toggleRuler}
+            selectMode={selectMode}
+            setSelectMode={(m) => {
+              setSelectMode(m);
+              setPanel('none');
+            }}
+            shapeStyle={shapeStyle}
+            setShapeStyle={(st) => setShapeStyle((prev) => ({ ...prev, ...st }))}
           />
         </View>
       </SafeAreaView>

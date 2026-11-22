@@ -1,32 +1,64 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { memo, useRef, useState } from 'react';
 import { Image, Pressable, Text, TextInput, View, type GestureResponderEvent } from 'react-native';
-import Svg, { Circle, G, Path, Rect as SvgRect } from 'react-native-svg';
-import { t } from '../../i18n';
+import Svg, { Circle, G, Line, Path, Rect as SvgRect, Text as SvgText } from 'react-native-svg';
+import { locale, t } from '../../i18n';
 import {
   newId,
   type BoardItem,
   type LineStyle,
   type Pt,
+  type ShapeItem,
+  type ShapeKind,
   type Stabilization,
   type Stroke,
   type StrokeTool,
 } from '../../state/whiteboard';
 import { ink, useTheme } from '../../theme';
-import { bounds, brushOutline, contains, dashArray, hitsStroke, intersects, moveItem, pathD, rectFrom, stabilize, textMetrics, union, type Rect } from './geometry';
+import {
+  bounds,
+  brushOutline,
+  CM,
+  contains,
+  dashArray,
+  eraseStroke,
+  hitsStroke,
+  inLasso,
+  intersects,
+  moveItem,
+  onRuler,
+  pathD,
+  projectOnEdge,
+  rectFrom,
+  snapToRuler,
+  stabilize,
+  textMetrics,
+  union,
+  type Rect,
+  type Ruler,
+} from './geometry';
+import { ShapeSvg } from './shapes';
 
-export type Tool = StrokeTool | 'eraser' | 'text' | 'select' | 'hand';
+export type Tool = StrokeTool | 'eraser' | 'text' | 'select' | 'hand' | 'shapes';
 export type Brush = { color: string; width: number; style: LineStyle; stabilization: Stabilization };
+export type SelectMode = 'rect' | 'lasso';
+export type ShapeStyle = { shape: ShapeKind; fill: string | null; stroke: string; strokeWidth: number };
 
 const ERASER_RADIUS = 10;
+const isOpenShape = (s: ShapeKind) => s === 'line' || s === 'arrow';
 
 type Drag =
   | { mode: 'draw'; points: Pt[] }
+  | { mode: 'drawRuler'; anchor: Pt; start: Pt }
   | { mode: 'erase' }
   | { mode: 'pan'; startPage: Pt; startOffset: Pt }
   | { mode: 'rect'; start: Pt }
+  | { mode: 'lasso'; points: Pt[] }
   | { mode: 'move'; last: Pt }
-  | { mode: 'tap'; start: Pt; moved: boolean };
+  | { mode: 'shape'; start: Pt }
+  | { mode: 'rulerMove'; last: Pt }
+  | { mode: 'rulerRotate'; grab: number; startAngle: number }
+  | { mode: 'tap'; start: Pt; moved: boolean; wasEditing: boolean };
 
 export function Canvas({
   items,
@@ -34,6 +66,10 @@ export function Canvas({
   tool,
   brush,
   textColor,
+  selectMode,
+  shapeStyle,
+  ruler,
+  setRuler,
   offset,
   setOffset,
   selected,
@@ -48,6 +84,10 @@ export function Canvas({
   tool: Tool;
   brush: Brush;
   textColor: string;
+  selectMode: SelectMode;
+  shapeStyle: ShapeStyle;
+  ruler: Ruler | null;
+  setRuler: (r: Ruler) => void;
   offset: Pt;
   setOffset: (p: Pt) => void;
   selected: string[];
@@ -62,54 +102,81 @@ export function Canvas({
   const drag = useRef<Drag | null>(null);
   const [live, setLive] = useState<Pt[] | null>(null);
   const [rect, setRect] = useState<Rect | null>(null);
+  const [lasso, setLasso] = useState<Pt[] | null>(null);
+  const [liveShape, setLiveShape] = useState<ShapeItem | null>(null);
   const [eraser, setEraser] = useState<Pt | null>(null);
+  const [measure, setMeasure] = useState<{ at: Pt; cm: number } | null>(null);
   const [box, setBox] = useState({ w: 0, h: 0 });
   const itemsRef = useRef(items);
   itemsRef.current = items;
 
   const selectedBox = union(items.filter((i) => selected.includes(i.id)).map(bounds));
+  const strokeTool = tool === 'pen' || tool === 'pencil' || tool === 'highlighter';
 
-  const page = (e: GestureResponderEvent): Pt => ({ x: e.nativeEvent.pageX, y: e.nativeEvent.pageY });
-  const toCanvas = (e: GestureResponderEvent): Pt => ({
-    x: e.nativeEvent.pageX - origin.current.x - offset.x,
-    y: e.nativeEvent.pageY - origin.current.y - offset.y,
-  });
+  const screen = (e: GestureResponderEvent): Pt => ({ x: e.nativeEvent.pageX - origin.current.x, y: e.nativeEvent.pageY - origin.current.y });
+  const toCanvas = (s: Pt): Pt => ({ x: s.x - offset.x, y: s.y - offset.y });
 
   const eraseAt = (p: Pt) => {
-    if (itemsRef.current.some((i) => i.kind === 'stroke' && hitsStroke(i, p, ERASER_RADIUS))) {
-      update((prev) => prev.filter((i) => !(i.kind === 'stroke' && hitsStroke(i, p, ERASER_RADIUS))));
-    }
+    if (!itemsRef.current.some((i) => i.kind === 'stroke' && hitsStroke(i, p, ERASER_RADIUS))) return;
+    update((prev) => prev.flatMap<BoardItem>((i) => (i.kind === 'stroke' ? eraseStroke(i, p, ERASER_RADIUS, () => newId('s')) : [i])));
   };
 
   const onGrant = (e: GestureResponderEvent) => {
     // I livelli sopra il canvas non ricevono tocchi: location è relativa al canvas.
     origin.current = { x: e.nativeEvent.pageX - e.nativeEvent.locationX, y: e.nativeEvent.pageY - e.nativeEvent.locationY };
-    if (editingId) setEditingId(null);
-    const p = toCanvas(e);
+    const wasEditing = editingId !== null;
+    if (wasEditing) setEditingId(null);
+    const sp = screen(e);
+    const p = toCanvas(sp);
+
+    // Il righello si sposta (al centro) o si ruota (verso gli estremi) con qualsiasi strumento.
+    if (ruler && onRuler(sp, ruler)) {
+      const along = (sp.x - ruler.cx) * Math.cos(ruler.angle) + (sp.y - ruler.cy) * Math.sin(ruler.angle);
+      drag.current =
+        Math.abs(along) < 70
+          ? { mode: 'rulerMove', last: sp }
+          : { mode: 'rulerRotate', grab: Math.atan2(sp.y - ruler.cy, sp.x - ruler.cx), startAngle: ruler.angle };
+      return;
+    }
+
     switch (tool) {
       case 'pen':
       case 'pencil':
-      case 'highlighter':
-        drag.current = { mode: 'draw', points: [p] };
-        setLive([p]);
+      case 'highlighter': {
+        const snap = ruler ? snapToRuler(sp, ruler) : null;
+        if (snap) {
+          const start = toCanvas(snap);
+          drag.current = { mode: 'drawRuler', anchor: snap, start };
+          setLive([start, start]);
+        } else {
+          drag.current = { mode: 'draw', points: [p] };
+          setLive([p]);
+        }
         break;
+      }
       case 'eraser':
         drag.current = { mode: 'erase' };
         setEraser(p);
         eraseAt(p);
         break;
       case 'hand':
-        drag.current = { mode: 'pan', startPage: page(e), startOffset: offset };
+        drag.current = { mode: 'pan', startPage: { x: e.nativeEvent.pageX, y: e.nativeEvent.pageY }, startOffset: offset };
         break;
       case 'select':
         if (selectedBox && contains(selectedBox, p)) drag.current = { mode: 'move', last: p };
-        else {
+        else if (selectMode === 'lasso') {
+          drag.current = { mode: 'lasso', points: [p] };
+          setLasso([p]);
+        } else {
           drag.current = { mode: 'rect', start: p };
           setRect({ x: p.x, y: p.y, w: 0, h: 0 });
         }
         break;
+      case 'shapes':
+        drag.current = { mode: 'shape', start: p };
+        break;
       case 'text':
-        drag.current = { mode: 'tap', start: p, moved: false };
+        drag.current = { mode: 'tap', start: p, moved: false, wasEditing };
         break;
     }
   };
@@ -117,7 +184,8 @@ export function Canvas({
   const onMove = (e: GestureResponderEvent) => {
     const d = drag.current;
     if (!d || e.nativeEvent.touches.length > 1) return;
-    const p = toCanvas(e);
+    const sp = screen(e);
+    const p = toCanvas(sp);
     switch (d.mode) {
       case 'draw': {
         const last = d.points[d.points.length - 1];
@@ -126,17 +194,26 @@ export function Canvas({
         setLive([...d.points]);
         break;
       }
+      case 'drawRuler': {
+        if (!ruler) return;
+        const end = toCanvas(projectOnEdge(sp, d.anchor, ruler));
+        setLive([d.start, end]);
+        setMeasure({ at: end, cm: Math.hypot(end.x - d.start.x, end.y - d.start.y) / CM });
+        break;
+      }
       case 'erase':
         setEraser(p);
         eraseAt(p);
         break;
-      case 'pan': {
-        const now = page(e);
-        setOffset({ x: d.startOffset.x + now.x - d.startPage.x, y: d.startOffset.y + now.y - d.startPage.y });
+      case 'pan':
+        setOffset({ x: d.startOffset.x + e.nativeEvent.pageX - d.startPage.x, y: d.startOffset.y + e.nativeEvent.pageY - d.startPage.y });
         break;
-      }
       case 'rect':
         setRect(rectFrom(d.start, p));
+        break;
+      case 'lasso':
+        d.points.push(p);
+        setLasso([...d.points]);
         break;
       case 'move': {
         const dx = p.x - d.last.x;
@@ -145,10 +222,38 @@ export function Canvas({
         update((prev) => prev.map((i) => (selected.includes(i.id) ? moveItem(i, dx, dy) : i)));
         break;
       }
+      case 'shape':
+        setLiveShape(makeShape(d.start, p));
+        break;
+      case 'rulerMove':
+        if (!ruler) return;
+        setRuler({ ...ruler, cx: ruler.cx + sp.x - d.last.x, cy: ruler.cy + sp.y - d.last.y });
+        d.last = sp;
+        break;
+      case 'rulerRotate':
+        if (!ruler) return;
+        setRuler({ ...ruler, angle: d.startAngle + Math.atan2(sp.y - ruler.cy, sp.x - ruler.cx) - d.grab });
+        break;
       case 'tap':
         if (Math.hypot(p.x - d.start.x, p.y - d.start.y) > 6) d.moved = true;
         break;
     }
+  };
+
+  const makeShape = (a: Pt, b: Pt): ShapeItem => ({
+    kind: 'shape',
+    id: newId('sh'),
+    ...shapeStyle,
+    x: a.x,
+    y: a.y,
+    w: b.x - a.x,
+    h: b.y - a.y,
+    text: '',
+  });
+
+  const addStroke = (points: Pt[]) => {
+    const stroke: Stroke = { kind: 'stroke', id: newId('s'), tool: tool as StrokeTool, color: brush.color, width: brush.width, style: brush.style, points };
+    update((prev) => [...prev, stroke]);
   };
 
   const onRelease = () => {
@@ -156,20 +261,15 @@ export function Canvas({
     drag.current = null;
     if (!d) return;
     switch (d.mode) {
-      case 'draw': {
-        const stroke: Stroke = {
-          kind: 'stroke',
-          id: newId('s'),
-          tool: tool as StrokeTool,
-          color: brush.color,
-          width: brush.width,
-          style: brush.style,
-          points: stabilize(d.points, brush.stabilization),
-        };
-        update((prev) => [...prev, stroke]);
+      case 'draw':
+        addStroke(stabilize(d.points, brush.stabilization));
         setLive(null);
         break;
-      }
+      case 'drawRuler':
+        if (live && live.length === 2) addStroke(live);
+        setLive(null);
+        setMeasure(null);
+        break;
       case 'erase':
         setEraser(null);
         break;
@@ -181,9 +281,29 @@ export function Canvas({
         else setSelected(itemsRef.current.filter((i) => intersects(bounds(i), r)).map((i) => i.id));
         break;
       }
+      case 'lasso':
+        setLasso(null);
+        setSelected(d.points.length < 3 ? [] : itemsRef.current.filter((i) => inLasso(i, d.points)).map((i) => i.id));
+        break;
+      case 'shape': {
+        const s = liveShape;
+        setLiveShape(null);
+        // Un tocco senza trascinare mette la forma con una misura standard.
+        const item =
+          s && Math.abs(s.w) + Math.abs(s.h) > 12
+            ? s
+            : isOpenShape(shapeStyle.shape)
+              ? makeShape(d.start, { x: d.start.x + 140, y: d.start.y })
+              : makeShape({ x: d.start.x - 50, y: d.start.y - 50 }, { x: d.start.x + 50, y: d.start.y + 50 });
+        update((prev) => [...prev, item]);
+        break;
+      }
       case 'tap': {
-        if (d.moved) break;
-        const hit = [...itemsRef.current].reverse().find((i) => (i.kind === 'text' || i.kind === 'note') && contains(bounds(i), d.start));
+        // Toccare la lavagna mentre si scrive chiude la scrittura, senza creare un altro testo.
+        if (d.moved || d.wasEditing) break;
+        const hit = [...itemsRef.current]
+          .reverse()
+          .find((i) => (i.kind === 'text' || i.kind === 'note' || (i.kind === 'shape' && !isOpenShape(i.shape))) && contains(bounds(i), d.start));
         if (hit) setEditingId(hit.id);
         else {
           const id = newId('t');
@@ -202,13 +322,18 @@ export function Canvas({
   };
 
   const setText = (id: string, text: string) =>
-    update((prev) => prev.map((i) => (i.id === id && (i.kind === 'text' || i.kind === 'note') ? { ...i, text } : i)));
+    update((prev) => prev.map((i) => (i.id === id && (i.kind === 'text' || i.kind === 'note' || i.kind === 'shape') ? { ...i, text } : i)));
+
+  const deleteSelection = () => {
+    update((prev) => prev.filter((i) => !selected.includes(i.id)));
+    setSelected([]);
+  };
 
   const highlights = items.filter((i): i is Stroke => i.kind === 'stroke' && i.tool === 'highlighter');
   const inks = items.filter((i): i is Stroke => i.kind === 'stroke' && i.tool !== 'highlighter');
-  const liveStroke: Stroke | null = live
-    ? { kind: 'stroke', id: 'live', tool: tool as StrokeTool, color: brush.color, width: brush.width, style: brush.style, points: live }
-    : null;
+  const shapes = items.filter((i): i is ShapeItem => i.kind === 'shape');
+  const liveStroke: Stroke | null =
+    live && strokeTool ? { kind: 'stroke', id: 'live', tool: tool as StrokeTool, color: brush.color, width: brush.width, style: brush.style, points: live } : null;
   const translate = `translate(${offset.x} ${offset.y})`;
 
   return (
@@ -231,13 +356,35 @@ export function Canvas({
         <G transform={translate}>
           <StrokeLayer strokes={highlights} />
           {liveStroke?.tool === 'highlighter' && <StrokeShape s={liveStroke} />}
+          {shapes.map((s) => (
+            <ShapeSvg key={s.id} s={s} />
+          ))}
+          {liveShape && <ShapeSvg s={liveShape} />}
         </G>
       </Svg>
 
       {items.map((i) => {
         if (i.kind === 'stroke' || i.kind === 'audio') return null;
-        const pos = { position: 'absolute' as const, left: i.x + offset.x, top: i.y + offset.y };
         const editing = editingId === i.id;
+        if (i.kind === 'shape') {
+          if (isOpenShape(i.shape) || (!i.text && !editing)) return null;
+          const r = rectFrom({ x: i.x, y: i.y }, { x: i.x + i.w, y: i.y + i.h });
+          const style = { fontSize: 15, lineHeight: 20, color: i.stroke, textAlign: 'center' as const, padding: 0 };
+          return (
+            <View
+              key={i.id}
+              pointerEvents={editing ? 'auto' : 'none'}
+              style={{ position: 'absolute', left: r.x + offset.x, top: r.y + offset.y, width: r.w, height: r.h, alignItems: 'center', justifyContent: 'center', padding: 8 }}
+            >
+              {editing ? (
+                <TextInput autoFocus multiline value={i.text} onChangeText={(v) => setText(i.id, v)} onBlur={finishEditing} placeholder={t.whiteboard.textPlaceholder} style={[style, { alignSelf: 'stretch' }]} />
+              ) : (
+                <Text style={style}>{i.text}</Text>
+              )}
+            </View>
+          );
+        }
+        const pos = { position: 'absolute' as const, left: i.x + offset.x, top: i.y + offset.y };
         if (i.kind === 'image')
           return <Image key={i.id} pointerEvents="none" source={{ uri: i.uri }} style={[pos, { width: i.w, height: i.h, borderRadius: 10 }]} />;
         if (i.kind === 'sticker')
@@ -271,16 +418,7 @@ export function Canvas({
           );
         const textStyle = { fontSize: textMetrics.size, lineHeight: textMetrics.lineHeight, color: i.color, padding: 0, minWidth: 40 };
         return editing ? (
-          <TextInput
-            key={i.id}
-            autoFocus
-            multiline
-            value={i.text}
-            onChangeText={(v) => setText(i.id, v)}
-            onBlur={finishEditing}
-            placeholder={t.whiteboard.textPlaceholder}
-            style={[pos, textStyle]}
-          />
+          <TextInput key={i.id} autoFocus multiline value={i.text} onChangeText={(v) => setText(i.id, v)} onBlur={finishEditing} placeholder={t.whiteboard.textPlaceholder} style={[pos, textStyle]} />
         ) : (
           <Text key={i.id} pointerEvents="none" style={[pos, textStyle]}>
             {i.text}
@@ -293,7 +431,8 @@ export function Canvas({
           <StrokeLayer strokes={inks} />
           {liveStroke && liveStroke.tool !== 'highlighter' && <StrokeShape s={liveStroke} />}
           {rect && <SvgRect x={rect.x} y={rect.y} width={rect.w} height={rect.h} fill="rgba(31,111,235,0.08)" stroke={ink.selection} strokeWidth={1.5} strokeDasharray="6 4" />}
-          {selectedBox && !rect && (
+          {lasso && <Path d={`${pathD(lasso)} Z`} fill="rgba(31,111,235,0.08)" stroke={ink.selection} strokeWidth={1.5} strokeDasharray="6 4" />}
+          {selectedBox && !rect && !lasso && (
             <SvgRect
               x={selectedBox.x - 6}
               y={selectedBox.y - 6}
@@ -307,7 +446,13 @@ export function Canvas({
             />
           )}
           {eraser && <Circle cx={eraser.x} cy={eraser.y} r={ERASER_RADIUS} fill="rgba(128,128,128,0.15)" stroke="rgba(128,128,128,0.8)" strokeWidth={1} />}
+          {measure && (
+            <SvgText x={measure.at.x + 10} y={measure.at.y - 10} fontSize={13} fontWeight="600" fill={ink.selection}>
+              {`${measure.cm.toLocaleString(locale, { maximumFractionDigits: 1 })} cm`}
+            </SvgText>
+          )}
         </G>
+        {ruler && <RulerSvg r={ruler} dark={isDark} />}
       </Svg>
 
       {items.map((i) =>
@@ -318,27 +463,74 @@ export function Canvas({
             onPress={() => onOpenAudio(i.id)}
             accessibilityRole="button"
             accessibilityLabel={t.whiteboard.audio.play}
-            style={{
-              position: 'absolute',
-              left: i.x + offset.x,
-              top: i.y + offset.y,
-              width: 44,
-              height: 44,
-              borderRadius: 22,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: ink.selection,
-            }}
+            style={{ position: 'absolute', left: i.x + offset.x, top: i.y + offset.y, width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: ink.selection }}
           >
             <MaterialCommunityIcons name={i.comment ? 'message-processing-outline' : 'volume-high'} size={22} color="#FFFFFF" />
           </Pressable>
         ) : null,
+      )}
+
+      {tool === 'select' && selectedBox && !rect && !lasso && (
+        <Pressable
+          onPress={deleteSelection}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={t.whiteboard.deleteSelection}
+          style={{
+            position: 'absolute',
+            left: selectedBox.x + selectedBox.w + 6 + offset.x - 14,
+            top: selectedBox.y - 6 + offset.y - 14,
+            width: 28,
+            height: 28,
+            borderRadius: 14,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: ink.selection,
+          }}
+        >
+          <MaterialCommunityIcons name="close" size={18} color="#FFFFFF" />
+        </Pressable>
       )}
     </View>
   );
 }
 
 const fill = { position: 'absolute' as const, left: 0, top: 0, right: 0, bottom: 0 };
+
+/** Righello: tacche in mm e cm su entrambi i bordi, angolo al centro. */
+function RulerSvg({ r, dark }: { r: Ruler; dark: boolean }) {
+  const deg = ((((r.angle * 180) / Math.PI) % 180) + 180) % 180;
+  const half = r.length / 2;
+  const th = r.thickness / 2;
+  const fg = dark ? '#F4F4F6' : '#16161A';
+  const ticks = [];
+  const mm = CM / 10;
+  const count = Math.floor(r.length / mm);
+  for (let k = 0; k <= count; k++) {
+    const x = -half + k * mm;
+    const len = k % 10 === 0 ? 14 : k % 5 === 0 ? 10 : 6;
+    ticks.push(<Line key={`t${k}`} x1={x} y1={-th} x2={x} y2={-th + len} stroke={fg} strokeWidth={1} />);
+    ticks.push(<Line key={`b${k}`} x1={x} y1={th} x2={x} y2={th - len} stroke={fg} strokeWidth={1} />);
+    if (k % 10 === 0 && k > 0 && k < count)
+      ticks.push(
+        <SvgText key={`n${k}`} x={x} y={-th + 26} fontSize={10} fill={fg} textAnchor="middle">
+          {String(k / 10)}
+        </SvgText>,
+      );
+  }
+  return (
+    <G transform={`translate(${r.cx} ${r.cy}) rotate(${(r.angle * 180) / Math.PI})`}>
+      <SvgRect x={-half} y={-th} width={r.length} height={r.thickness} rx={8} fill={dark ? 'rgba(60,60,70,0.78)' : 'rgba(235,235,240,0.82)'} stroke={fg} strokeOpacity={0.25} />
+      {ticks}
+      <G transform={`rotate(${-(r.angle * 180) / Math.PI})`}>
+        <Circle r={24} fill={dark ? '#17171C' : '#FFFFFF'} stroke={ink.selection} strokeWidth={1.5} />
+        <SvgText y={5} fontSize={13} fontWeight="700" fill={ink.selection} textAnchor="middle">
+          {`${Math.round(deg)}°`}
+        </SvgText>
+      </G>
+    </G>
+  );
+}
 
 const StrokeLayer = memo(function StrokeLayer({ strokes }: { strokes: Stroke[] }) {
   return (
