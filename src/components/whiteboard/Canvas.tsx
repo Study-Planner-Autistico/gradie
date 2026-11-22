@@ -1,6 +1,7 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { memo, useEffect, useRef, useState } from 'react';
-import { Image, Pressable, Text, TextInput, View, type GestureResponderEvent } from 'react-native';
+import { Animated, Image, Pressable, Text, TextInput, View, type GestureResponderEvent } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, G, Line, Path, Rect as SvgRect, Text as SvgText } from 'react-native-svg';
 import { locale, t } from '../../i18n';
 import {
@@ -165,6 +166,21 @@ export function Canvas({
   const tx = page ? (box.w - page.w * S) / 2 : offset.x;
   const ty = anchorY - (anchorY - offset.y) * zoom;
   const eraserR = ERASER_RADIUS / S;
+
+  // Numero del foglio al centro dello schermo: compare mentre si scorre e sparisce 1 secondo dopo (dec. 118).
+  const insets = useSafeAreaInsets();
+  const pageNumber = page && box.h > 0 ? Math.max(0, Math.floor((box.h / 2 - ty) / S / page.h)) + 1 : 0;
+  const hasPage = page !== null;
+  const badge = useRef(new Animated.Value(0)).current;
+  const lastY = useRef(offset.y);
+  useEffect(() => {
+    if (!hasPage || offset.y === lastY.current) return;
+    lastY.current = offset.y;
+    badge.stopAnimation();
+    badge.setValue(1);
+    const timer = setTimeout(() => Animated.timing(badge, { toValue: 0, duration: 200, useNativeDriver: true }).start(), 1000);
+    return () => clearTimeout(timer);
+  }, [offset.y, hasPage, badge]);
 
   const selectedBox = union(items.filter((i) => selected.includes(i.id)).map(bounds));
   const strokeTool = tool === 'pen' || tool === 'pencil' || tool === 'highlighter';
@@ -634,6 +650,30 @@ export function Canvas({
         >
           <MaterialCommunityIcons name="close" size={18} color="#FFFFFF" />
         </Pressable>
+      )}
+
+      {page && (
+        <Animated.View
+          pointerEvents="none"
+          accessibilityLiveRegion="polite"
+          accessibilityLabel={t.whiteboard.pageNumber(pageNumber)}
+          style={{
+            position: 'absolute',
+            top: insets.top + 64,
+            alignSelf: 'center',
+            minWidth: 40,
+            height: 40,
+            paddingHorizontal: 8,
+            borderRadius: 20,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: ink.selection,
+            opacity: badge,
+            transform: [{ scale: badge.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] }) }],
+          }}
+        >
+          <Text style={{ color: '#FFFFFF', fontSize: 17, fontWeight: '700' }}>{pageNumber}</Text>
+        </Animated.View>
       )}
     </View>
   );

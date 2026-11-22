@@ -263,7 +263,7 @@ const it = {
     inDesign: 'In progettazione',
   },
   activitiesHub: {
-    actions: { takeNotes: 'Prendi appunti', importFile: 'Importa file', youtube: 'Video di YouTube', whiteboard: 'Crea lavagna' },
+    actions: { importFile: 'Importa file', youtube: 'Video di YouTube' },
     notes: 'Note',
   },
   whiteboard: {
@@ -271,6 +271,7 @@ const it = {
     back: 'Indietro',
     tools: { pen: 'Penna', pencil: 'Matita', highlighter: 'Evidenziatore', eraser: 'Gomma', text: 'Testo', select: 'Selezione', add: 'Aggiungi', audio: 'Registra audio', hand: 'Mano', more: 'Altri strumenti', less: 'Torna agli strumenti', ruler: 'Righello', shapes: 'Forme' },
     undo: 'Annulla',
+    pageNumber: (n: number) => `Foglio ${n}`,
     redo: 'Ripeti',
     shapes: {
       arrow: 'Freccia',
@@ -625,7 +626,7 @@ const en: Dict = {
     inDesign: 'In design',
   },
   activitiesHub: {
-    actions: { takeNotes: 'Take notes', importFile: 'Import file', youtube: 'YouTube video', whiteboard: 'New whiteboard' },
+    actions: { importFile: 'Import file', youtube: 'YouTube video' },
     notes: 'Notes',
   },
   whiteboard: {
@@ -633,6 +634,7 @@ const en: Dict = {
     back: 'Back',
     tools: { pen: 'Pen', pencil: 'Pencil', highlighter: 'Highlighter', eraser: 'Eraser', text: 'Text', select: 'Select', add: 'Add', audio: 'Record audio', hand: 'Hand', more: 'More tools', less: 'Back to tools', ruler: 'Ruler', shapes: 'Shapes' },
     undo: 'Undo',
+    pageNumber: (n: number) => `Page ${n}`,
     redo: 'Redo',
     shapes: {
       arrow: 'Arrow',

@@ -26,14 +26,12 @@ import {
 } from '../../state/whiteboard';
 import { useTheme } from '../../theme';
 
-type QuickAction = { key: keyof typeof t.activitiesHub.actions; icon: IconName; brand?: boolean; opensBoard?: boolean };
+type QuickAction = { key: keyof typeof t.activitiesHub.actions; icon: IconName; brand?: boolean };
 
-/** Azioni rapide (dec. 109). Appunti e lavagna aprono una nuova pagina (dec. 110); le altre sono da definire. */
+/** Azioni rapide (dec. 109; senza Prendi appunti e Crea lavagna, dec. 118: le note si creano dal +). Da definire. */
 const ACTIONS: QuickAction[] = [
-  { key: 'takeNotes', icon: 'create-outline', opensBoard: true },
   { key: 'importFile', icon: 'download-outline' },
   { key: 'youtube', icon: 'logo-youtube', brand: true },
-  { key: 'whiteboard', icon: 'grid-outline', opensBoard: true },
 ];
 
 /** Attività: azioni rapide e note (dec. 109, modifica dec. 25). */
@@ -129,7 +127,6 @@ export default function Attivita() {
             icon={a.icon}
             label={t.activitiesHub.actions[a.key]}
             iconColor={a.brand ? colors.danger : colors.textSecondary}
-            onPress={a.opensBoard ? () => router.push(`/lavagna/new-${Date.now().toString(36)}`) : undefined}
           />
         ))}
       </ScrollView>
