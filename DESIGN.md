@@ -181,7 +181,7 @@ Un'unica route con una macchina a passi: header fisso (indietro + progress bar),
 ## 9b. Liquid Glass
 | Elemento | Glass? |
 |---|---|
-| Tab bar | ✅ `NativeTabs`: su iOS 26 è Liquid Glass di sistema e si riduce scorrendo |
+| Tab bar | ✅ `NativeTabs`: su iOS 26 è Liquid Glass di sistema e **non si riduce** scorrendo (`minimizeBehavior="never"`, dec. 123) |
 | Form sheet (ambienti, menu) | ✅ di sistema |
 | Tutto il resto | ❌ superfici Atlassian (`surface`, `shadow`) |
 Il web usa una tab bar flottante con blur come fallback (`FloatingTabBar`).

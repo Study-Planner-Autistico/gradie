@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { drawerWidth, menuProgress, useMenuOpen } from '../state/menu';
 import { useTheme } from '../theme';
 import { Glass } from './Glass';
 import { TABS } from './tabs';
@@ -13,8 +14,13 @@ import { TABS } from './tabs';
 export function FloatingTabBar({ state, emitter, navigateToTab }: BottomTabBarProps) {
   const { colors, typography, radius } = useTheme();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const menuOpen = useMenuOpen();
+  // Segue la Home quando si apre il menu laterale (dec. 126).
+  const shift = menuProgress.interpolate({ inputRange: [0, 1], outputRange: [0, drawerWidth(width)] });
+  const dim = menuProgress.interpolate({ inputRange: [0, 1], outputRange: [1, 0.45] });
   return (
-    <View pointerEvents="box-none" style={[styles.wrap, { bottom: Math.max(insets.bottom, 12) }]}>
+    <Animated.View pointerEvents={menuOpen ? 'none' : 'box-none'} style={[styles.wrap, { bottom: Math.max(insets.bottom, 12), opacity: dim, transform: [{ translateX: shift }] }]}>
       <Glass style={[styles.bar, { borderRadius: radius.pill, boxShadow: colors.shadowOverlay }]}>
         {state.routes.map((route, i) => {
           const cfg = TABS.find((x) => x.name === route.name);
@@ -42,7 +48,7 @@ export function FloatingTabBar({ state, emitter, navigateToTab }: BottomTabBarPr
           );
         })}
       </Glass>
-    </View>
+    </Animated.View>
   );
 }
 

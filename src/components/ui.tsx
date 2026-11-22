@@ -1,8 +1,9 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useState, type ComponentRef, type ReactNode, type Ref } from 'react';
+import { useRef, useState, type ComponentRef, type ReactNode, type Ref } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   Platform,
   Pressable,
   ScrollView,
@@ -27,11 +28,30 @@ export type { IconName } from './icons';
 export type TextInputRef = ComponentRef<typeof TextInput>;
 
 /** Contenitore schermata: sfondo surface.sunken, margini 16, spazio per la tab bar. */
-export function Screen({ children, withTabBar = true }: { children: ReactNode; withTabBar?: boolean }) {
+/** Schermata con scorrimento. `header` resta fisso in alto, fuori dallo scorrimento. */
+export function Screen({ children, withTabBar = true, header }: { children: ReactNode; withTabBar?: boolean; header?: ReactNode }) {
   const { colors, spacing, layout } = useTheme();
+  const scrollY = useRef(new Animated.Value(0)).current;
+  // Sfumatura sotto l'header fisso: compare appena il contenuto ci passa sotto.
+  const fade = scrollY.interpolate({ inputRange: [0, 24], outputRange: [0, 1], extrapolate: 'clamp' });
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.bg }}>
-      <ScrollView
+      {header && (
+        <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.xs, backgroundColor: colors.bg, zIndex: 1 }}>
+          {header}
+          <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: '100%', height: 32, opacity: fade }}>
+            {/* Curva che cala subito e poi sfuma piano: attacca all'header senza fare una fascia bianca. */}
+            <LinearGradient
+              colors={[colors.bg, `${colors.bg}B3`, `${colors.bg}66`, `${colors.bg}33`, `${colors.bg}14`, `${colors.bg}00`]}
+              locations={[0, 0.15, 0.35, 0.55, 0.78, 1]}
+              style={{ flex: 1 }}
+            />
+          </Animated.View>
+        </View>
+      )}
+      <Animated.ScrollView
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+        scrollEventThrottle={16}
         contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{
@@ -42,7 +62,7 @@ export function Screen({ children, withTabBar = true }: { children: ReactNode; w
         }}
       >
         {children}
-      </ScrollView>
+      </Animated.ScrollView>
     </SafeAreaView>
   );
 }

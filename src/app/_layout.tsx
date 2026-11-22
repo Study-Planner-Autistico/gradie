@@ -1,3 +1,4 @@
+import { DMSerifDisplay_400Regular, useFonts } from '@expo-google-fonts/dm-serif-display';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { EnvironmentProvider } from '../state/environment';
@@ -5,6 +6,8 @@ import { useTheme } from '../theme';
 
 export default function RootLayout() {
   const { colors } = useTheme();
+  // Finché il font non è pronto il giorno usa il font di sistema: niente attesa all'avvio.
+  useFonts({ DMSerifDisplay_400Regular });
   return (
     <EnvironmentProvider>
       <StatusBar style="auto" />
@@ -18,7 +21,10 @@ export default function RootLayout() {
         />
         <Stack.Screen name="lavagna/[id]" options={{ gestureEnabled: false, animation: 'fade' }} />
         <Stack.Screen name="nuova-nota" options={{ presentation: 'formSheet', sheetAllowedDetents: [0.92], sheetGrabberVisible: true }} />
-        <Stack.Screen name="menu" options={{ presentation: 'formSheet', sheetAllowedDetents: [0.7, 1], sheetGrabberVisible: true }} />
+        <Stack.Screen name="notifiche" options={{ presentation: 'formSheet', sheetAllowedDetents: [0.7, 1], sheetGrabberVisible: true }} />
+        <Stack.Screen name="classe/[id]" options={{ presentation: 'formSheet', sheetAllowedDetents: [0.92], sheetGrabberVisible: true }} />
+        <Stack.Screen name="messaggi" options={{ presentation: 'formSheet', sheetAllowedDetents: [0.7, 1], sheetGrabberVisible: true }} />
+        <Stack.Screen name="menu"options={{ presentation: 'formSheet', sheetAllowedDetents: [0.7, 1], sheetGrabberVisible: true }} />
       </Stack>
     </EnvironmentProvider>
   );

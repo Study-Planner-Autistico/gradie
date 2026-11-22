@@ -81,6 +81,9 @@ export const lightColors = {
   heroGradientOverlay: ['rgba(255,255,255,0)', 'rgba(160,150,255,0.35)'] as readonly [string, string, ...string[]],
   /** Gradiente pieno del logo (viola → blu), scurito per reggere testo bianco ≥ 5:1. Solo momenti di brand. */
   brandGradient: ['#6F52EC', '#5547D2', '#4560D8'] as readonly [string, string, ...string[]],
+  /** Riquadro in evidenza della Home: viola pieno del brand, testo bianco (5.6:1). */
+  feature: '#5D55D7',
+  onFeature: '#FFFFFF',
   tints: lightTints,
 };
 
@@ -132,6 +135,8 @@ export const darkColors: ColorTokens = {
   heroGradient: ['#29254F', '#1F2A4F', '#242528'] as readonly [string, string, ...string[]],
   heroGradientOverlay: ['rgba(36,37,40,0)', 'rgba(120,110,255,0.25)'] as readonly [string, string, ...string[]],
   brandGradient: ['#4A3A9E', '#3B348F', '#2C3F8F'] as readonly [string, string, ...string[]],
+  feature: '#4A42C2',
+  onFeature: '#FFFFFF',
   tints: darkTints,
 };
 
@@ -162,6 +167,9 @@ export const spacing = { xxs: 2, xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, 
 export const radius = { xs: 2, sm: 4, md: 6, lg: 8, xl: 12, xxl: 16, pill: 999 } as const;
 
 /** font.heading.* / font.body.* / font.metric.* — peso bold Atlassian = 653 → '700' su iOS. */
+/** Font del titolo del giorno in Home (dec. 121): serif da display, caricato in src/app/_layout.tsx. */
+export const fonts = { display: 'DMSerifDisplay_400Regular' } as const;
+
 export const typography = {
   /** Estensione mobile: numero grande in evidenza (giorno, media). */
   hero: { fontSize: 40, lineHeight: 44, fontWeight: '700', letterSpacing: -0.5 },
