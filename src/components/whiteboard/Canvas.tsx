@@ -459,6 +459,10 @@ export function Canvas({
   const translate = `translate(${tx} ${ty}) scale(${S})`;
   // Fogli: quelli scritti, e quanti servono per arrivare in fondo allo schermo mentre si scende (dec. 117).
   const pages = paper && page ? Math.max(pageCount(paper, items), Math.ceil((box.h - ty) / S / page.h)) : 0;
+  // Si disegnano solo i fogli sullo schermo.
+  const firstPage = page ? Math.max(0, Math.floor(-ty / S / page.h)) : 0;
+  const lastPage = page ? Math.min(pages - 1, Math.floor((box.h - ty) / S / page.h)) : -1;
+  const visiblePages = Array.from({ length: Math.max(0, lastPage - firstPage + 1) }, (_, k) => firstPage + k);
   // Testi, note e immagini seguono la scala del foglio.
   const scaled = { transform: [{ scale: S }], transformOrigin: 'top left' };
   const background = paper ? (isDark ? paperLines.desk.dark : paperLines.desk.light) : isDark ? ink.paper.dark : ink.paper.light;
@@ -486,7 +490,7 @@ export function Canvas({
             <>
               <SvgRect x={0} y={0} width={page.w} height={page.h * pages} fill={paper.color} />
               {/* La carta si ripete foglio dopo foglio; una linea leggera segna dove inizia il successivo. */}
-              {Array.from({ length: pages }, (_, k) => (
+              {visiblePages.map((k) => (
                 <G key={k}>
                   <PaperPattern template={paper.template} dark={paper.dark} x={0} y={k * page.h} w={page.w} h={page.h} />
                   {k > 0 && <Line x1={0} y1={k * page.h} x2={page.w} y2={k * page.h} stroke={paper.dark ? paperLines.dark : paperLines.light} strokeWidth={2} strokeDasharray="8 6" />}

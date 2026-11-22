@@ -1,6 +1,6 @@
-import { useRef } from 'react';
+import { memo } from 'react';
 import { Text, View } from 'react-native';
-import Svg, { Circle, Defs, Line, Pattern, Rect } from 'react-native-svg';
+import Svg, { Circle, Line, Rect } from 'react-native-svg';
 import type { BoardItem, PageSize, Paper, PaperTemplate } from '../../state/whiteboard';
 import { bounds, union } from './geometry';
 import { paperLines, useTheme } from '../../theme';
@@ -24,8 +24,6 @@ export function pageCount(p: Paper, items: BoardItem[]) {
   return Math.max(1, Math.ceil((bottom + h * 0.25) / h));
 }
 
-let seq = 0;
-
 /** Passo del motivo (in punti, scala 1) per ogni carta. */
 const STEP: Record<PaperTemplate, { w: number; h: number }> = {
   blank: { w: 1, h: 1 },
@@ -40,58 +38,80 @@ const STEP: Record<PaperTemplate, { w: number; h: number }> = {
   music: { w: 40, h: 78 },
 };
 
-/** Righe, quadretti, puntini o pentagramma della carta, da usare dentro un <Svg>. `scale` riduce il motivo nelle anteprime. */
-export function PaperPattern({ template, dark, x, y, w, h, scale = 1 }: { template: PaperTemplate; dark: boolean; x: number; y: number; w: number; h: number; scale?: number }) {
-  // Id unico per istanza: sul web gli id SVG sono globali alla pagina.
-  const id = useRef(`paper-${seq++}`).current;
+/** Posizioni a passo `step` dentro [from, from + len): una per cella, a `at` dall'inizio della cella. */
+const steps = (from: number, len: number, step: number, at: number) => {
+  const out: number[] = [];
+  for (let v = from + at; v < from + len; v += step) out.push(v);
+  return out;
+};
+
+/**
+ * Righe, quadretti, puntini o pentagramma della carta, da usare dentro un <Svg>. `scale` riduce il motivo nelle anteprime.
+ * Disegnati elemento per elemento (non con <Pattern>), così seguono il foglio quando si scorre (su iOS il <Pattern> restava fermo).
+ */
+export const PaperPattern = memo(function PaperPattern({
+  template,
+  dark,
+  x,
+  y,
+  w,
+  h,
+  scale = 1,
+}: {
+  template: PaperTemplate;
+  dark: boolean;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  scale?: number;
+}) {
   const ink = dark ? paperLines.dark : paperLines.light;
   if (template === 'blank') return null;
   const sw = STEP[template].w * scale;
   const sh = STEP[template].h * scale;
-  const hLine = <Line x1={0} y1={sh - 0.5} x2={sw} y2={sh - 0.5} stroke={ink} strokeWidth={1} />;
-  let cell;
+  const rows = () => steps(y, h, sh, sh - 0.5).map((ly) => <Line key={`h${ly}`} x1={x} y1={ly} x2={x + w} y2={ly} stroke={ink} strokeWidth={1} />);
+  let body;
   switch (template) {
     case 'grid':
     case 'smallGrid':
-      cell = (
+      body = (
         <>
-          {hLine}
-          <Line x1={sw - 0.5} y1={0} x2={sw - 0.5} y2={sh} stroke={ink} strokeWidth={1} />
-        </>
-      );
-      break;
-    case 'dots':
-      cell = <Circle cx={sw / 2} cy={sh / 2} r={1.3 * Math.max(scale, 0.6)} fill={ink} />;
-      break;
-    case 'music': {
-      // Pentagramma: 5 righe ravvicinate, poi uno spazio.
-      const g = 8 * scale;
-      cell = (
-        <>
-          {[0, 1, 2, 3, 4].map((k) => (
-            <Line key={k} x1={0} y1={sh - 12 * scale - k * g} x2={sw} y2={sh - 12 * scale - k * g} stroke={ink} strokeWidth={1} />
+          {rows()}
+          {steps(x, w, sw, sw - 0.5).map((lx) => (
+            <Line key={`v${lx}`} x1={lx} y1={y} x2={lx} y2={y + h} stroke={ink} strokeWidth={1} />
           ))}
         </>
       );
       break;
+    case 'dots': {
+      const r = 1.3 * Math.max(scale, 0.6);
+      body = steps(y, h, sh, sh / 2).flatMap((cy) => steps(x, w, sw, sw / 2).map((cx) => <Circle key={`d${cx}-${cy}`} cx={cx} cy={cy} r={r} fill={ink} />));
+      break;
+    }
+    case 'music': {
+      // Pentagramma: 5 righe ravvicinate, poi uno spazio.
+      const g = 8 * scale;
+      body = steps(y, h, sh, 0).flatMap((top) =>
+        [0, 1, 2, 3, 4].map((k) => {
+          const ly = top + sh - 12 * scale - k * g;
+          return <Line key={`m${ly}`} x1={x} y1={ly} x2={x + w} y2={ly} stroke={ink} strokeWidth={1} />;
+        }),
+      );
+      break;
     }
     default:
-      cell = hLine;
+      body = rows();
   }
   const margin = (template === 'cornell' ? 110 : MARGIN_X) * scale;
   return (
     <>
-      <Defs>
-        <Pattern id={id} x={x} y={y} width={sw} height={sh} patternUnits="userSpaceOnUse">
-          {cell}
-        </Pattern>
-      </Defs>
-      <Rect x={x} y={y} width={w} height={h} fill={`url(#${id})`} />
+      {body}
       {(template === 'margin' || template === 'cornell') && <Line x1={x + margin} y1={y} x2={x + margin} y2={template === 'cornell' ? y + h * 0.78 : y + h} stroke={paperLines.margin} strokeWidth={1.2} />}
       {template === 'cornell' && <Line x1={x} y1={y + h * 0.78} x2={x + w} y2={y + h * 0.78} stroke={paperLines.margin} strokeWidth={1.2} />}
     </>
   );
-}
+});
 
 /** Anteprima di una carta (modulo Nuova nota). */
 export function PaperThumb({ template, color, dark, width, height }: { template: PaperTemplate; color: string; dark: boolean; width: number; height: number }) {
