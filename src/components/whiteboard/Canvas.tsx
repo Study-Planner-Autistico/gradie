@@ -1,5 +1,5 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { memo, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { Image, Pressable, Text, TextInput, View, type GestureResponderEvent } from 'react-native';
 import Svg, { Circle, G, Line, Path, Rect as SvgRect, Text as SvgText } from 'react-native-svg';
 import { locale, t } from '../../i18n';
@@ -64,7 +64,14 @@ type Drag =
   | { mode: 'shape'; start: Pt }
   | { mode: 'rulerMove'; last: Pt }
   | { mode: 'rulerRotate'; grab: number; startAngle: number }
-  | { mode: 'tap'; start: Pt; moved: boolean; wasEditing: boolean };
+  | { mode: 'tap'; start: Pt; moved: boolean; wasEditing: boolean }
+  | { mode: 'multi'; c0: Pt; d0: number; startOffset: Pt; active: boolean };
+
+/** Due dita: punto medio e distanza. */
+const pinch = (touches: GestureResponderEvent['nativeEvent']['touches']) => {
+  const [a, b] = touches;
+  return { c: { x: (a.pageX + b.pageX) / 2, y: (a.pageY + b.pageY) / 2 }, d: Math.hypot(a.pageX - b.pageX, a.pageY - b.pageY) };
+};
 
 export function Canvas({
   items,
@@ -88,7 +95,10 @@ export function Canvas({
   onUndo,
   onRedo,
   onRevert,
+  scale = 1,
 }: {
+  /** Carta: unità del foglio per punto dello schermo (il foglio occupa tutta la larghezza, dec. 117). */
+  scale?: number;
   paper?: Paper;
   items: BoardItem[];
   update: (fn: (prev: BoardItem[]) => BoardItem[], group?: string) => void;
@@ -128,16 +138,43 @@ export function Canvas({
   const [box, setBox] = useState({ w: 0, h: 0 });
   const itemsRef = useRef(items);
   itemsRef.current = items;
+  // Rimpicciolimento con due dita sulla carta: solo un effetto, poi il foglio torna com'era (dec. 117).
+  const [zoom, setZoom] = useState(1);
+  const [anchorY, setAnchorY] = useState(0);
+  const zoomRef = useRef(1);
+  zoomRef.current = zoom;
+  const frame = useRef<number | null>(null);
+  useEffect(() => () => {
+    if (frame.current !== null) cancelAnimationFrame(frame.current);
+  }, []);
+  const bounceBack = () => {
+    const from = zoomRef.current;
+    if (from === 1) return;
+    const t0 = Date.now();
+    const step = () => {
+      const k = Math.min(1, (Date.now() - t0) / 260);
+      setZoom(from + (1 - from) * (1 - Math.pow(1 - k, 3)));
+      frame.current = k < 1 ? requestAnimationFrame(step) : null;
+    };
+    frame.current = requestAnimationFrame(step);
+  };
+
+  const page = paper ? pageSize(paper) : null;
+  const S = scale * zoom;
+  // Con la carta il foglio resta centrato orizzontalmente (occupa tutta la larghezza quando non è rimpicciolito).
+  const tx = page ? (box.w - page.w * S) / 2 : offset.x;
+  const ty = anchorY - (anchorY - offset.y) * zoom;
+  const eraserR = ERASER_RADIUS / S;
 
   const selectedBox = union(items.filter((i) => selected.includes(i.id)).map(bounds));
   const strokeTool = tool === 'pen' || tool === 'pencil' || tool === 'highlighter';
 
   const screen = (e: GestureResponderEvent): Pt => ({ x: e.nativeEvent.pageX - origin.current.x, y: e.nativeEvent.pageY - origin.current.y });
-  const toCanvas = (s: Pt): Pt => ({ x: s.x - offset.x, y: s.y - offset.y });
+  const toCanvas = (s: Pt): Pt => ({ x: (s.x - tx) / S, y: (s.y - ty) / S });
 
   const eraseAt = (p: Pt) => {
-    if (!itemsRef.current.some((i) => i.kind === 'stroke' && hitsStroke(i, p, ERASER_RADIUS))) return;
-    update((prev) => prev.flatMap<BoardItem>((i) => (i.kind === 'stroke' ? eraseStroke(i, p, ERASER_RADIUS, () => newId('s')) : [i])), gesture.current);
+    if (!itemsRef.current.some((i) => i.kind === 'stroke' && hitsStroke(i, p, eraserR))) return;
+    update((prev) => prev.flatMap<BoardItem>((i) => (i.kind === 'stroke' ? eraseStroke(i, p, eraserR, () => newId('s')) : [i])), gesture.current);
   };
 
   /** Interrompe il gesto in corso senza aggiungere nulla. */
@@ -162,10 +199,34 @@ export function Canvas({
       if (Date.now() - m.t0 > TAP_DELAY) m.invalid = true;
       else {
         m.max = n;
-        if (n >= 2 && drag.current) cancelDrag();
+        if (n >= 2) startMulti(e);
       }
     }
     if (m.max >= 2 && n > 0 && Math.hypot(touches[0].pageX - m.start.x, touches[0].pageY - m.start.y) > TAP_SLOP) m.invalid = true;
+  };
+
+  /** Più dita: un tocco fermo annulla o ripete; trascinando si scorre, avvicinandole si rimpicciolisce (solo effetto). */
+  const startMulti = (e: GestureResponderEvent) => {
+    if (drag.current?.mode !== 'multi') cancelDrag();
+    const { c, d } = pinch(e.nativeEvent.touches);
+    drag.current = { mode: 'multi', c0: c, d0: d, startOffset: offset, active: false };
+  };
+
+  const moveMulti = (e: GestureResponderEvent, d: Extract<Drag, { mode: 'multi' }>) => {
+    if (e.nativeEvent.touches.length < 2) return;
+    const { c, d: dist } = pinch(e.nativeEvent.touches);
+    if (!d.active && (Math.hypot(c.x - d.c0.x, c.y - d.c0.y) > 10 || Math.abs(dist - d.d0) > 10)) {
+      d.active = true;
+      multi.current.invalid = true;
+    }
+    if (!d.active) return;
+    setOffset({ x: page ? d.startOffset.x : d.startOffset.x + c.x - d.c0.x, y: d.startOffset.y + c.y - d.c0.y });
+    if (page && d.d0 > 0) {
+      const r = dist / d.d0;
+      // Resistenza: il foglio si rimpicciolisce meno delle dita e mai sotto metà.
+      setZoom(r < 1 ? Math.max(0.5, 1 - (1 - r) * 0.5) : 1);
+      setAnchorY(c.y - origin.current.y);
+    }
   };
 
   const onGrant = (e: GestureResponderEvent) => {
@@ -176,7 +237,7 @@ export function Canvas({
     multi.current = { t0: Date.now(), max: fingers, start: { x: e.nativeEvent.pageX, y: e.nativeEvent.pageY }, invalid: false };
     const wasEditing = editingId !== null;
     if (wasEditing) setEditingId(null);
-    if (fingers >= 2) return;
+    if (fingers >= 2) return startMulti(e);
     const sp = screen(e);
     const p = toCanvas(sp);
 
@@ -235,6 +296,7 @@ export function Canvas({
   const onMove = (e: GestureResponderEvent) => {
     trackTouches(e);
     const d = drag.current;
+    if (d?.mode === 'multi') return moveMulti(e, d);
     if (!d || e.nativeEvent.touches.length > 1) return;
     const sp = screen(e);
     const p = toCanvas(sp);
@@ -250,7 +312,8 @@ export function Canvas({
         if (!ruler) return;
         const end = toCanvas(projectOnEdge(sp, d.anchor, ruler));
         setLive([d.start, end]);
-        setMeasure({ at: end, cm: Math.hypot(end.x - d.start.x, end.y - d.start.y) / CM });
+        // Il righello misura sullo schermo: la lunghezza sul foglio va riportata in punti dello schermo.
+        setMeasure({ at: end, cm: (Math.hypot(end.x - d.start.x, end.y - d.start.y) * S) / CM });
         break;
       }
       case 'erase':
@@ -312,6 +375,7 @@ export function Canvas({
     const m = multi.current;
     if (m.max >= 2) {
       cancelDrag();
+      bounceBack();
       if (fingersUp && !m.invalid && Date.now() - m.t0 <= TAP_MAX) (m.max >= 3 ? onRedo : onUndo)();
       return;
     }
@@ -392,9 +456,11 @@ export function Canvas({
   const shapes = items.filter((i): i is ShapeItem => i.kind === 'shape');
   const liveStroke: Stroke | null =
     live && strokeTool ? { kind: 'stroke', id: 'live', tool: tool as StrokeTool, color: brush.color, width: brush.width, style: brush.style, points: live } : null;
-  const translate = `translate(${offset.x} ${offset.y})`;
-  const page = paper ? pageSize(paper) : null;
-  const pages = paper ? pageCount(paper, items) : 0;
+  const translate = `translate(${tx} ${ty}) scale(${S})`;
+  // Fogli: quelli scritti, e quanti servono per arrivare in fondo allo schermo mentre si scende (dec. 117).
+  const pages = paper && page ? Math.max(pageCount(paper, items), Math.ceil((box.h - ty) / S / page.h)) : 0;
+  // Testi, note e immagini seguono la scala del foglio.
+  const scaled = { transform: [{ scale: S }], transformOrigin: 'top left' };
   const background = paper ? (isDark ? paperLines.desk.dark : paperLines.desk.light) : isDark ? ink.paper.dark : ink.paper.light;
 
   return (
@@ -448,7 +514,7 @@ export function Canvas({
             <View
               key={i.id}
               pointerEvents={editing ? 'auto' : 'none'}
-              style={{ position: 'absolute', left: r.x + offset.x, top: r.y + offset.y, width: r.w, height: r.h, alignItems: 'center', justifyContent: 'center', padding: 8 }}
+              style={{ position: 'absolute', left: r.x * S + tx, top: r.y * S + ty, width: r.w, height: r.h, alignItems: 'center', justifyContent: 'center', padding: 8, ...scaled }}
             >
               {editing ? (
                 <TextInput autoFocus multiline value={i.text} onChangeText={(v) => setText(i.id, v)} onBlur={finishEditing} placeholder={t.whiteboard.textPlaceholder} style={[style, { alignSelf: 'stretch' }]} />
@@ -458,7 +524,7 @@ export function Canvas({
             </View>
           );
         }
-        const pos = { position: 'absolute' as const, left: i.x + offset.x, top: i.y + offset.y };
+        const pos = { position: 'absolute' as const, left: i.x * S + tx, top: i.y * S + ty, ...scaled };
         if (i.kind === 'image')
           return <Image key={i.id} pointerEvents="none" source={{ uri: i.uri }} style={[pos, { width: i.w, height: i.h, borderRadius: 10 }]} />;
         if (i.kind === 'sticker')
@@ -472,7 +538,7 @@ export function Canvas({
             <View
               key={i.id}
               pointerEvents={editing ? 'auto' : 'none'}
-              style={[pos, { width: i.w, minHeight: i.w * 0.8, padding: 10, borderRadius: 6, backgroundColor: ink.sticky, transform: [{ rotate: '-1.5deg' }] }]}
+              style={[pos, { width: i.w, minHeight: i.w * 0.8, padding: 10, borderRadius: 6, backgroundColor: ink.sticky, transform: [...scaled.transform, { rotate: '-1.5deg' }] }]}
             >
               {editing ? (
                 <TextInput
@@ -519,7 +585,7 @@ export function Canvas({
               strokeDasharray="6 4"
             />
           )}
-          {eraser && <Circle cx={eraser.x} cy={eraser.y} r={ERASER_RADIUS} fill="rgba(128,128,128,0.15)" stroke="rgba(128,128,128,0.8)" strokeWidth={1} />}
+          {eraser && <Circle cx={eraser.x} cy={eraser.y} r={eraserR} fill="rgba(128,128,128,0.15)" stroke="rgba(128,128,128,0.8)" strokeWidth={1 / S} />}
           {measure && (
             <SvgText x={measure.at.x + 10} y={measure.at.y - 10} fontSize={13} fontWeight="600" fill={ink.selection}>
               {`${measure.cm.toLocaleString(locale, { maximumFractionDigits: 1 })} cm`}
@@ -537,7 +603,7 @@ export function Canvas({
             onPress={() => onOpenAudio(i.id)}
             accessibilityRole="button"
             accessibilityLabel={t.whiteboard.audio.play}
-            style={{ position: 'absolute', left: i.x + offset.x, top: i.y + offset.y, width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: ink.selection }}
+            style={{ position: 'absolute', left: i.x * S + tx, top: i.y * S + ty, width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: ink.selection }}
           >
             <MaterialCommunityIcons name={i.comment ? 'message-processing-outline' : 'volume-high'} size={22} color="#FFFFFF" />
           </Pressable>
@@ -552,8 +618,8 @@ export function Canvas({
           accessibilityLabel={t.whiteboard.deleteSelection}
           style={{
             position: 'absolute',
-            left: selectedBox.x + selectedBox.w + 6 + offset.x - 14,
-            top: selectedBox.y - 6 + offset.y - 14,
+            left: (selectedBox.x + selectedBox.w + 6) * S + tx - 14,
+            top: (selectedBox.y - 6) * S + ty - 14,
             width: 28,
             height: 28,
             borderRadius: 14,

@@ -2,7 +2,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Glass } from '../../components/Glass';
 import { IconButton } from '../../components/ui';
 import { Canvas, type Brush, type SelectMode, type ShapeStyle, type Tool } from '../../components/whiteboard/Canvas';
@@ -63,12 +63,23 @@ export default function Lavagna() {
   }));
   const [panel, setPanel] = useState<Panel>('none');
   const [sheet, setSheet] = useState<Sheet>({ kind: 'none' });
+  const insets = useSafeAreaInsets();
+  const [size, setSize] = useState({ w: 0, h: 0 });
   // Si riparte dalla visuale con cui si era lasciata la pagina.
-  const [offset, setOffset] = useState<Pt>(() => {
+  const [freeOffset, setFreeOffset] = useState<Pt>(() => {
     const vp = getViewport(id ?? 'new');
     return vp ? { x: -vp.x, y: -vp.y } : { x: 0, y: 0 };
   });
-  const [size, setSize] = useState({ w: 0, h: 0 });
+  // Nota con carta (dec. 117): il foglio occupa tutta la larghezza ed è fermo ai lati; si scorre solo in verticale.
+  // `top` è il punto del foglio in cima allo schermo, in unità del foglio; null = inizio del foglio sotto l'intestazione.
+  const page = meta ? pageSize(meta.paper) : null;
+  const scale = page && size.w > 0 ? size.w / page.w : 1;
+  const headerH = insets.top + 56;
+  const [top, setTop] = useState<number | null>(() => (meta ? (getViewport(id ?? 'new')?.y ?? null) : null));
+  const minTop = -headerH / scale;
+  const topNow = Math.max(minTop, top ?? minTop);
+  const offset: Pt = page ? { x: 0, y: -topNow * scale } : freeOffset;
+  const setOffset = (p: Pt) => (page ? setTop(Math.max(minTop, -p.y / scale)) : setFreeOffset(p));
   const [ruler, setRuler] = useState<Ruler | null>(null);
   const [selectMode, setSelectMode] = useState<SelectMode>('rect');
   const [shapeStyle, setShapeStyle] = useState<ShapeStyle>(() => ({
@@ -79,11 +90,14 @@ export default function Lavagna() {
   }));
 
   // All'uscita salva la visuale: l'anteprima in Note mostra proprio questa parte di pagina.
-  const view = useRef({ offset, size });
-  view.current = { offset, size };
+  const view = useRef({ offset, size, scale });
+  view.current = { offset, size, scale };
   useEffect(() => {
     const key = id ?? 'new';
-    return () => saveViewport(key, { x: -view.current.offset.x, y: -view.current.offset.y, w: view.current.size.w, h: view.current.size.h });
+    return () => {
+      const v = view.current;
+      saveViewport(key, { x: -v.offset.x / v.scale, y: -v.offset.y / v.scale, w: v.size.w / v.scale, h: v.size.h / v.scale });
+    };
   }, [id]);
 
   const toggleRuler = () =>
@@ -93,13 +107,6 @@ export default function Lavagna() {
 
   const title = meta?.title ?? demoNotes.find((n) => n.id === id)?.title ?? t.whiteboard.untitled;
 
-  // Prima apertura di una nota creata dal +: foglio centrato sotto l'intestazione.
-  const centered = useRef(getViewport(id ?? 'new') !== undefined);
-  useEffect(() => {
-    if (centered.current || !meta || size.w === 0) return;
-    centered.current = true;
-    setOffset({ x: Math.max(8, (size.w - pageSize(meta.paper).w) / 2), y: 72 });
-  }, [meta, size.w]);
   const brush = isStrokeTool(tool) ? brushes[tool] : null;
   const ink0 = (isDark ? ink.pen.dark : ink.pen.light)[0];
 
@@ -110,7 +117,7 @@ export default function Lavagna() {
   };
 
   /** Punto visibile al centro della lavagna, dove compaiono gli elementi aggiunti. */
-  const center = (w = 0, h = 0): Pt => ({ x: size.w / 2 - offset.x - w / 2, y: size.h / 2.6 - offset.y - h / 2 });
+  const center = (w = 0, h = 0): Pt => ({ x: (size.w / 2 - offset.x) / scale - w / 2, y: (size.h / 2.6 - offset.y) / scale - h / 2 });
 
   const add = (item: BoardItem) => {
     update((prev) => [...prev, item]);
@@ -118,7 +125,7 @@ export default function Lavagna() {
   };
 
   const addImage = (p: Picked) => {
-    const w = Math.min(220, size.w * 0.6);
+    const w = Math.min(220, (size.w * 0.6) / scale);
     const h = p.width > 0 ? (w * p.height) / p.width : w;
     add({ kind: 'image', id: newId('img'), ...center(w, h), w, h, uri: p.uri });
   };
@@ -140,6 +147,7 @@ export default function Lavagna() {
         setRuler={setRuler}
         offset={offset}
         setOffset={setOffset}
+        scale={scale}
         selected={selected}
         setSelected={setSelected}
         editingId={editingId}
