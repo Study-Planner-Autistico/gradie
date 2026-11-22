@@ -46,6 +46,10 @@ export default function Attivita() {
   const itemsOf = useBoards();
   const [managing, setManaging] = useState(false);
   const [picked, setPicked] = useState<string[]>([]);
+  // In orizzontale e su iPad le note si dispongono su più colonne (dec. 115).
+  const [listW, setListW] = useState(0);
+  const cols = listW >= 960 ? 3 : listW >= 600 ? 2 : 1;
+  const cardW = cols > 1 ? (listW - spacing.md * (cols - 1)) / cols : undefined;
   // Note create dal + (dec. 112), poi pagine nuove con contenuto, poi le note dimostrative.
   const fromPlus: CardNote[] = metas.map((m) => ({
     id: m.id,
@@ -133,9 +137,11 @@ export default function Attivita() {
       <View style={{ marginTop: spacing.md }}>
         <SectionHeader title={t.activitiesHub.notes} />
       </View>
-      <View style={{ gap: spacing.md }}>
+      <View style={{ gap: spacing.md, flexDirection: 'row', flexWrap: 'wrap' }} onLayout={(e) => setListW(e.nativeEvent.layout.width)}>
         {notes.map((n) => (
-          <NoteCard key={n.id} note={n} items={itemsOf(n.id)} managing={managing} picked={picked.includes(n.id)} onPick={() => toggle(n.id)} />
+          <View key={n.id} style={{ width: cardW ?? '100%' }}>
+            <NoteCard note={n} items={itemsOf(n.id)} managing={managing} picked={picked.includes(n.id)} onPick={() => toggle(n.id)} />
+          </View>
         ))}
       </View>
       <View style={{ alignItems: 'flex-start' }}>

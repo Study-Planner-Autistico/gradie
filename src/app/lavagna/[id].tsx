@@ -126,7 +126,7 @@ export default function Lavagna() {
         onSize={setSize}
       />
 
-      <SafeAreaView edges={['top']} pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, top: 0 }}>
+      <SafeAreaView edges={['top', 'left', 'right']} pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, top: 0 }}>
         <View pointerEvents="box-none" style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg, paddingTop: spacing.sm }}>
           <IconButton icon="chevron-back" label={t.whiteboard.back} onPress={() => (router.canGoBack() ? router.back() : router.replace('/attivita'))} />
           <Text style={[typography.headline, { color: colors.text, flex: 1 }]} numberOfLines={1}>
@@ -135,7 +135,7 @@ export default function Lavagna() {
         </View>
       </SafeAreaView>
 
-      <SafeAreaView edges={['bottom']} pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}>
+      <SafeAreaView edges={['bottom', 'left', 'right']} pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}>
         <View pointerEvents="box-none" style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.md, gap: spacing.sm, alignItems: 'center' }}>
           {sheet.kind === 'add' && (
             <AddPanel

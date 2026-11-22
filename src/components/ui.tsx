@@ -30,7 +30,7 @@ export type TextInputRef = ComponentRef<typeof TextInput>;
 export function Screen({ children, withTabBar = true }: { children: ReactNode; withTabBar?: boolean }) {
   const { colors, spacing, layout } = useTheme();
   return (
-    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.bg }}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.bg }}>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"

@@ -183,7 +183,7 @@ export default function Onboarding() {
   const ctx: Ctx = { a, set, next, goTo, back, editFrom, step };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top', 'bottom']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top', 'bottom', 'left', 'right']}>
       {step === 'welcome' && (
         <>
           <StatusBar style="light" />
