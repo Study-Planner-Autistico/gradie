@@ -37,3 +37,12 @@ export const demoAgenda: DemoAgendaItem[] = [
 
 /** Media dal registro voti personale (dec. 26: solo medie, nessuna previsione). */
 export const demoGrades = { average: '7,8', count: 14 };
+
+/** Note dimostrative della schermata Attività (dec. 109). */
+export type DemoNote = { id: string; title: string; subject: string; edited: string; tint: TintName };
+
+export const demoNotes: DemoNote[] = [
+  { id: 'n1', title: 'Derivate e limiti', subject: 'Matematica', edited: 'Oggi, 09:12', tint: 'lesson' },
+  { id: 'n2', title: 'La Rivoluzione francese', subject: 'Storia', edited: 'Ieri', tint: 'activity' },
+  { id: 'n3', title: 'Moto rettilineo uniforme', subject: 'Fisica', edited: '18 nov', tint: 'official' },
+];

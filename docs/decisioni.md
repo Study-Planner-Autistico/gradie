@@ -52,3 +52,4 @@
 | 106 | 2026-11-22 | 02 Agenda | La visibilità dell'elenco partecipanti la decide **l'organizzatore** (pubblico o privato). | Precisa dec. 93 |
 | 107 | 2026-11-22 | 02 Agenda | Il promemoria predefinito "il giorno prima" vale per **attività, appuntamenti ed eventi ufficiali**, **non per le lezioni**. A che ora arriva il giorno prima resta da definire. | Precisa dec. 104 |
 | 108 | 2026-11-22 | 02 Agenda | Le **chiusure del singolo istituto** (ponti, chiusure straordinarie) **le decide il docente**: le inserisce come evento ufficiale di tipo "chiusura", che sospende le lezioni. | Precisa dec. 100, 101 |
+| 109 | 2026-11-22 | 03 Attività | La schermata **Attività** si apre con le azioni rapide **Prendi appunti, Importa file, Video di YouTube, Crea lavagna** e con la sezione **Note** a schede. Il comportamento di ogni azione resta da definire. | **Modifica dec. 25** (Attività include anche gli appunti); precisa dec. 28 |

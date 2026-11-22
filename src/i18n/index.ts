@@ -72,6 +72,10 @@ const it = {
     settings: 'Impostazioni',
     inDesign: 'In progettazione',
   },
+  activitiesHub: {
+    actions: { takeNotes: 'Prendi appunti', importFile: 'Importa file', youtube: 'Video di YouTube', whiteboard: 'Crea lavagna' },
+    notes: 'Note',
+  },
   placeholder: {
     title: 'Modulo in progettazione',
     body: 'Questa sezione verrà definita nelle prossime fasi del progetto.',
@@ -160,6 +164,10 @@ const en: Dict = {
     notifications: 'Notifications',
     settings: 'Settings',
     inDesign: 'In design',
+  },
+  activitiesHub: {
+    actions: { takeNotes: 'Take notes', importFile: 'Import file', youtube: 'YouTube video', whiteboard: 'New whiteboard' },
+    notes: 'Notes',
   },
   placeholder: {
     title: 'Module in design',
