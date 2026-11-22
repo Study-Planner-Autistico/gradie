@@ -22,6 +22,12 @@ export type BoardItem = Stroke | TextItem | ImageItem | StickerItem | NoteItem |
 /** Parte di lavagna visibile: angolo in alto a sinistra e misure, in coordinate della lavagna. */
 export type Viewport = { x: number; y: number; w: number; h: number };
 
+/** Nota creata dal + (dec. 112): nome, copertina e carta. */
+export type PaperTemplate = 'blank' | 'lined' | 'margin' | 'grid' | 'dots';
+export type PageSize = 'a4' | 'letter';
+export type Paper = { template: PaperTemplate; color: string; dark: boolean; size: PageSize; landscape: boolean };
+export type NoteMeta = { id: string; title: string; cover: string | null; paper: Paper; created: number };
+
 /** Pagina modificata: id della lavagna e ora dell'ultima modifica. */
 export type PageInfo = { id: string; edited: number };
 
@@ -29,10 +35,13 @@ const EMPTY: BoardItem[] = [];
 const boards = new Map<string, BoardItem[]>();
 const edited = new Map<string, number>();
 const viewports = new Map<string, Viewport>();
+const metas = new Map<string, NoteMeta>();
+let notes: NoteMeta[] = [];
 const listeners = new Set<() => void>();
 let pages: PageInfo[] = [];
 
 function emit() {
+  notes = [...metas.values()].sort((a, b) => (edited.get(b.id) ?? b.created) - (edited.get(a.id) ?? a.created));
   pages = [...edited.entries()]
     .filter(([id]) => (boards.get(id)?.length ?? 0) > 0)
     .map(([id, at]) => ({ id, edited: at }))
@@ -83,3 +92,21 @@ export function saveViewport(id: string, vp: Viewport) {
 }
 
 export const getViewport = (id: string) => viewports.get(id);
+
+/** Crea una nota vuota con copertina e carta scelte; restituisce il suo id. */
+export function createNote(meta: Omit<NoteMeta, 'id' | 'created'>): string {
+  const id = newId('nota');
+  metas.set(id, { ...meta, id, created: Date.now() });
+  emit();
+  return id;
+}
+
+export const getNoteMeta = (id: string) => metas.get(id);
+
+/** Note create dal +, dalla più recente. */
+export function useNotes() {
+  return useSyncExternalStore(subscribe, () => notes, () => notes);
+}
+
+/** Momento dell'ultima modifica di una lavagna, se c'è. */
+export const getEdited = (id: string) => edited.get(id);

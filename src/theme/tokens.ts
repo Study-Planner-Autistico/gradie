@@ -128,3 +128,29 @@ export const ink = {
   onSticky: '#3A3200',
   selection: '#1F6FEB',
 } as const;
+
+/** Copertine delle note (dec. 112). */
+export const covers = [
+  { id: 'classic1', color: '#2F5DA8' },
+  { id: 'classic2', color: '#2E6B4F' },
+  { id: 'classic3', color: '#C77A2E' },
+  { id: 'classic4', color: '#B23A48' },
+  { id: 'classic5', color: '#5B4B9A' },
+  { id: 'classic6', color: '#2B2B2F' },
+  { id: 'classic7', color: '#E39AB0' },
+  { id: 'classic8', color: '#D9B23F' },
+] as const;
+
+/** Colori della carta (dec. 112); `dark` indica che sopra serve inchiostro chiaro. */
+export const paperColors = [
+  { id: 'white', color: '#FFFFFF', dark: false },
+  { id: 'cream', color: '#FFF8E7', dark: false },
+  { id: 'graphite', color: '#2A2A2E', dark: true },
+  { id: 'black', color: '#0C0C0F', dark: true },
+  { id: 'rose', color: '#F6C9CF', dark: false },
+  { id: 'pink', color: '#F9D6E6', dark: false },
+  { id: 'lavender', color: '#E3D9F7', dark: false },
+] as const;
+
+/** Righe e quadretti della carta, e margine rosso. */
+export const paperLines = { light: 'rgba(60,90,160,0.22)', dark: 'rgba(255,255,255,0.18)', margin: 'rgba(217,61,82,0.6)', desk: { light: '#E4E4E9', dark: '#000000' } } as const;

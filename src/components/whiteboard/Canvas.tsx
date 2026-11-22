@@ -8,13 +8,15 @@ import {
   type BoardItem,
   type LineStyle,
   type Pt,
+  type Paper,
   type ShapeItem,
   type ShapeKind,
   type Stabilization,
   type Stroke,
   type StrokeTool,
 } from '../../state/whiteboard';
-import { ink, useTheme } from '../../theme';
+import { ink, paperLines, useTheme } from '../../theme';
+import { pageSize, PaperPattern } from './Paper';
 import {
   bounds,
   brushOutline,
@@ -78,7 +80,9 @@ export function Canvas({
   setEditingId,
   onOpenAudio,
   onSize,
+  paper,
 }: {
+  paper?: Paper;
   items: BoardItem[];
   update: (fn: (prev: BoardItem[]) => BoardItem[]) => void;
   tool: Tool;
@@ -335,10 +339,12 @@ export function Canvas({
   const liveStroke: Stroke | null =
     live && strokeTool ? { kind: 'stroke', id: 'live', tool: tool as StrokeTool, color: brush.color, width: brush.width, style: brush.style, points: live } : null;
   const translate = `translate(${offset.x} ${offset.y})`;
+  const page = paper ? pageSize(paper) : null;
+  const background = paper ? (isDark ? paperLines.desk.dark : paperLines.desk.light) : isDark ? ink.paper.dark : ink.paper.light;
 
   return (
     <View
-      style={{ flex: 1, backgroundColor: isDark ? ink.paper.dark : ink.paper.light, overflow: 'hidden' }}
+      style={{ flex: 1, backgroundColor: background, overflow: 'hidden' }}
       onLayout={(e) => {
         const next = { w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height };
         setBox(next);
@@ -354,6 +360,12 @@ export function Canvas({
     >
       <Svg pointerEvents="none" width={box.w} height={box.h} style={fill}>
         <G transform={translate}>
+          {paper && page && (
+            <>
+              <SvgRect x={0} y={0} width={page.w} height={page.h} fill={paper.color} />
+              <PaperPattern template={paper.template} dark={paper.dark} x={0} y={0} w={page.w} h={page.h} />
+            </>
+          )}
           <StrokeLayer strokes={highlights} />
           {liveStroke?.tool === 'highlighter' && <StrokeShape s={liveStroke} />}
           {shapes.map((s) => (

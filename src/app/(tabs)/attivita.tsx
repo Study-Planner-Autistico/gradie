@@ -2,11 +2,13 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Chip, Screen, ScreenHeader, SectionHeader, type IconName } from '../../components/ui';
+import { GlassButton } from '../../components/Glass';
 import { BoardPreview } from '../../components/whiteboard/BoardPreview';
+import { CoverThumb } from '../../components/whiteboard/Paper';
 import { demoNotes, type DemoNote } from '../../data/demo';
 import { locale, t } from '../../i18n';
 import { useEnvironment } from '../../state/environment';
-import { getViewport, useBoards, usePages, type BoardItem } from '../../state/whiteboard';
+import { getEdited, getViewport, useBoards, useNotes, usePages, type BoardItem } from '../../state/whiteboard';
 import { useTheme } from '../../theme';
 
 type QuickAction = { key: keyof typeof t.activitiesHub.actions; icon: IconName; brand?: boolean; opensBoard?: boolean };
@@ -24,16 +26,29 @@ export default function Attivita() {
   const { colors, spacing } = useTheme();
   const { active } = useEnvironment();
   const pages = usePages();
+  const metas = useNotes();
   const itemsOf = useBoards();
-  // Pagine nuove con contenuto, dalla più recente, poi le note dimostrative.
-  const created: DemoNote[] = pages
-    .filter((p) => !demoNotes.some((n) => n.id === p.id))
+  // Note create dal + (dec. 112), poi pagine nuove con contenuto, poi le note dimostrative.
+  const fromPlus: CardNote[] = metas.map((m) => ({
+    id: m.id,
+    title: m.title,
+    subject: '',
+    edited: editedLabel(getEdited(m.id) ?? m.created),
+    tint: 'lesson',
+    cover: m.cover,
+  }));
+  const loose: CardNote[] = pages
+    .filter((p) => !demoNotes.some((n) => n.id === p.id) && !metas.some((m) => m.id === p.id))
     .map((p) => ({ id: p.id, title: t.whiteboard.untitled, subject: '', edited: editedLabel(p.edited), tint: 'lesson' }));
-  const notes = [...created, ...demoNotes];
+  const notes: CardNote[] = [...fromPlus, ...loose, ...demoNotes];
 
   return (
     <Screen>
-      <ScreenHeader title={t.tabs.activities} subtitle={active.name} />
+      <ScreenHeader
+        title={t.tabs.activities}
+        subtitle={active.name}
+        right={<GlassButton icon="add" label={t.newNote.add} onPress={() => router.push('/nuova-nota')} />}
+      />
 
       <ScrollView
         horizontal
@@ -93,10 +108,12 @@ function ActionButton({ icon, label, iconColor, onPress }: { icon: IconName; lab
   );
 }
 
+type CardNote = DemoNote & { cover?: string | null };
+
 const THUMB = { w: 84, h: 120 };
 
 /** Riga nota: a sinistra la visuale dell'ultima volta (o un'anteprima decorativa), a destra titolo e data. */
-function NoteCard({ note, items }: { note: DemoNote; items: BoardItem[] }) {
+function NoteCard({ note, items }: { note: CardNote; items: BoardItem[] }) {
   const { colors, typography, radius, spacing } = useTheme();
   const tint = colors.tints[note.tint];
   return (
@@ -119,7 +136,9 @@ function NoteCard({ note, items }: { note: DemoNote; items: BoardItem[] }) {
       })}
     >
       <View style={{ width: THUMB.w, height: THUMB.h, borderRadius: radius.sm, overflow: 'hidden', borderWidth: 1, borderColor: colors.border }}>
-        {items.length > 0 ? (
+        {note.cover ? (
+          <CoverThumb color={note.cover} title={note.title} width={THUMB.w} height={THUMB.h} />
+        ) : items.length > 0 ? (
           <BoardPreview items={items} height={THUMB.h} viewport={getViewport(note.id)} />
         ) : (
           <View style={{ flex: 1, backgroundColor: tint.bg, padding: spacing.sm, gap: 5 }}>

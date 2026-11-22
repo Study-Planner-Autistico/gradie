@@ -9,7 +9,8 @@ import { AddPanel, AudioPanel, RecordPanel, type Picked } from '../../components
 import { isStrokeTool, Toolbar, type Panel } from '../../components/whiteboard/Toolbar';
 import { demoNotes } from '../../data/demo';
 import { t } from '../../i18n';
-import { getViewport, newId, saveViewport, useBoard, type BoardItem, type Pt, type StrokeTool } from '../../state/whiteboard';
+import { getNoteMeta, getViewport, newId, saveViewport, useBoard, type BoardItem, type Pt, type StrokeTool } from '../../state/whiteboard';
+import { pageSize } from '../../components/whiteboard/Paper';
 import { ink, useTheme } from '../../theme';
 
 type Sheet = { kind: 'none' } | { kind: 'add' } | { kind: 'record' } | { kind: 'audio'; id: string };
@@ -24,7 +25,10 @@ const initialBrush = (tool: StrokeTool, dark: boolean): Brush => ({
 /** Lavagna di una nota (dec. 110): scrittura libera e strumenti in basso. */
 export default function Lavagna() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { colors, typography, spacing, isDark } = useTheme();
+  const { colors, typography, spacing, isDark: themeDark } = useTheme();
+  const meta = getNoteMeta(id ?? '');
+  // Su carta scura l'inchiostro principale è chiaro, e viceversa (dec. 112).
+  const isDark = meta ? meta.paper.dark : themeDark;
   const [items, update] = useBoard(id ?? 'new');
   const [tool, setTool] = useState<Tool>('pen');
   const [brushes, setBrushes] = useState<Record<StrokeTool, Brush>>(() => ({
@@ -62,7 +66,15 @@ export default function Lavagna() {
   const [selected, setSelected] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const title = demoNotes.find((n) => n.id === id)?.title ?? t.whiteboard.untitled;
+  const title = meta?.title ?? demoNotes.find((n) => n.id === id)?.title ?? t.whiteboard.untitled;
+
+  // Prima apertura di una nota creata dal +: foglio centrato sotto l'intestazione.
+  const centered = useRef(getViewport(id ?? 'new') !== undefined);
+  useEffect(() => {
+    if (centered.current || !meta || size.w === 0) return;
+    centered.current = true;
+    setOffset({ x: Math.max(8, (size.w - pageSize(meta.paper).w) / 2), y: 72 });
+  }, [meta, size.w]);
   const brush = isStrokeTool(tool) ? brushes[tool] : null;
   const ink0 = (isDark ? ink.pen.dark : ink.pen.light)[0];
 
@@ -89,13 +101,14 @@ export default function Lavagna() {
   const audio = sheet.kind === 'audio' ? items.find((i) => i.id === sheet.id) : undefined;
 
   return (
-    <View style={{ flex: 1, backgroundColor: isDark ? ink.paper.dark : ink.paper.light }}>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <Canvas
         items={items}
         update={update}
         tool={tool}
         brush={brush ?? brushes.pen}
         textColor={ink0}
+        paper={meta?.paper}
         selectMode={selectMode}
         shapeStyle={shapeStyle}
         ruler={ruler}
@@ -176,6 +189,7 @@ export default function Lavagna() {
             }}
             shapeStyle={shapeStyle}
             setShapeStyle={(st) => setShapeStyle((prev) => ({ ...prev, ...st }))}
+            inkDark={isDark}
           />
         </View>
       </SafeAreaView>

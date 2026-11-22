@@ -52,6 +52,7 @@ export function Toolbar({
   setSelectMode,
   shapeStyle,
   setShapeStyle,
+  inkDark,
 }: {
   tool: Tool;
   onTool: (t: Tool) => void;
@@ -67,8 +68,11 @@ export function Toolbar({
   setSelectMode: (m: SelectMode) => void;
   shapeStyle: ShapeStyle;
   setShapeStyle: (s: Partial<ShapeStyle>) => void;
+  /** Carta scura: servono inchiostri chiari. Se assente segue il tema. */
+  inkDark?: boolean;
 }) {
-  const { colors, radius, spacing, isDark } = useTheme();
+  const { colors, radius, spacing, isDark: themeDark } = useTheme();
+  const isDark = inkDark ?? themeDark;
   const [more, setMore] = useState(false);
 
   const press = (key: Key) => {
