@@ -11,9 +11,9 @@ import { brushOutline, dashArray } from './geometry';
 import { SHAPES, ShapeSvg } from './shapes';
 
 type McIcon = ComponentProps<typeof MaterialCommunityIcons>['name'];
-type Key = Tool | 'add' | 'audio' | 'more' | 'ruler';
+type Key = Tool | 'add' | 'audio' | 'more' | 'less' | 'ruler';
 
-/** Strumenti nell'ordine della dec. 110 (il quarto è rinviato); righello e forme dietro la freccia (dec. 111). */
+/** Strumenti nell'ordine della dec. 110 (il quarto è rinviato); la freccia mostra al loro posto righello e forme (dec. 111, 116). */
 const TOOLS: { key: Key; icon: McIcon }[] = [
   { key: 'pen', icon: 'pen' },
   { key: 'pencil', icon: 'pencil-outline' },
@@ -79,14 +79,16 @@ export function Toolbar({
     if (key === 'add') return onAdd();
     if (key === 'audio') return onAudio();
     if (key === 'ruler') return onRuler();
-    if (key === 'more') return setMore((m) => !m);
+    if (key === 'more') return setMore(true);
+    if (key === 'less') return setMore(false);
     if (key === tool && hasOptions(key)) return setPanel(panel === 'none' ? 'options' : 'none');
     // Le forme si scelgono subito: il pannello si apre insieme allo strumento.
     setPanel(key === 'shapes' ? 'options' : 'none');
     onTool(key);
   };
 
-  const keys: { key: Key; icon: McIcon }[] = [...TOOLS, { key: 'more', icon: more ? 'chevron-left' : 'chevron-right' }, ...(more ? EXTRA : [])];
+  // Righello e forme prendono il posto degli strumenti di scrittura; la freccia iniziale riporta indietro.
+  const keys: { key: Key; icon: McIcon }[] = more ? [{ key: 'less', icon: 'chevron-left' }, ...EXTRA] : [...TOOLS, { key: 'more', icon: 'chevron-right' }];
 
   return (
     <View style={{ gap: spacing.sm, alignItems: 'center', alignSelf: 'stretch' }} pointerEvents="box-none">
@@ -114,7 +116,7 @@ export function Toolbar({
                 accessibilityLabel={label}
                 accessibilityState={{ selected: active }}
                 style={({ pressed }) => ({
-                  width: tl.key === 'more' ? 30 : 38,
+                  width: tl.key === 'more' || tl.key === 'less' ? 30 : 38,
                   height: 44,
                   borderRadius: radius.md,
                   alignItems: 'center',
@@ -123,7 +125,7 @@ export function Toolbar({
                   opacity: pressed ? 0.6 : 1,
                 })}
               >
-                <MaterialCommunityIcons name={icon} size={22} color={active ? colors.onAccent : tl.key === 'more' ? colors.danger : colors.text} />
+                <MaterialCommunityIcons name={icon} size={22} color={active ? colors.onAccent : tl.key === 'more' || tl.key === 'less' ? colors.danger : colors.text} />
                 {active && isStrokeTool(tl.key) && brush && (
                   <View style={{ position: 'absolute', bottom: 4, width: 6, height: 6, borderRadius: 3, backgroundColor: brush.color, borderWidth: 1, borderColor: colors.onAccent }} />
                 )}

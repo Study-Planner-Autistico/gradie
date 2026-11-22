@@ -1,7 +1,9 @@
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Glass } from '../../components/Glass';
 import { IconButton } from '../../components/ui';
 import { Canvas, type Brush, type SelectMode, type ShapeStyle, type Tool } from '../../components/whiteboard/Canvas';
 import { CM, type Ruler } from '../../components/whiteboard/geometry';
@@ -9,7 +11,20 @@ import { AddPanel, AudioPanel, RecordPanel, type Picked } from '../../components
 import { isStrokeTool, Toolbar, type Panel } from '../../components/whiteboard/Toolbar';
 import { demoNotes } from '../../data/demo';
 import { t } from '../../i18n';
-import { getNoteMeta, getViewport, newId, saveViewport, useBoard, type BoardItem, type Pt, type StrokeTool } from '../../state/whiteboard';
+import {
+  getNoteMeta,
+  getViewport,
+  newId,
+  redoBoard,
+  revertGroup,
+  saveViewport,
+  undoBoard,
+  useBoard,
+  useHistory,
+  type BoardItem,
+  type Pt,
+  type StrokeTool,
+} from '../../state/whiteboard';
 import { pageSize } from '../../components/whiteboard/Paper';
 import { ink, useTheme } from '../../theme';
 
@@ -29,7 +44,17 @@ export default function Lavagna() {
   const meta = getNoteMeta(id ?? '');
   // Su carta scura l'inchiostro principale è chiaro, e viceversa (dec. 112).
   const isDark = meta ? meta.paper.dark : themeDark;
-  const [items, update] = useBoard(id ?? 'new');
+  const boardId = id ?? 'new';
+  const [items, update] = useBoard(boardId);
+  const { canUndo, canRedo } = useHistory(boardId);
+  const undo = () => {
+    setEditingId(null);
+    undoBoard(boardId);
+  };
+  const redo = () => {
+    setEditingId(null);
+    redoBoard(boardId);
+  };
   const [tool, setTool] = useState<Tool>('pen');
   const [brushes, setBrushes] = useState<Record<StrokeTool, Brush>>(() => ({
     pen: initialBrush('pen', isDark),
@@ -124,7 +149,18 @@ export default function Lavagna() {
         }}
         onOpenAudio={(aid) => setSheet({ kind: 'audio', id: aid })}
         onSize={setSize}
+        onUndo={undo}
+        onRedo={redo}
+        onRevert={(g) => revertGroup(boardId, g)}
       />
+
+      {/* Annulla e ripeti, a destra a metà altezza (dec. 116). */}
+      <SafeAreaView edges={['right']} pointerEvents="box-none" style={{ position: 'absolute', top: 0, bottom: 0, right: 0, justifyContent: 'center' }}>
+        <Glass style={{ borderRadius: 22, padding: 4, gap: 2, marginRight: spacing.sm }}>
+          <HistoryButton icon="undo" label={t.whiteboard.undo} disabled={!canUndo} onPress={undo} />
+          <HistoryButton icon="redo" label={t.whiteboard.redo} disabled={!canRedo} onPress={redo} />
+        </Glass>
+      </SafeAreaView>
 
       <SafeAreaView edges={['top', 'left', 'right']} pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, top: 0 }}>
         <View pointerEvents="box-none" style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg, paddingTop: spacing.sm }}>
@@ -194,5 +230,22 @@ export default function Lavagna() {
         </View>
       </SafeAreaView>
     </View>
+  );
+}
+
+function HistoryButton({ icon, label, disabled, onPress }: { icon: 'undo' | 'redo'; label: string; disabled: boolean; onPress: () => void }) {
+  const { colors } = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      hitSlop={4}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled }}
+      style={({ pressed }) => ({ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}
+    >
+      <MaterialCommunityIcons name={icon} size={22} color={disabled ? colors.textTertiary : colors.text} />
+    </Pressable>
   );
 }

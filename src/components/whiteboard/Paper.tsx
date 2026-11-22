@@ -1,7 +1,8 @@
 import { useRef } from 'react';
 import { Text, View } from 'react-native';
 import Svg, { Circle, Defs, Line, Pattern, Rect } from 'react-native-svg';
-import type { PageSize, Paper, PaperTemplate } from '../../state/whiteboard';
+import type { BoardItem, PageSize, Paper, PaperTemplate } from '../../state/whiteboard';
+import { bounds, union } from './geometry';
 import { paperLines, useTheme } from '../../theme';
 
 /** Larghezza del foglio in verticale, in punti della lavagna; l'altezza segue il formato. */
@@ -13,6 +14,14 @@ export const MARGIN_X = 52;
 export function pageSize(p: Paper) {
   const long = PORTRAIT_W * RATIO[p.size];
   return p.landscape ? { w: long, h: PORTRAIT_W } : { w: PORTRAIT_W, h: long };
+}
+
+/** Fogli della nota, uno sotto l'altro: se ne aggiunge uno quando si scrive nell'ultimo quarto dell'ultimo (dec. 116). */
+export function pageCount(p: Paper, items: BoardItem[]) {
+  const { h } = pageSize(p);
+  const content = union(items.map(bounds));
+  const bottom = content ? content.y + content.h : 0;
+  return Math.max(1, Math.ceil((bottom + h * 0.25) / h));
 }
 
 let seq = 0;

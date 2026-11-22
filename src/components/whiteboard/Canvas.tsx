@@ -16,7 +16,7 @@ import {
   type StrokeTool,
 } from '../../state/whiteboard';
 import { ink, paperLines, useTheme } from '../../theme';
-import { pageSize, PaperPattern } from './Paper';
+import { pageCount, pageSize, PaperPattern } from './Paper';
 import {
   bounds,
   brushOutline,
@@ -47,6 +47,10 @@ export type SelectMode = 'rect' | 'lasso';
 export type ShapeStyle = { shape: ShapeKind; fill: string | null; stroke: string; strokeWidth: number };
 
 const ERASER_RADIUS = 10;
+/** Tocco a più dita (dec. 116): le dita devono appoggiarsi entro TAP_DELAY e il tocco finire entro TAP_MAX. */
+const TAP_DELAY = 500;
+const TAP_MAX = 1000;
+const TAP_SLOP = 30;
 const isOpenShape = (s: ShapeKind) => s === 'line' || s === 'arrow';
 
 type Drag =
@@ -81,10 +85,18 @@ export function Canvas({
   onOpenAudio,
   onSize,
   paper,
+  onUndo,
+  onRedo,
+  onRevert,
 }: {
   paper?: Paper;
   items: BoardItem[];
-  update: (fn: (prev: BoardItem[]) => BoardItem[]) => void;
+  update: (fn: (prev: BoardItem[]) => BoardItem[], group?: string) => void;
+  /** Due dita: annulla. Tre dita: ripeti. */
+  onUndo: () => void;
+  onRedo: () => void;
+  /** Toglie le modifiche già fatte dal gesto quando diventa un tocco a più dita. */
+  onRevert: (group: string) => void;
   tool: Tool;
   brush: Brush;
   textColor: string;
@@ -104,6 +116,9 @@ export function Canvas({
   const { isDark } = useTheme();
   const origin = useRef<Pt>({ x: 0, y: 0 });
   const drag = useRef<Drag | null>(null);
+  // Ogni gesto è un solo passo di annulla.
+  const gesture = useRef('');
+  const multi = useRef({ t0: 0, max: 0, start: { x: 0, y: 0 }, invalid: false });
   const [live, setLive] = useState<Pt[] | null>(null);
   const [rect, setRect] = useState<Rect | null>(null);
   const [lasso, setLasso] = useState<Pt[] | null>(null);
@@ -122,14 +137,46 @@ export function Canvas({
 
   const eraseAt = (p: Pt) => {
     if (!itemsRef.current.some((i) => i.kind === 'stroke' && hitsStroke(i, p, ERASER_RADIUS))) return;
-    update((prev) => prev.flatMap<BoardItem>((i) => (i.kind === 'stroke' ? eraseStroke(i, p, ERASER_RADIUS, () => newId('s')) : [i])));
+    update((prev) => prev.flatMap<BoardItem>((i) => (i.kind === 'stroke' ? eraseStroke(i, p, ERASER_RADIUS, () => newId('s')) : [i])), gesture.current);
+  };
+
+  /** Interrompe il gesto in corso senza aggiungere nulla. */
+  const cancelDrag = () => {
+    const d = drag.current;
+    drag.current = null;
+    setLive(null);
+    setRect(null);
+    setLasso(null);
+    setLiveShape(null);
+    setEraser(null);
+    setMeasure(null);
+    if (d && (d.mode === 'erase' || d.mode === 'move')) onRevert(gesture.current);
+  };
+
+  /** Conta le dita: se se ne appoggiano altre entro TAP_DELAY, il gesto diventa un tocco a più dita. */
+  const trackTouches = (e: GestureResponderEvent) => {
+    const m = multi.current;
+    const touches = e.nativeEvent.touches;
+    const n = touches.length;
+    if (n > m.max) {
+      if (Date.now() - m.t0 > TAP_DELAY) m.invalid = true;
+      else {
+        m.max = n;
+        if (n >= 2 && drag.current) cancelDrag();
+      }
+    }
+    if (m.max >= 2 && n > 0 && Math.hypot(touches[0].pageX - m.start.x, touches[0].pageY - m.start.y) > TAP_SLOP) m.invalid = true;
   };
 
   const onGrant = (e: GestureResponderEvent) => {
     // I livelli sopra il canvas non ricevono tocchi: location è relativa al canvas.
     origin.current = { x: e.nativeEvent.pageX - e.nativeEvent.locationX, y: e.nativeEvent.pageY - e.nativeEvent.locationY };
+    gesture.current = newId('g');
+    const fingers = e.nativeEvent.touches.length || 1;
+    multi.current = { t0: Date.now(), max: fingers, start: { x: e.nativeEvent.pageX, y: e.nativeEvent.pageY }, invalid: false };
     const wasEditing = editingId !== null;
     if (wasEditing) setEditingId(null);
+    if (fingers >= 2) return;
     const sp = screen(e);
     const p = toCanvas(sp);
 
@@ -186,6 +233,7 @@ export function Canvas({
   };
 
   const onMove = (e: GestureResponderEvent) => {
+    trackTouches(e);
     const d = drag.current;
     if (!d || e.nativeEvent.touches.length > 1) return;
     const sp = screen(e);
@@ -223,7 +271,7 @@ export function Canvas({
         const dx = p.x - d.last.x;
         const dy = p.y - d.last.y;
         d.last = p;
-        update((prev) => prev.map((i) => (selected.includes(i.id) ? moveItem(i, dx, dy) : i)));
+        update((prev) => prev.map((i) => (selected.includes(i.id) ? moveItem(i, dx, dy) : i)), gesture.current);
         break;
       }
       case 'shape':
@@ -260,7 +308,13 @@ export function Canvas({
     update((prev) => [...prev, stroke]);
   };
 
-  const onRelease = () => {
+  const onRelease = (fingersUp: boolean) => {
+    const m = multi.current;
+    if (m.max >= 2) {
+      cancelDrag();
+      if (fingersUp && !m.invalid && Date.now() - m.t0 <= TAP_MAX) (m.max >= 3 ? onRedo : onUndo)();
+      return;
+    }
     const d = drag.current;
     drag.current = null;
     if (!d) return;
@@ -311,7 +365,7 @@ export function Canvas({
         if (hit) setEditingId(hit.id);
         else {
           const id = newId('t');
-          update((prev) => [...prev, { kind: 'text', id, x: d.start.x, y: d.start.y - textMetrics.lineHeight / 2, text: '', color: textColor }]);
+          update((prev) => [...prev, { kind: 'text', id, x: d.start.x, y: d.start.y - textMetrics.lineHeight / 2, text: '', color: textColor }], `text:${id}`);
           setEditingId(id);
         }
         break;
@@ -322,11 +376,11 @@ export function Canvas({
   const finishEditing = () => {
     const id = editingId;
     setEditingId(null);
-    update((prev) => prev.filter((i) => !(i.id === id && i.kind === 'text' && i.text.trim() === '')));
+    update((prev) => prev.filter((i) => !(i.id === id && i.kind === 'text' && i.text.trim() === '')), `text:${id}`);
   };
 
   const setText = (id: string, text: string) =>
-    update((prev) => prev.map((i) => (i.id === id && (i.kind === 'text' || i.kind === 'note' || i.kind === 'shape') ? { ...i, text } : i)));
+    update((prev) => prev.map((i) => (i.id === id && (i.kind === 'text' || i.kind === 'note' || i.kind === 'shape') ? { ...i, text } : i)), `text:${id}`);
 
   const deleteSelection = () => {
     update((prev) => prev.filter((i) => !selected.includes(i.id)));
@@ -340,6 +394,7 @@ export function Canvas({
     live && strokeTool ? { kind: 'stroke', id: 'live', tool: tool as StrokeTool, color: brush.color, width: brush.width, style: brush.style, points: live } : null;
   const translate = `translate(${offset.x} ${offset.y})`;
   const page = paper ? pageSize(paper) : null;
+  const pages = paper ? pageCount(paper, items) : 0;
   const background = paper ? (isDark ? paperLines.desk.dark : paperLines.desk.light) : isDark ? ink.paper.dark : ink.paper.light;
 
   return (
@@ -354,16 +409,23 @@ export function Canvas({
       onMoveShouldSetResponder={() => true}
       onResponderTerminationRequest={() => false}
       onResponderGrant={onGrant}
+      onResponderStart={trackTouches}
       onResponderMove={onMove}
-      onResponderRelease={onRelease}
-      onResponderTerminate={onRelease}
+      onResponderRelease={() => onRelease(true)}
+      onResponderTerminate={() => onRelease(false)}
     >
       <Svg pointerEvents="none" width={box.w} height={box.h} style={fill}>
         <G transform={translate}>
           {paper && page && (
             <>
-              <SvgRect x={0} y={0} width={page.w} height={page.h} fill={paper.color} />
-              <PaperPattern template={paper.template} dark={paper.dark} x={0} y={0} w={page.w} h={page.h} />
+              <SvgRect x={0} y={0} width={page.w} height={page.h * pages} fill={paper.color} />
+              {/* La carta si ripete foglio dopo foglio; una linea leggera segna dove inizia il successivo. */}
+              {Array.from({ length: pages }, (_, k) => (
+                <G key={k}>
+                  <PaperPattern template={paper.template} dark={paper.dark} x={0} y={k * page.h} w={page.w} h={page.h} />
+                  {k > 0 && <Line x1={0} y1={k * page.h} x2={page.w} y2={k * page.h} stroke={paper.dark ? paperLines.dark : paperLines.light} strokeWidth={2} strokeDasharray="8 6" />}
+                </G>
+              ))}
             </>
           )}
           <StrokeLayer strokes={highlights} />

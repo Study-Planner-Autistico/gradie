@@ -2,6 +2,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState, type ReactNode } from 'react';
 import { Platform, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Button } from '../components/ui';
 import { CoverThumb, PaperThumb } from '../components/whiteboard/Paper';
 import { t } from '../i18n';
 import { demoNotes } from '../data/demo';
@@ -53,9 +55,8 @@ export default function NuovaNota() {
           <Ionicons name="close" size={26} color={colors.text} />
         </Pressable>
         <Text style={[typography.headline, { color: colors.text, flex: 1, textAlign: 'center' }]}>{editing ? t.newNote.editTitle : t.newNote.title}</Text>
-        <Pressable onPress={create} hitSlop={12} accessibilityRole="button" accessibilityLabel={editing ? t.newNote.save : t.newNote.create}>
-          <Text style={[typography.headline, { color: colors.accent }]}>{editing ? t.newNote.save : t.newNote.create}</Text>
-        </Pressable>
+        {/* Stessa larghezza della x, per tenere il titolo al centro. */}
+        <View style={{ width: 26 }} />
       </View>
 
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingTop: 0, gap: spacing.lg }}>
@@ -156,6 +157,11 @@ export default function NuovaNota() {
           />
         </View>
       </ScrollView>
+
+      {/* Pulsante in basso (dec. 116). */}
+      <SafeAreaView edges={['bottom']} style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.md }}>
+        <Button title={editing ? t.newNote.save : t.newNote.create} appearance="primary" onPress={create} />
+      </SafeAreaView>
     </View>
   );
 }

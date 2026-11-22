@@ -59,17 +59,82 @@ function subscribe(l: () => void) {
 let counter = 0;
 export const newId = (prefix = 'i') => `${prefix}-${Date.now().toString(36)}-${(counter++).toString(36)}`;
 
+// Cronologia per annulla e ripeti (dec. 116): istantanee della lavagna prima di ogni modifica.
+const HISTORY_MAX = 100;
+const undoStack = new Map<string, BoardItem[][]>();
+const redoStack = new Map<string, BoardItem[][]>();
+/** Gruppo dell'ultima modifica: le modifiche dello stesso gesto o dello stesso testo sono un solo passo. */
+const lastGroup = new Map<string, string | null>();
+
+const sameItems = (a: BoardItem[], b: BoardItem[]) => a.length === b.length && a.every((x, k) => x === b[k]);
+
+/** Aggiorna la lavagna `id`; `group` unisce in un solo passo di annulla le modifiche consecutive con lo stesso gruppo. */
+function updateBoard(id: string, fn: (prev: BoardItem[]) => BoardItem[], group?: string) {
+  const prev = boards.get(id) ?? EMPTY;
+  const next = fn(prev);
+  if (sameItems(prev, next)) return;
+  const undo = undoStack.get(id) ?? [];
+  if (group && lastGroup.get(id) === group && undo.length) {
+    // Se il gesto riporta la lavagna com'era prima, il passo non serve.
+    if (sameItems(undo[undo.length - 1], next)) undo.pop();
+  } else {
+    undo.push(prev);
+    if (undo.length > HISTORY_MAX) undo.shift();
+  }
+  undoStack.set(id, undo);
+  redoStack.set(id, []);
+  lastGroup.set(id, group ?? null);
+  boards.set(id, next);
+  edited.set(id, Date.now());
+  emit();
+}
+
+/** Annulla l'ultima modifica della lavagna. */
+export function undoBoard(id: string) {
+  const undo = undoStack.get(id);
+  if (!undo?.length) return;
+  const redo = redoStack.get(id) ?? [];
+  redo.push(boards.get(id) ?? EMPTY);
+  redoStack.set(id, redo);
+  boards.set(id, undo.pop()!);
+  lastGroup.set(id, null);
+  edited.set(id, Date.now());
+  emit();
+}
+
+/** Ripete l'ultima modifica annullata. */
+export function redoBoard(id: string) {
+  const redo = redoStack.get(id);
+  if (!redo?.length) return;
+  const undo = undoStack.get(id) ?? [];
+  undo.push(boards.get(id) ?? EMPTY);
+  undoStack.set(id, undo);
+  boards.set(id, redo.pop()!);
+  lastGroup.set(id, null);
+  edited.set(id, Date.now());
+  emit();
+}
+
+/** Toglie, senza lasciarne traccia, le modifiche del gesto `group` se sono le ultime (un tocco a più dita iniziato con un dito). */
+export function revertGroup(id: string, group: string) {
+  const undo = undoStack.get(id);
+  if (lastGroup.get(id) !== group || !undo?.length) return;
+  boards.set(id, undo.pop()!);
+  lastGroup.set(id, null);
+  emit();
+}
+
+/** Se si può annullare o ripetere sulla lavagna `id`. */
+export function useHistory(id: string) {
+  const canUndo = useSyncExternalStore(subscribe, () => (undoStack.get(id)?.length ?? 0) > 0, () => false);
+  const canRedo = useSyncExternalStore(subscribe, () => (redoStack.get(id)?.length ?? 0) > 0, () => false);
+  return { canUndo, canRedo };
+}
+
 /** Elementi della lavagna `id`, conservati finché l'app resta aperta. */
 export function useBoard(id: string) {
   const items = useSyncExternalStore(subscribe, () => boards.get(id) ?? EMPTY, () => EMPTY);
-  const update = useCallback(
-    (fn: (prev: BoardItem[]) => BoardItem[]) => {
-      boards.set(id, fn(boards.get(id) ?? EMPTY));
-      edited.set(id, Date.now());
-      emit();
-    },
-    [id],
-  );
+  const update = useCallback((fn: (prev: BoardItem[]) => BoardItem[], group?: string) => updateBoard(id, fn, group), [id]);
   return [items, update] as const;
 }
 

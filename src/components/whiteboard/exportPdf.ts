@@ -1,11 +1,11 @@
-// Scarica (dec. 113): esporta le note in PDF. Ogni nota è una pagina.
+// Scarica (dec. 113): esporta le note in PDF, un foglio PDF per ogni foglio della nota (dec. 116).
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
 import type { BoardItem, NoteMeta, Paper, ShapeItem } from '../../state/whiteboard';
 import { ink, paperLines } from '../../theme';
 import { bounds, brushOutline, dashArray, pathD, rectFrom, shapePoints, textMetrics, union, type Rect } from './geometry';
-import { LINE_GAP, MARGIN_X, pageSize } from './Paper';
+import { LINE_GAP, MARGIN_X, pageCount, pageSize } from './Paper';
 
 export type ExportNote = { title: string; items: BoardItem[]; meta?: NoteMeta };
 
@@ -109,20 +109,31 @@ function itemSvg(i: BoardItem): string {
   }
 }
 
-function noteSvg(n: ExportNote): string {
-  const page = n.meta ? { x: 0, y: 0, ...pageSize(n.meta.paper) } : null;
-  const content = union(n.items.map(bounds));
-  const area: Rect = page ?? (content ? { x: content.x - 20, y: content.y - 20, w: content.w + 40, h: content.h + 40 } : { x: 0, y: 0, w: 380, h: 537 });
+/** Una o più pagine SVG della nota: con la carta, un foglio PDF per ogni foglio della nota (dec. 116). */
+function noteSvgs(n: ExportNote): string[] {
   const highlights = n.items.filter((i) => i.kind === 'stroke' && i.tool === 'highlighter');
   const rest = n.items.filter((i) => !(i.kind === 'stroke' && i.tool === 'highlighter'));
-  const bg = n.meta ? paperSvg(n.meta.paper, area) : `<rect x="0" y="0" width="${area.w}" height="${area.h}" fill="#FFFFFF"/>`;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${area.x} ${area.y} ${area.w} ${area.h}" style="width:100%;max-height:92vh"><g transform="translate(${area.x} ${area.y})">${bg}</g>${[...highlights, ...rest].map(itemSvg).join('')}</svg>`;
+  const ink = [...highlights, ...rest].map(itemSvg).join('');
+  const svg = (area: Rect, bg: string) =>
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${area.x} ${area.y} ${area.w} ${area.h}" style="width:100%;max-height:92vh"><g transform="translate(${area.x} ${area.y})">${bg}</g>${ink}</svg>`;
+  if (n.meta) {
+    const paper = n.meta.paper;
+    const size = pageSize(paper);
+    return Array.from({ length: pageCount(paper, n.items) }, (_, k) => {
+      const area = { x: 0, y: k * size.h, w: size.w, h: size.h };
+      return svg(area, paperSvg(paper, { x: 0, y: 0, w: size.w, h: size.h }));
+    });
+  }
+  const content = union(n.items.map(bounds));
+  const area: Rect = content ? { x: content.x - 20, y: content.y - 20, w: content.w + 40, h: content.h + 40 } : { x: 0, y: 0, w: 380, h: 537 };
+  return [svg(area, `<rect x="0" y="0" width="${area.w}" height="${area.h}" fill="#FFFFFF"/>`)];
 }
 
 function html(notes: ExportNote[]) {
-  const pages = notes
-    .map((n, k) => `<section style="${k < notes.length - 1 ? 'page-break-after:always;' : ''}"><h2 style="font:600 16px -apple-system,Helvetica,sans-serif;margin:0 0 8px">${esc(n.title)}</h2>${noteSvg(n)}</section>`)
-    .join('');
+  const sheets = notes.flatMap((n) =>
+    noteSvgs(n).map((svg, k) => `${k === 0 ? `<h2 style="font:600 16px -apple-system,Helvetica,sans-serif;margin:0 0 8px">${esc(n.title)}</h2>` : ''}${svg}`),
+  );
+  const pages = sheets.map((s, k) => `<section style="${k < sheets.length - 1 ? 'page-break-after:always;' : ''}">${s}</section>`).join('');
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head><body style="margin:24px">${pages}</body></html>`;
 }
 

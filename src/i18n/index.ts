@@ -1,6 +1,6 @@
 // Localizzazione IT/EN (dec. 46). Minimale finché non si sceglie una libreria.
 const it = {
-  appName: 'Gradie',
+  appName: 'Gradie',
   onb: {
     back: 'Indietro',
     mascot: 'La mascotte di Gradie: una nuvoletta con il tocco da laureato',
@@ -269,7 +269,9 @@ const it = {
   whiteboard: {
     untitled: 'Nuova pagina',
     back: 'Indietro',
-    tools: { pen: 'Penna', pencil: 'Matita', highlighter: 'Evidenziatore', eraser: 'Gomma', text: 'Testo', select: 'Selezione', add: 'Aggiungi', audio: 'Registra audio', hand: 'Mano', more: 'Altri strumenti', ruler: 'Righello', shapes: 'Forme' },
+    tools: { pen: 'Penna', pencil: 'Matita', highlighter: 'Evidenziatore', eraser: 'Gomma', text: 'Testo', select: 'Selezione', add: 'Aggiungi', audio: 'Registra audio', hand: 'Mano', more: 'Altri strumenti', less: 'Torna agli strumenti', ruler: 'Righello', shapes: 'Forme' },
+    undo: 'Annulla',
+    redo: 'Ripeti',
     shapes: {
       arrow: 'Freccia',
       line: 'Linea',
@@ -360,7 +362,7 @@ const it = {
 type Dict = typeof it;
 
 const en: Dict = {
-  appName: 'Gradie',
+  appName: 'Gradie',
   onb: {
     back: 'Back',
     mascot: 'The Gradie mascot: a little cloud wearing a graduation cap',
@@ -629,7 +631,9 @@ const en: Dict = {
   whiteboard: {
     untitled: 'New page',
     back: 'Back',
-    tools: { pen: 'Pen', pencil: 'Pencil', highlighter: 'Highlighter', eraser: 'Eraser', text: 'Text', select: 'Select', add: 'Add', audio: 'Record audio', hand: 'Hand', more: 'More tools', ruler: 'Ruler', shapes: 'Shapes' },
+    tools: { pen: 'Pen', pencil: 'Pencil', highlighter: 'Highlighter', eraser: 'Eraser', text: 'Text', select: 'Select', add: 'Add', audio: 'Record audio', hand: 'Hand', more: 'More tools', less: 'Back to tools', ruler: 'Ruler', shapes: 'Shapes' },
+    undo: 'Undo',
+    redo: 'Redo',
     shapes: {
       arrow: 'Arrow',
       line: 'Line',
