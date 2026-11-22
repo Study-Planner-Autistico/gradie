@@ -350,7 +350,7 @@ const StrokeLayer = memo(function StrokeLayer({ strokes }: { strokes: Stroke[] }
   );
 });
 
-function StrokeShape({ s }: { s: Stroke }) {
+export function StrokeShape({ s }: { s: Stroke }) {
   const opacity = s.tool === 'highlighter' ? ink.highlighterOpacity : s.tool === 'pencil' ? ink.pencilOpacity : 1;
   if (s.style === 'brush') return <Path d={brushOutline(s.points, s.width * 1.6)} fill={s.color} opacity={opacity} />;
   return (

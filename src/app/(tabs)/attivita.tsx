@@ -2,9 +2,11 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Chip, Screen, ScreenHeader, SectionHeader, type IconName } from '../../components/ui';
+import { BoardPreview } from '../../components/whiteboard/BoardPreview';
 import { demoNotes, type DemoNote } from '../../data/demo';
-import { t } from '../../i18n';
+import { locale, t } from '../../i18n';
 import { useEnvironment } from '../../state/environment';
+import { useBoards, usePages, type BoardItem } from '../../state/whiteboard';
 import { useTheme } from '../../theme';
 
 type QuickAction = { key: keyof typeof t.activitiesHub.actions; icon: IconName; brand?: boolean; opensBoard?: boolean };
@@ -21,8 +23,15 @@ const ACTIONS: QuickAction[] = [
 export default function Attivita() {
   const { colors, spacing } = useTheme();
   const { active } = useEnvironment();
+  const pages = usePages();
+  const itemsOf = useBoards();
+  // Pagine nuove con contenuto, dalla più recente, poi le note dimostrative.
+  const created: DemoNote[] = pages
+    .filter((p) => !demoNotes.some((n) => n.id === p.id))
+    .map((p) => ({ id: p.id, title: t.whiteboard.untitled, subject: '', edited: editedLabel(p.edited), tint: 'lesson' }));
+  const notes = [...created, ...demoNotes];
   const rows: DemoNote[][] = [];
-  for (let i = 0; i < demoNotes.length; i += 2) rows.push(demoNotes.slice(i, i + 2));
+  for (let i = 0; i < notes.length; i += 2) rows.push(notes.slice(i, i + 2));
 
   return (
     <Screen>
@@ -52,7 +61,7 @@ export default function Attivita() {
         {rows.map((row) => (
           <View key={row[0].id} style={{ flexDirection: 'row', gap: spacing.md }}>
             {row.map((n) => (
-              <NoteCard key={n.id} note={n} />
+              <NoteCard key={n.id} note={n} items={itemsOf(n.id)} />
             ))}
             {row.length === 1 && <View style={{ flex: 1 }} />}
           </View>
@@ -92,7 +101,7 @@ function ActionButton({ icon, label, iconColor, onPress }: { icon: IconName; lab
 }
 
 /** Scheda nota: anteprima stilizzata della pagina + titolo. */
-function NoteCard({ note }: { note: DemoNote }) {
+function NoteCard({ note, items }: { note: DemoNote; items: BoardItem[] }) {
   const { colors, typography, radius, spacing } = useTheme();
   const tint = colors.tints[note.tint];
   return (
@@ -112,23 +121,30 @@ function NoteCard({ note }: { note: DemoNote }) {
         opacity: pressed ? 0.8 : 1,
       })}
     >
-      <View
-        style={{
-          height: 120,
-          backgroundColor: tint.bg,
-          padding: spacing.md,
-          gap: 6,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.border,
-        }}
-      >
-        <Text style={[typography.caption, { color: tint.fg }]} numberOfLines={1}>
-          {note.subject}
-        </Text>
-        {[0.9, 0.75, 0.85, 0.6, 0.7].map((w, i) => (
-          <View key={i} style={{ height: 4, width: `${w * 100}%`, borderRadius: 2, backgroundColor: tint.fg, opacity: 0.25 }} />
-        ))}
-      </View>
+      {items.length > 0 ? (
+        // Anteprima reale della lavagna.
+        <View style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}>
+          <BoardPreview items={items} height={120} />
+        </View>
+      ) : (
+        <View
+          style={{
+            height: 120,
+            backgroundColor: tint.bg,
+            padding: spacing.md,
+            gap: 6,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+          }}
+        >
+          <Text style={[typography.caption, { color: tint.fg }]} numberOfLines={1}>
+            {note.subject}
+          </Text>
+          {[0.9, 0.75, 0.85, 0.6, 0.7].map((w, i) => (
+            <View key={i} style={{ height: 4, width: `${w * 100}%`, borderRadius: 2, backgroundColor: tint.fg, opacity: 0.25 }} />
+          ))}
+        </View>
+      )}
       <View style={{ padding: spacing.md, gap: 2 }}>
         <Text style={[typography.headline, { color: colors.text }]} numberOfLines={2}>
           {note.title}
@@ -137,4 +153,9 @@ function NoteCard({ note }: { note: DemoNote }) {
       </View>
     </Pressable>
   );
+}
+
+/** "Oggi, 09:12" per le pagine create in questa sessione. */
+function editedLabel(at: number) {
+  return `${t.home.today}, ${new Date(at).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}`;
 }
