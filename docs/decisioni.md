@@ -73,3 +73,4 @@
 | 127 | 2026-11-22 | Home | **Niente attese per le animazioni**: il menu si apre e si chiude in 200 ms senza rimbalzo, le voci sono subito visibili; messaggi e notifiche si aprono subito al tocco (l'icona si anima comunque). | Precisa dec. 122, 126 |
 | 128 | 2026-11-22 | Home | Menu laterale: icone **senza sfondo**, a **tratto arrotondato** (Lucide, licenza ISC, `src/components/LineIcons.tsx`); voci con testo **più leggero**; **Impostazioni in fondo**, sopra l'ambiente; l'ambiente non ha più il titolo sopra ma un'**icona** (scuola) nella riga. | Precisa dec. 124 |
 | 129 | 2026-11-22 | Home | Menu laterale: icone con **tratto più spesso** (2,6) e ambiente **senza card**, con le righe allineate alle altre voci. | Precisa dec. 128 |
+| 130 | 2026-11-22 | Generale | **Onboarding disattivato per ora**: l'app si apre direttamente sulla Home. Il flusso resta nel codice (`/onboarding`) e verrà rivisto più avanti. | Sospende l'ingresso dall'onboarding (modulo 01) |
