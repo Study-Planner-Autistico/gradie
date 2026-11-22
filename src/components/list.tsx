@@ -27,12 +27,15 @@ export function ListGroup({ children, title }: { children: ReactNode; title?: st
 /** Riga con icona in un riquadro, etichetta e chevron (DESIGN.md §5.4). */
 export function ListRow({
   icon,
+  leading,
   label,
   detail,
   onPress,
   trailing,
 }: {
-  icon: IconName;
+  icon?: IconName;
+  /** Al posto dell'icona (es. una bandiera). */
+  leading?: ReactNode;
   label: string;
   detail?: string;
   onPress?: () => void;
@@ -55,9 +58,11 @@ export function ListRow({
         opacity: pressed ? 0.7 : 1,
       })}
     >
-      <View style={{ width: 32, height: 32, borderRadius: radius.lg, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
-        <Ionicons name={icon} size={18} color={colors.textSecondary} />
-      </View>
+      {leading ?? (
+        <View style={{ width: 32, height: 32, borderRadius: radius.lg, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
+          {icon && <Ionicons name={icon} size={18} color={colors.textSecondary} />}
+        </View>
+      )}
       <View style={{ flex: 1 }}>
         <Text style={[typography.callout, { color: colors.text }]}>{label}</Text>
         {detail && <Text style={[typography.caption, { color: colors.textTertiary }]}>{detail}</Text>}

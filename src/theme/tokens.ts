@@ -179,6 +179,10 @@ export const typography = {
   title1: { fontSize: 28, lineHeight: 32, fontWeight: '700' },
   /** font.heading.medium — titolo della card */
   title2: { fontSize: 20, lineHeight: 24, fontWeight: '700' },
+  /** font.heading.large — numeri dei profili (seguiti, follower) */
+  stat: { fontSize: 24, lineHeight: 28, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  /** font.heading.xsmall in maiuscolo spaziato — etichette di sezione del Profilo */
+  label: { fontSize: 14, lineHeight: 20, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' },
   /** font.heading.small */
   headline: { fontSize: 16, lineHeight: 20, fontWeight: '700' },
   /** font.body.large — testo su mobile */

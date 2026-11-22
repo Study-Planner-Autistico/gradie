@@ -1,193 +1,231 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { ListGroup, ListRow } from '../../components/list';
-import { Card, Chip, Screen, ScreenHeader, type IconName, IconButton, Fab } from '../../components/ui';
-import { demoEnvironments, demoProfile, demoUser } from '../../data/demo';
-import { t } from '../../i18n';
-import { useEnvironment } from '../../state/environment';
-import { useTheme, type TintName } from '../../theme';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Circle, Path } from 'react-native-svg';
+import { tap } from '../../components/haptics';
+import { LineIcon } from '../../components/LineIcons';
+import { Mascot } from '../../components/Mascot';
+import { Flag } from '../../components/Flag';
+import { Button, Chip } from '../../components/ui';
+import { demoCountries, demoFriends, demoGrades, demoMe, demoUser } from '../../data/demo';
+import { locale, t } from '../../i18n';
+import { missingSteps, myTag, useProfile, type InterestId } from '../../state/profile';
+import { useTheme } from '../../theme';
+
+const countryName = (code: string) => {
+  const c = demoCountries.find((x) => x.code === code);
+  return c ? (locale.startsWith('it') ? c.it : c.en) : code;
+};
 
 /**
- * Profilo: in alto il profilo social (dec. 33, privato di default dec. 15),
- * sotto account e impostazioni (modulo 01 §5). DESIGN.md §6.4.
+ * Profilo (dec. 133), ispirato a Duolingo: in alto nome e impostazioni su un fondo colorato con l'avatar
+ * (per ora una sagoma da completare); sotto iscrizione e codice, bandiera modificabile, seguiti e follower,
+ * card "Completa il profilo", panoramica (media voti solo per te, bio, interessi) e amici.
+ * Niente streak, punti o classifiche (dec. 57).
  */
 export default function Profilo() {
+  const { colors, layout, spacing } = useTheme();
+  const insets = useSafeAreaInsets();
+  const profile = useProfile();
+  const steps = missingSteps(profile);
+
+  return (
+    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ paddingBottom: layout.tabBarClearance }}>
+      <Header topInset={insets.top} />
+
+      <View style={{ paddingHorizontal: spacing.xxl, paddingTop: spacing.xxxl, gap: spacing.xxxl }}>
+        <MetaAndStats country={profile.country} />
+        {steps > 0 && <CompleteCard steps={steps} />}
+        <Overview bio={profile.bio} interests={profile.interests as InterestId[]} />
+        <Friends />
+      </View>
+    </ScrollView>
+  );
+}
+
+/** Fondo colorato con nome, ingranaggio e avatar (sagoma tratteggiata con il + finché non ci sono gli avatar). */
+function Header({ topInset }: { topInset: number }) {
   const { colors, typography, spacing, layout } = useTheme();
-  const { active } = useEnvironment();
-  const p = demoProfile;
-
   return (
-    <View style={{ flex: 1 }}>
-      <Screen>
-        <ScreenHeader title={t.profile.title} right={<IconButton icon="share-outline" label={t.profile.share} />} />
+    <View style={{ backgroundColor: colors.selected, paddingTop: topInset + spacing.md, overflow: 'hidden' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.xxl }}>
+        <Text accessibilityRole="header" style={[typography.title1, { color: colors.text, flex: 1 }]} numberOfLines={1}>
+          {demoUser.firstName} {demoUser.lastName}
+        </Text>
+        <Pressable
+          onPress={() => {
+            tap();
+            router.push('/impostazioni');
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={t.profile.settingsTitle}
+          style={({ pressed }) => ({ width: layout.iconButton, height: layout.iconButton, alignItems: 'center', justifyContent: 'center', marginRight: -10, opacity: pressed ? 0.6 : 1 })}
+        >
+          <LineIcon name="settings" size={26} color={colors.text} />
+        </Pressable>
+      </View>
 
-        <Card style={{ gap: spacing.lg }}>
-          {/* Foto grande + bottone quadrato per cambiarla */}
-          <View style={styles.between}>
-            <BigAvatar initials={`${demoUser.firstName[0]}${demoUser.lastName[0]}`} />
-            <SquareButton icon="camera-outline" label={t.profile.changePhoto} />
-          </View>
-
-          {/* Nome + Modifica */}
-          <View style={{ gap: spacing.xs }}>
-            <View style={[styles.between, { alignItems: 'center' }]}>
-              <Text style={[typography.display, { color: colors.text, flex: 1 }]} numberOfLines={2}>
-                {demoUser.firstName} {demoUser.lastName}
-              </Text>
-              <SoftPill label={t.profile.edit} />
-            </View>
-            <View style={[styles.row, { gap: spacing.sm, flexWrap: 'wrap' }]}>
-              <Text style={[typography.body, { color: colors.textSecondary }]}>
-                {`${t.profile.following(p.following)} · ${t.profile.followers(p.followers)}`}
-              </Text>
-              <Chip variant="muted" icon="lock-closed-outline" label={t.profile.private} />
-            </View>
-          </View>
-
-          {/* Interessi */}
-          <View style={[styles.row, { flexWrap: 'wrap', gap: spacing.sm }]}>
-            {p.interests.map((i) => (
-              <InterestPill key={i.label} label={i.label} icon={i.icon} tint={i.tint} />
-            ))}
-            <InterestPill label={t.profile.moreInterests(p.moreInterests)} />
-            <InterestPill label={t.profile.addInterest} icon="add" dashed />
-          </View>
-
-          {/* Azioni rapide */}
-          <View style={{ gap: spacing.xs }}>
-            <ActionRow icon="reorder-three-outline" label={t.profile.addBio} />
-            <ActionRow icon="grid-outline" label={t.profile.posts} detail={t.profile.postsDetail(p.posts)} />
-            <ActionRow icon="bookmark-outline" label={t.profile.saved} detail={t.profile.savedDetail(p.saved)} />
-          </View>
-        </Card>
-
-        <ListGroup title={t.profile.settings}>
-          <ListRow icon="person-outline" label={t.profile.myAccount} detail={t.profile.myAccountDetail} />
-          <ListRow
-            icon="business-outline"
-            label={t.profile.environments}
-            detail={`${active.name} · ${t.profile.environmentsDetail(demoEnvironments.length)}`}
-            onPress={() => router.push('/ambienti')}
-          />
-          <ListRow icon="shield-checkmark-outline" label={t.profile.security} detail={t.profile.securityDetail} />
-          <ListRow icon="options-outline" label={t.profile.preferences} detail={t.profile.preferencesDetail} />
-          <ListRow icon="document-lock-outline" label={t.profile.privacy} detail={t.profile.privacyDetail} />
-        </ListGroup>
-      </Screen>
-
-      <Fab icon="pencil" label={t.profile.editProfile} bottom={layout.tabBarClearance - spacing.lg} />
+      <Pressable onPress={tap} accessibilityRole="button" accessibilityLabel={t.profile.avatarSoon} style={{ alignItems: 'center', marginTop: spacing.xxxl }}>
+        <AvatarPlaceholder size={160} />
+      </Pressable>
     </View>
   );
 }
 
-/** Foto profilo grande; senza foto mostra le iniziali sul gradiente mesh. */
-function BigAvatar({ initials }: { initials: string }) {
-  const { colors, typography } = useTheme();
+/** Sagoma generica tratteggiata con il +: il posto dell'avatar, che disegneremo noi (dec. 133). */
+function AvatarPlaceholder({ size }: { size: number }) {
+  const { colors } = useTheme();
+  const fill = colors.accent;
   return (
-    <View style={styles.bigAvatar}>
-      <LinearGradient colors={colors.heroGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-      <Text style={[typography.hero, { color: colors.text }]}>{initials.toUpperCase()}</Text>
+    <Svg width={size} height={size} viewBox="0 0 200 200">
+      <Path d="M30,200 C30,150 62,124 100,124 C138,124 170,150 170,200 Z" fill={fill} opacity={0.22} />
+      <Circle cx={100} cy={72} r={42} fill={fill} opacity={0.22} />
+      <Path d="M30,200 C30,150 62,124 100,124 C138,124 170,150 170,200" fill="none" stroke={fill} strokeWidth={3} strokeDasharray="8 7" strokeLinecap="round" opacity={0.7} />
+      <Circle cx={100} cy={72} r={42} fill="none" stroke={fill} strokeWidth={3} strokeDasharray="8 7" strokeLinecap="round" opacity={0.7} />
+      <Path d="M100,56 V88 M84,72 H116" stroke="#FFFFFF" strokeWidth={6} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+/** "Su Gradie dal 2026 · #1234", poi bandiera modificabile, seguiti e follower; il QR resta per il futuro. */
+function MetaAndStats({ country }: { country: string }) {
+  const { colors, typography, spacing, radius, layout } = useTheme();
+  return (
+    <View style={{ gap: spacing.xl }}>
+      <Text style={[typography.label, { color: colors.textTertiary }]}>
+        {t.profile.joined(demoMe.joinedYear)} · {myTag}
+      </Text>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+        <Pressable
+          onPress={() => {
+            tap();
+            router.push('/bandiera');
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={`${t.profile.country}: ${countryName(country)}`}
+          style={({ pressed }) => ({ flex: 1, gap: spacing.xxs, opacity: pressed ? 0.6 : 1 })}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, height: 28 }}>
+            <Flag code={country} width={39} />
+            <Ionicons name="chevron-down" size={14} color={colors.textTertiary} />
+          </View>
+          <Text style={[typography.body, { color: colors.textTertiary }]} numberOfLines={1}>
+            {countryName(country)}
+          </Text>
+        </Pressable>
+        <Stat value={demoMe.following} label={t.profile.followingLabel} />
+        <Stat value={demoMe.followers} label={t.profile.followersLabel} />
+        <Pressable
+          onPress={tap}
+          accessibilityRole="button"
+          accessibilityLabel={t.profile.qr}
+          style={({ pressed }) => ({
+            width: layout.button,
+            height: layout.button,
+            borderRadius: radius.xl,
+            borderWidth: 2,
+            borderColor: colors.border,
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: pressed ? 0.6 : 1,
+          })}
+        >
+          <Ionicons name="qr-code-outline" size={24} color={colors.textSecondary} />
+        </Pressable>
+      </View>
     </View>
   );
 }
 
-function SquareButton({ icon, label }: { icon: IconName; label: string }) {
-  const { colors, radius } = useTheme();
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      style={({ pressed }) => ({
-        width: 60,
-        height: 60,
-        borderRadius: radius.lg,
-        backgroundColor: colors.surfaceMuted,
-        alignItems: 'center',
-        justifyContent: 'center',
-        transform: [{ scale: pressed ? 0.95 : 1 }],
-      })}
-    >
-      <Ionicons name={icon} size={24} color={colors.text} />
-    </Pressable>
-  );
-}
-
-function SoftPill({ label }: { label: string }) {
-  const { colors, radius, typography } = useTheme();
-  return (
-    <Pressable
-      accessibilityRole="button"
-      style={({ pressed }) => ({
-        paddingHorizontal: 16,
-        height: 36,
-        borderRadius: radius.md,
-        backgroundColor: colors.surfaceMuted,
-        justifyContent: 'center',
-        opacity: pressed ? 0.8 : 1,
-      })}
-    >
-      <Text style={[typography.callout, { color: colors.textSecondary, fontWeight: '600' }]}>{label}</Text>
-    </Pressable>
-  );
-}
-
-function InterestPill({ label, icon, tint, dashed }: { label: string; icon?: IconName; tint?: TintName; dashed?: boolean }) {
-  const { colors, radius, typography, spacing } = useTheme();
-  const iconColor = tint ? colors.tints[tint].fg : colors.textSecondary;
-  return (
-    <Pressable
-      accessibilityRole="button"
-      style={({ pressed }) => ({
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.sm,
-        height: 44,
-        paddingHorizontal: spacing.lg,
-        borderRadius: radius.pill,
-        borderWidth: 1.5,
-        borderStyle: dashed ? 'dashed' : 'solid',
-        borderColor: colors.border,
-        opacity: pressed ? 0.8 : 1,
-      })}
-    >
-      {icon &&
-        (tint ? (
-          <View style={[styles.pillIcon, { backgroundColor: colors.tints[tint].bg }]}>
-            <Ionicons name={icon} size={14} color={iconColor} />
-          </View>
-        ) : (
-          <Ionicons name={icon} size={18} color={iconColor} />
-        ))}
-      <Text style={[typography.headline, { color: dashed ? colors.textSecondary : colors.text }]}>{label}</Text>
-    </Pressable>
-  );
-}
-
-function ActionRow({ icon, label, detail }: { icon: IconName; label: string; detail?: string }): ReactNode {
+function Stat({ value, label }: { value: number; label: string }) {
   const { colors, typography, spacing } = useTheme();
   return (
-    <Pressable
-      accessibilityRole="button"
-      style={({ pressed }) => [styles.row, { gap: spacing.lg, paddingVertical: spacing.sm, opacity: pressed ? 0.8 : 1 }]}
-    >
-      <View style={[styles.actionIcon, { backgroundColor: colors.surfaceMuted }]}>
-        <Ionicons name={icon} size={20} color={colors.textSecondary} />
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={[typography.headline, { color: colors.textSecondary }]}>{label}</Text>
-        {detail && <Text style={[typography.caption, { color: colors.textTertiary }]}>{detail}</Text>}
-      </View>
-    </Pressable>
+    <View style={{ flex: 1, gap: spacing.xxs }}>
+      <Text style={[typography.stat, { color: colors.text, height: 28 }]}>{value}</Text>
+      <Text style={[typography.body, { color: colors.textTertiary }]}>{label}</Text>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center' },
-  between: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  bigAvatar: { width: 128, height: 128, borderRadius: 64, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
-  pillIcon: { width: 24, height: 24, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
-  actionIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-});
+/** Card "Completa il profilo!" con la mascotte; sparisce quando non manca più niente. */
+function CompleteCard({ steps }: { steps: number }) {
+  const { colors, typography, spacing, radius } = useTheme();
+  return (
+    <View style={{ backgroundColor: colors.selected, borderRadius: radius.xl, padding: spacing.xl, gap: spacing.xl, overflow: 'hidden' }}>
+      <View style={{ position: 'absolute', right: -4, top: 10 }}>
+        <Mascot size={100} mood="happy" />
+      </View>
+      <View style={{ marginRight: 96, gap: spacing.sm }}>
+        <Text style={[typography.title2, { color: colors.text }]}>{t.profile.complete}</Text>
+        <Text style={[typography.label, { color: colors.textTertiary }]}>{t.profile.stepsLeft(steps)}</Text>
+      </View>
+      <Button title={t.profile.completeCta} appearance="primary" fullWidth onPress={() => router.push('/modifica-profilo')} />
+    </View>
+  );
+}
+
+/** Panoramica: media voti (solo per te, dec. 36-37), bio e pochi interessi. */
+function Overview({ bio, interests }: { bio: string; interests: InterestId[] }) {
+  const { colors, typography, spacing } = useTheme();
+  const edit = () => router.push('/modifica-profilo');
+  return (
+    <View style={{ gap: spacing.lg }}>
+      <Text style={[typography.label, { color: colors.textTertiary }]}>{t.profile.overview}</Text>
+
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+        <LineIcon name="chart" size={28} color={colors.accent} />
+        <Text style={[typography.title2, { color: colors.text }]}>
+          {demoGrades.average} <Text style={[typography.body, { color: colors.textSecondary }]}>{t.profile.average}</Text>
+        </Text>
+        <View style={{ flex: 1 }} />
+        <Chip variant="muted" icon="lock-closed" label={t.profile.onlyYou} />
+      </View>
+
+      <Pressable onPress={edit} accessibilityRole="button" accessibilityLabel={t.profile.bio} style={({ pressed }) => ({ gap: spacing.xs, opacity: pressed ? 0.6 : 1 })}>
+        <Text style={[typography.headline, { color: colors.text }]}>{t.profile.bio}</Text>
+        <Text style={[typography.body, { color: bio ? colors.text : colors.link }]}>{bio || t.profile.noBio}</Text>
+      </Pressable>
+
+      <Pressable onPress={edit} accessibilityRole="button" accessibilityLabel={t.profile.interests} style={({ pressed }) => ({ gap: spacing.sm, opacity: pressed ? 0.6 : 1 })}>
+        <Text style={[typography.headline, { color: colors.text }]}>{t.profile.interests}</Text>
+        {interests.length === 0 ? (
+          <Text style={[typography.body, { color: colors.link }]}>{t.profile.noInterests}</Text>
+        ) : (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+            {interests.map((id) => (
+              <Chip key={id} variant="discovery" label={t.interestNames[id]} />
+            ))}
+          </View>
+        )}
+      </Pressable>
+    </View>
+  );
+}
+
+/** Amici: avatar (per ora iniziali) con il nome, e un + tratteggiato per aggiungerne (in arrivo). */
+function Friends() {
+  const { colors, typography, spacing } = useTheme();
+  return (
+    <View style={{ gap: spacing.lg }}>
+      <Text style={[typography.label, { color: colors.textTertiary }]}>{t.profile.friends}</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -spacing.xxl }} contentContainerStyle={{ paddingHorizontal: spacing.xxl, gap: spacing.xl }}>
+        {demoFriends.map((f) => (
+          <View key={f.id} style={{ alignItems: 'center', gap: spacing.sm, width: 72 }}>
+            <View style={{ width: 68, height: 68, borderRadius: 34, backgroundColor: f.color, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={[typography.title2, { color: '#FFFFFF' }]}>{f.initials}</Text>
+            </View>
+            <Text style={[typography.callout, { color: colors.text }]} numberOfLines={1}>
+              {f.name}
+            </Text>
+          </View>
+        ))}
+        <Pressable onPress={tap} accessibilityRole="button" accessibilityLabel={t.profile.addFriendSoon} style={{ alignItems: 'center', gap: spacing.sm, width: 72 }}>
+          <View style={{ width: 68, height: 68, borderRadius: 34, borderWidth: 2, borderStyle: 'dashed', borderColor: colors.borderBold, alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="add" size={30} color={colors.textSecondary} />
+          </View>
+        </Pressable>
+      </ScrollView>
+    </View>
+  );
+}

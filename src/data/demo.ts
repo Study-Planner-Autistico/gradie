@@ -60,6 +60,48 @@ export const demoClasses: Record<string, DemoClass> = {
   'env-2': { id: 'c-ing1', name: 'Ingegneria Informatica', detail: 'Università di Bologna · 1° anno', students: 186, teachers: 14, news: 1, members: ['DG', 'FR', 'CL', 'MB', 'AV', 'PS', 'IR', 'GT'] },
 };
 
+/** Profilo (dec. 133): iscrizione, amici (con iniziali finché non ci sono gli avatar). */
+export const demoMe = { joinedYear: 2026, following: 29, followers: 12 };
+export const demoFriends = [
+  { id: 'f1', name: 'Marco', initials: 'MR', color: '#2F5DA8' },
+  { id: 'f2', name: 'Sofia', initials: 'SP', color: '#B23A48' },
+  { id: 'f3', name: 'Luca', initials: 'LB', color: '#2E6B4F' },
+  { id: 'f4', name: 'Chiara', initials: 'CF', color: '#C77A2E' },
+];
+
+/** Paesi per la bandiera del profilo (codice ISO, nome IT/EN). */
+export const demoCountries: { code: string; it: string; en: string }[] = [
+  { code: 'IT', it: 'Italia', en: 'Italy' },
+  { code: 'AL', it: 'Albania', en: 'Albania' },
+  { code: 'RO', it: 'Romania', en: 'Romania' },
+  { code: 'MA', it: 'Marocco', en: 'Morocco' },
+  { code: 'UA', it: 'Ucraina', en: 'Ukraine' },
+  { code: 'CN', it: 'Cina', en: 'China' },
+  { code: 'IN', it: 'India', en: 'India' },
+  { code: 'PH', it: 'Filippine', en: 'Philippines' },
+  { code: 'EG', it: 'Egitto', en: 'Egypt' },
+  { code: 'BD', it: 'Bangladesh', en: 'Bangladesh' },
+  { code: 'PK', it: 'Pakistan', en: 'Pakistan' },
+  { code: 'TN', it: 'Tunisia', en: 'Tunisia' },
+  { code: 'SN', it: 'Senegal', en: 'Senegal' },
+  { code: 'NG', it: 'Nigeria', en: 'Nigeria' },
+  { code: 'PE', it: 'Perù', en: 'Peru' },
+  { code: 'EC', it: 'Ecuador', en: 'Ecuador' },
+  { code: 'BR', it: 'Brasile', en: 'Brazil' },
+  { code: 'ES', it: 'Spagna', en: 'Spain' },
+  { code: 'FR', it: 'Francia', en: 'France' },
+  { code: 'DE', it: 'Germania', en: 'Germany' },
+  { code: 'GB', it: 'Regno Unito', en: 'United Kingdom' },
+  { code: 'US', it: 'Stati Uniti', en: 'United States' },
+  { code: 'MD', it: 'Moldavia', en: 'Moldova' },
+  { code: 'PL', it: 'Polonia', en: 'Poland' },
+  { code: 'CH', it: 'Svizzera', en: 'Switzerland' },
+  { code: 'SM', it: 'San Marino', en: 'San Marino' },
+];
+
+/** Emoji della bandiera da un codice ISO a 2 lettere. */
+export const flagEmoji = (code: string) => String.fromCodePoint(...[...code.toUpperCase()].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
+
 // ——— Onboarding (modulo 01). Estratti dimostrativi: l'elenco vero viene da MIM e USTAT (dec. 86). ———
 
 export type DemoInstitution = { id: string; name: string; city: string; kind: 'superiori' | 'universita' };
