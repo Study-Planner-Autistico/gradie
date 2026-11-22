@@ -1,10 +1,13 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Clipboard from 'expo-clipboard';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { success, tap, warn } from '../components/haptics';
+import { Mascot } from '../components/Mascot';
 import {
   ChoiceSheet,
   CodeInput,
@@ -181,6 +184,12 @@ export default function Onboarding() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top', 'bottom']}>
+      {step === 'welcome' && (
+        <>
+          <StatusBar style="light" />
+          <LinearGradient colors={colors.brandGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+        </>
+      )}
       {step !== 'welcome' && step !== 'done' && step !== 'blocked' && (
         <Header
           onBack={history.length ? back : undefined}
@@ -342,24 +351,25 @@ function useAutoAdvance(cb: () => void) {
 
 // ——— ON-01 Benvenuto ———
 
+/** Momento di brand: gradiente del logo, mascotte grande, testo bianco (contrasto ≥ 5:1). */
 function Welcome({ ctx }: { ctx: Ctx }) {
-  const { colors, typography, spacing } = useTheme();
+  const { typography, spacing } = useTheme();
   return (
     <View style={{ flex: 1, padding: spacing.xxl, justifyContent: 'space-between' }}>
       <FadeUp>
-        <View style={{ alignItems: 'center', gap: spacing.sm, marginTop: spacing.xxl }}>
-          <Text style={[typography.headline, { color: colors.accent }]}>{t.appName}</Text>
-          <Text style={[typography.display, { color: colors.text, textAlign: 'center' }]}>{t.onb.welcome.title}</Text>
+        <View style={{ alignItems: 'center', gap: spacing.sm, marginTop: spacing.xl }}>
+          <Text style={[typography.title2, { color: '#FFFFFF', letterSpacing: 0.5 }]}>{t.appName}</Text>
+          <Text style={[typography.display, { color: '#FFFFFF', textAlign: 'center' }]}>{t.onb.welcome.title}</Text>
         </View>
       </FadeUp>
       <View style={{ alignItems: 'center' }}>
-        <OrbitArt icon="planet-outline" size={260} />
+        <Mascot size={250} mood="celebrate" accessibilityLabel={t.onb.mascot} />
       </View>
       <FadeUp delay={250}>
         <View style={{ gap: spacing.md }}>
-          <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>{t.onb.welcome.body}</Text>
-          <Button title={t.onb.welcome.start} appearance="primary" iconAfter="arrow-forward" onPress={() => ctx.goTo('method')} />
-          <Button title={t.onb.welcome.haveAccount} appearance="subtle" onPress={() => ctx.goTo('login')} />
+          <Text style={[typography.body, { color: '#FFFFFF', textAlign: 'center' }]}>{t.onb.welcome.body}</Text>
+          <Button title={t.onb.welcome.start} appearance="inverse" iconAfter="arrow-forward" onPress={() => ctx.goTo('method')} />
+          <Button title={t.onb.welcome.haveAccount} appearance="inverseSubtle" onPress={() => ctx.goTo('login')} />
         </View>
       </FadeUp>
     </View>
@@ -468,7 +478,7 @@ function Blocked({ ctx }: { ctx: Ctx }) {
   return (
     <View style={{ flex: 1, padding: spacing.xxl, justifyContent: 'center', gap: spacing.xxl }}>
       <View style={{ alignItems: 'center' }}>
-        <OrbitArt icon="hourglass-outline" tint="holiday" size={200} satellites={['time-outline', 'calendar-outline', 'lock-closed-outline', 'moon-outline']} />
+        <Mascot size={200} mood="sleepy" />
       </View>
       <FadeUp>
         <View style={{ gap: spacing.sm }}>
@@ -1037,7 +1047,7 @@ function Done({ ctx }: { ctx: Ctx }) {
     <View style={{ flex: 1, padding: spacing.xxl, justifyContent: 'center', gap: spacing.xxl, overflow: 'hidden' }}>
       <Confetti />
       <View style={{ alignItems: 'center' }}>
-        <OrbitArt icon="checkmark-done-outline" tint="official" size={240} />
+        <Mascot size={240} mood="celebrate" accessibilityLabel={t.onb.mascot} />
       </View>
       <FadeUp delay={150}>
         <View style={{ gap: spacing.sm }}>
@@ -1065,6 +1075,7 @@ function Login({ ctx }: { ctx: Ctx }) {
     <StepLayout
       title={t.onb.login.title}
       subtitle={t.onb.login.subtitle}
+      art={<Mascot size={150} />}
       footer={
         <Button
           title={t.onb.login.submit}

@@ -19,6 +19,7 @@ import { t } from '../i18n';
 import { useTheme, type TintName } from '../theme';
 import { tap } from './haptics';
 import type { IconName } from './icons';
+import { Mascot } from './Mascot';
 
 export type { IconName } from './icons';
 
@@ -191,7 +192,7 @@ export function EmptyState({ icon, message }: { icon: IconName; message: string 
   );
 }
 
-export type ButtonAppearance = 'primary' | 'default' | 'subtle' | 'danger' | 'warning' | 'discovery' | 'ink';
+export type ButtonAppearance = 'primary' | 'default' | 'subtle' | 'danger' | 'warning' | 'discovery' | 'ink' | 'inverse' | 'inverseSubtle';
 
 /** Bottone Atlassian (DESIGN.md §5.5): alto 48 su mobile, raggio 8. */
 export function Button({
@@ -224,6 +225,9 @@ export function Button({
     danger: { bg: colors.dangerIcon, pressed: colors.danger, fg: '#FFFFFF' },
     warning: { bg: '#FBC828', pressed: '#F5B000', fg: '#292A2E' },
     discovery: { bg: colors.discovery, pressed: colors.discovery, fg: '#FFFFFF' },
+    /** Sul gradiente di brand: bianco pieno con testo viola, o trasparente con testo bianco. */
+    inverse: { bg: '#FFFFFF', pressed: '#EEECFF', fg: '#463FB5' },
+    inverseSubtle: { bg: 'transparent', pressed: 'rgba(255,255,255,0.16)', fg: '#FFFFFF' },
   };
   const p = palette[appearance];
   const isOff = disabled || loading;
@@ -483,14 +487,13 @@ export function SectionMessage({
 
 /** Schermata segnaposto per moduli non ancora progettati. */
 export function PlaceholderScreen({ title, icon }: { title: string; icon: IconName }) {
-  const { colors, typography, spacing, radius } = useTheme();
+  const { colors, typography, spacing } = useTheme();
   return (
     <Screen>
       <ScreenHeader title={title} />
       <Card style={{ alignItems: 'center', paddingVertical: spacing.xxxl }}>
-        <View style={[styles.box56, { backgroundColor: colors.surfaceMuted, borderRadius: radius.xl }]}>
-          <Ionicons name={icon} size={26} color={colors.textSecondary} />
-        </View>
+        <Mascot size={120} mood="sleepy" />
+        <Chip variant="muted" icon={icon} label={title} />
         <Text style={[typography.headline, { color: colors.text }]}>{t.placeholder.title}</Text>
         <Text style={[typography.callout, { color: colors.textSecondary, textAlign: 'center', fontWeight: '400' }]}>{t.placeholder.body}</Text>
       </Card>

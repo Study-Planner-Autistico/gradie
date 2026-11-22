@@ -1,12 +1,15 @@
-# DESIGN.md — regole di design (v2)
+# DESIGN.md — regole di design (v3, Gradie)
 
+> Brand: **Gradie** (dec. 114). Icona e mascotte: la nuvoletta con il tocco (`assets/brand/gradie-logo.png`, `src/components/Mascot.tsx`).
 > Base: **Atlassian Design System** (atlassian.design). Valori presi da `@atlaskit/tokens` 20.14 (temi `atlassian-light` / `atlassian-dark`).
+> Regola dei colori: **il brand è il viola del logo**; neutri, semantici e tinte per tipo restano Atlassian.
 > Disposizione delle pagine: le immagini di ispirazione inviate dall'utente (card bianche su sfondo grigio, profilo con avatar grande).
 > Onboarding: struttura ispirata all'onboarding di Waterllama (iOS), senza copiarne asset, mascotte o gamification.
 > Fonte di verità del codice: `src/theme/tokens.ts`. Nessun valore hardcoded nei componenti.
 
 ## 0. TL;DR (leggi questo per primo)
-- Colori, tipografia, raggi, spaziatura, elevazione e movimento sono quelli di Atlassian. Brand `#1868DB`, testo `#292A2E`.
+- Tipografia, raggi, spaziatura, elevazione, movimento, neutri e semantici sono Atlassian. **Brand Gradie `#5D55D7`** (viola del logo), testo `#292A2E`.
+- La mascotte compare nei momenti chiave: benvenuto, accesso, blocco età, fine onboarding, moduli in arrivo.
 - Sfondo `surface.sunken` grigio chiaro, contenuti su card `surface.raised` bianche (raggio 12) con `shadow.raised`.
 - Bottoni Atlassian a raggio 8, alti 48 su mobile. **Un solo primary per area.**
 - Lozenge (chip) a raggio 4, testo 12 bold. Colore = tipo, mai solo colore.
@@ -29,13 +32,15 @@
 | `surfaceOverlay` | elevation.surface.overlay | `#FFFFFF` | `#2B2C2F` |
 | `surfaceMuted` | color.background.neutral | `#0515240F` | `#CECED912` |
 | `border` | color.border | `#0B120E24` | `#E3E4F21F` |
-| `borderInput` / `borderFocused` | color.border.input / .focused | `#8C8F97` / `#4688EC` | `#7E8188` / `#8FB8F6` |
+| `borderInput` | color.border.input | `#8C8F97` | `#7E8188` |
 | `text` | color.text | `#292A2E` | `#CECFD2` |
 | `textSecondary` | color.text.subtle | `#505258` | `#A9ABAF` |
 | `textTertiary` | color.text.subtlest | `#6B6E76` | `#96999E` |
-| `accent` | color.background.brand.bold | `#1868DB` | `#669DF1` |
-| `link` | color.link | `#1868DB` | `#669DF1` |
-| `selected` | color.background.selected | `#E9F2FE` | `#1C2B42` |
+| `accent` | **brand Gradie** | `#5D55D7` | `#9B93FF` |
+| `link` | brand Gradie | `#5149C9` | `#A9A2FF` |
+| `selected` / `selectedText` | brand tenue | `#EEECFF` / `#4A42C2` | `#29254F` / `#B3ACFF` |
+| `borderFocused` | brand | `#7A70F0` | `#9B93FF` |
+| `gold` | oro della nappa | `#F7C55A` | `#F7C55A` |
 | `ink` | color.background.neutral.bold | `#292A2E` | `#CECFD2` |
 | `blanket` | color.blanket | `#050C1F75` | `#10121499` |
 
@@ -53,8 +58,10 @@ success `#4C6B1F`/`#EFFFD6` · warning `#9E4C00`/`#FFF5DB` · danger `#AE2E24`/`
 | `holiday` | gray | `#F0F1F2` / `#505258` |
 Il colore indica il **tipo**, non la materia (colori per materia: decisione aperta).
 
-### 2.4 Gradiente in evidenza
-- Tenue, `blue.subtlest → purple.subtlest → bianco`. Al massimo **una card per schermata** (riepilogo di oggi in Home). Testo sempre `text`.
+### 2.4 Gradienti
+- **`heroGradient`** (tenue, lavanda → pervinca → bianco): al massimo **una card per schermata** (riepilogo di oggi in Home). Testo `text`.
+- **`brandGradient`** (pieno, viola → blu del logo, scurito per il testo bianco ≥ 5:1): solo nei **momenti di brand** a tutto schermo (benvenuto). Sopra: testo bianco, bottone `inverse` (bianco con testo viola) e `inverseSubtle`.
+- `gold` solo per stella, nappa e piccoli accenti decorativi: mai come testo o sfondo di testo.
 
 ## 3. Tipografia (font.heading.* / font.body.*)
 Font: di sistema (SF Pro / Roboto). Atlassian Sans non è incluso: il suo stack ufficiale ripiega su `-apple-system`.
@@ -95,6 +102,7 @@ Card raised; riga alta ≥ 56 con icona in un riquadro 32 (`surfaceMuted`, raggi
 | `default` | azioni secondarie | neutral / text.subtle |
 | `subtle` | azioni terziarie, link-bottone | trasparente |
 | `ink` | "Continua con Apple" | neutral.bold |
+| `inverse` / `inverseSubtle` | sopra il `brandGradient` | bianco con testo viola / trasparente con testo bianco |
 | `danger` / `warning` / `discovery` | conferme distruttive, cambi importanti, novità | semantici |
 - Alti 48, raggio 8, testo `headline`, icona 18 prima o dopo. Premuto: colore `.pressed` + scala 0.98. Disabilitato: neutral + `text.disabled`. Caricamento: spinner al posto del testo.
 - `IconButton`: cerchio 44, `surface` + `shadowRaised` (default) o trasparente (subtle).
@@ -118,15 +126,21 @@ Alta 6, raggio pieno, traccia neutral, riempimento brand animato (400 ms, out.ex
 - Sheet: sale dal basso con una molla, raggio 16 in alto, `shadowOverlay`. Toccare un'opzione la seleziona e **porta avanti da sola dopo ~320 ms**.
 ### 5.14 `CodeInput`
 6 caselle 46×56, raggio 6, cifre `metric`. Casella attiva con bordo focus; errore = bordo danger + scossa orizzontale + aptica di avviso. Autocompletamento del codice SMS/email di iOS attivo.
-### 5.15 `OrbitArt` (illustrazione)
-Illustrazione originale dell'app: nucleo tinto con l'icona del passo, due anelli tratteggiati, 4 satelliti bianchi che fluttuano. Sostituisce le mascotte dell'ispirazione.
+### 5.15 `OrbitArt` (illustrazione dei passi)
+Nucleo tinto con l'icona del passo, due anelli tratteggiati, 4 satelliti bianchi che fluttuano. Per i passi "di servizio" dell'onboarding (metodo, verifica, istituto, importa…).
+### 5.16 `Mascot` (nuvoletta col tocco)
+- Vettoriale (react-native-svg), colori fissi `mascot.*` presi dal logo, uguale in chiaro e scuro.
+- Umori: `happy` (stella), `celebrate` (stella grande, sorriso, rimbalzo più vivace), `sleepy` (occhi chiusi, "z").
+- Fluttua e sbatte le palpebre ogni 3–5 s; ferma con "Riduci movimento". Con `accessibilityLabel` è un'immagine, altrimenti decorativa.
+- **Dove:** benvenuto (`celebrate`, su `brandGradient`), accesso (`happy`), blocco età (`sleepy`), fine onboarding (`celebrate` + coriandoli), schermate dei moduli in progettazione (`sleepy`).
+- **Dove no:** dentro le liste, accanto ai voti o ai dati (resta un tocco di carattere, non decorazione ovunque). Mai sostituirla con l'immagine raster del logo.
 
 ## 6. Onboarding (modulo 01, `src/app/onboarding.tsx`)
 Un'unica route con una macchina a passi: header fisso (indietro + progress bar), i passi scorrono dentro.
 
 | Passo | Schermata | Forma |
 |---|---|---|
-| Benvenuto | ON-01 | titolo grande, illustrazione, primary "Inizia" + subtle "Ho già un account" |
+| Benvenuto | ON-01 | `brandGradient`, nome Gradie, titolo bianco, mascotte `celebrate`, `inverse` "Inizia" + `inverseSubtle` "Ho già un account" |
 | Metodo | ON-04 | Apple (ink), Google, Email (default) |
 | Data di nascita | ON-02 → ON-03 | 3 campi GG/MM/AAAA con focus automatico, section message; < 14 anni → blocco senza azioni |
 | Email e password | ON-05 | campi, requisito password con spunta live, consenso |
@@ -159,7 +173,12 @@ Un'unica route con una macchina a passi: header fisso (indietro + progress bar),
 - Aptica: selezione su ogni tocco, successo su codice corretto e conferme, avviso sugli errori.
 - "Riduci movimento" attivo → niente coriandoli né fluttuazione dell'illustrazione.
 
-## 9. Liquid Glass
+## 9. Icona e splash
+- Icona iOS: `assets/icon.png` 1024×1024 a filo (iOS arrotonda da sé). Android: `android-icon-background.png` a tutto campo, primo piano trasparente.
+- Splash: logo arrotondato su `#F4F2FF` (chiaro) / `#18191A` (scuro). Favicon dal logo.
+- Originale: `assets/brand/gradie-logo.png`.
+
+## 9b. Liquid Glass
 | Elemento | Glass? |
 |---|---|
 | Tab bar | ✅ `NativeTabs`: su iOS 26 è Liquid Glass di sistema e si riduce scorrendo |
@@ -169,14 +188,14 @@ Il web usa una tab bar flottante con blur come fallback (`FloatingTabBar`).
 
 ## 10. Divieti
 - Niente gamification: punti, badge, streak, sfide, classifiche (dec. 57).
-- Niente asset copiati dalle ispirazioni (mascotte, illustrazioni, loghi, testi). Niente logo o marchio Atlassian.
+- Niente asset copiati dalle ispirazioni (mascotte, illustrazioni, loghi, testi). Niente logo o marchio Atlassian. L'unica mascotte è quella di Gradie.
 - Niente emoji come icone. Niente MAIUSCOLO nei bottoni. Niente più di un primary per area.
 - Niente widget riordinabili in Home (dec. 21), niente temi utente (dec. 49), niente presenze (dec. 97).
 
 ## 11. Decisioni di design aperte
 1. Colori per materia: sì o no?
 2. Illustrazioni: tenere `OrbitArt` o commissionare uno stile illustrato proprio?
-3. Logo e nome definitivi ("Orbita" è provvisorio).
+3. ~~Logo e nome~~ → deciso: Gradie (dec. 114). Serve il logo in alta risoluzione / vettoriale originale per l'icona finale (ora ricavata dall'immagine inviata, ~770 px).
 4. Layout per iPad (priorità alta per gli appunti, dec. 28).
 5. A che ora arriva il promemoria "il giorno prima" (dec. 107).
 6. Profilo social: @handle, istituto/città/link visibili? Chi vede contatori e interessi con profilo privato?

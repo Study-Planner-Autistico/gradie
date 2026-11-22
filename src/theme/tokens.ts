@@ -1,5 +1,6 @@
-// Design tokens — fonte di verità: DESIGN.md (v2, basato su Atlassian Design System).
-// Valori presi da @atlaskit/tokens 20.14 (temi atlassian-light / atlassian-dark). Non usare valori hardcoded.
+// Design tokens — fonte di verità: DESIGN.md (v3).
+// Brand Gradie (viola del logo) sopra la base Atlassian (@atlaskit/tokens 20.14):
+// neutri, semantici e tinte per tipo restano Atlassian. Non usare valori hardcoded.
 import type { TextStyle } from 'react-native';
 
 /** Tinte per tipo di elemento (DESIGN.md §2.3): color.background.accent.*.subtlest + color.text.accent.*. */
@@ -34,7 +35,7 @@ export const lightColors = {
   border: '#0B120E24',
   borderBold: '#7D818A',
   borderInput: '#8C8F97',
-  borderFocused: '#4688EC',
+  borderFocused: '#7A70F0',
   /** color.text / .subtle / .subtlest */
   text: '#292A2E',
   textSecondary: '#505258',
@@ -43,15 +44,17 @@ export const lightColors = {
   /** color.background.neutral.bold — bottone "ink" */
   ink: '#292A2E',
   onInk: '#FFFFFF',
-  /** color.background.brand.bold — bottone primario, selezione */
-  accent: '#1868DB',
-  accentHovered: '#1558BC',
-  accentPressed: '#144794',
+  /** Brand Gradie (viola del logo): primario, selezione, link. Bianco sopra: contrasto 5.6:1. */
+  accent: '#5D55D7',
+  accentHovered: '#5149C9',
+  accentPressed: '#463FB5',
   onAccent: '#FFFFFF',
-  link: '#1868DB',
-  /** color.background.selected / brand.subtlest */
-  selected: '#E9F2FE',
-  selectedText: '#1868DB',
+  link: '#5149C9',
+  /** Brand tenue: selezione, opzioni scelte */
+  selected: '#EEECFF',
+  selectedText: '#4A42C2',
+  /** Oro della nappa e della stella: solo accenti decorativi, mai testo su bianco. */
+  gold: '#F7C55A',
   success: '#4C6B1F',
   successBg: '#EFFFD6',
   successIcon: '#6A9A23',
@@ -73,9 +76,11 @@ export const lightColors = {
   /** Fallback del Liquid Glass di sistema (solo tab bar web) */
   glassFallback: 'rgba(255,255,255,0.78)',
   glassBorder: '#0B120E24',
-  /** Gradiente tenue per la card in evidenza: blue.subtlest → purple.subtlest (DESIGN.md §2.4). */
-  heroGradient: ['#E9F2FE', '#F8EEFE', '#FFFFFF'] as readonly [string, string, ...string[]],
-  heroGradientOverlay: ['rgba(255,255,255,0)', 'rgba(207,225,253,0.55)'] as readonly [string, string, ...string[]],
+  /** Gradiente del logo in versione tenue, per la card in evidenza (DESIGN.md §2.4). */
+  heroGradient: ['#ECE8FF', '#E4E9FF', '#FFFFFF'] as readonly [string, string, ...string[]],
+  heroGradientOverlay: ['rgba(255,255,255,0)', 'rgba(160,150,255,0.35)'] as readonly [string, string, ...string[]],
+  /** Gradiente pieno del logo (viola → blu), scurito per reggere testo bianco ≥ 5:1. Solo momenti di brand. */
+  brandGradient: ['#6F52EC', '#5547D2', '#4560D8'] as readonly [string, string, ...string[]],
   tints: lightTints,
 };
 
@@ -91,20 +96,21 @@ export const darkColors: ColorTokens = {
   border: '#E3E4F21F',
   borderBold: '#7E8188',
   borderInput: '#7E8188',
-  borderFocused: '#8FB8F6',
+  borderFocused: '#9B93FF',
   text: '#CECFD2',
   textSecondary: '#A9ABAF',
   textTertiary: '#96999E',
   textDisabled: '#E5E9F640',
   ink: '#CECFD2',
   onInk: '#1F1F21',
-  accent: '#669DF1',
-  accentHovered: '#8FB8F6',
-  accentPressed: '#ADCBFB',
+  accent: '#9B93FF',
+  accentHovered: '#B0A9FF',
+  accentPressed: '#C4BEFF',
   onAccent: '#1F1F21',
-  link: '#669DF1',
-  selected: '#1C2B42',
-  selectedText: '#669DF1',
+  link: '#A9A2FF',
+  selected: '#29254F',
+  selectedText: '#B3ACFF',
+  gold: '#F7C55A',
   success: '#B3DF72',
   successBg: '#28311B',
   successIcon: '#82B536',
@@ -123,10 +129,29 @@ export const darkColors: ColorTokens = {
   shadowOverlay: '0px 0px 0px 1px #BDBDBD1F, 0px 8px 12px #0104045C, 0px 0px 1px 1px #01040480',
   glassFallback: 'rgba(36,37,40,0.78)',
   glassBorder: '#E3E4F21F',
-  heroGradient: ['#1C2B42', '#35243F', '#242528'] as readonly [string, string, ...string[]],
-  heroGradientOverlay: ['rgba(36,37,40,0)', 'rgba(70,136,236,0.25)'] as readonly [string, string, ...string[]],
+  heroGradient: ['#29254F', '#1F2A4F', '#242528'] as readonly [string, string, ...string[]],
+  heroGradientOverlay: ['rgba(36,37,40,0)', 'rgba(120,110,255,0.25)'] as readonly [string, string, ...string[]],
+  brandGradient: ['#4A3A9E', '#3B348F', '#2C3F8F'] as readonly [string, string, ...string[]],
   tints: darkTints,
 };
+
+/** Colori della mascotte (nuvoletta col tocco), presi dal logo. Uguali in chiaro e in scuro. */
+export const mascot = {
+  cloudTop: '#FFFFFF',
+  cloudBottom: '#D8D2FF',
+  cloudShade: '#C4BCFA',
+  eye: '#2E2C86',
+  eyeLow: '#4B49C2',
+  sparkle: '#FFFFFF',
+  brow: '#3E3AA6',
+  capTop: '#6A60E8',
+  capSide: '#4B45C9',
+  capBand: '#3D37A8',
+  tassel: '#F7C55A',
+  tasselShade: '#D9A43A',
+  star: '#FFE7A3',
+  cheek: '#F5B8D8',
+} as const;
 
 export type TintName = keyof typeof lightTints;
 

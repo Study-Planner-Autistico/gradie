@@ -1,4 +1,6 @@
-# Orbita (nome provvisorio)
+# Gradie
+
+<img src="assets/brand/gradie-logo.png" width="96" alt="Icona di Gradie: una nuvoletta con il tocco da laureato" />
 
 Ecosistema all-in-one per studenti delle superiori e dell'università italiane: lezioni, scadenze, attività, materiali, voti, collaborazione e AI in un unico posto.
 

@@ -8,7 +8,7 @@ Leggi in quest'ordine prima di lavorare:
 5. `docs/moduli/` — specifiche dei moduli già lavorati.
 
 ## Regole di progetto
-- Nome "Orbita" è **provvisorio**: non spargerlo nel codice oltre a `app.json` e `src/i18n`.
+- Il nome è **Gradie** (dec. 114): compare solo in `app.json`, `package.json` e `src/i18n`. Icona e mascotte in `assets/brand/` e `src/components/Mascot.tsx`.
 - Non inventare requisiti, ruoli, prezzi, integrazioni o backend: elencali come domande aperte (briefing, regole 2-4).
 - Si procede **un modulo alla volta**; il primo è "Fondazioni di dominio e configurazione dell'ambiente".
 - Stringhe UI solo in `src/i18n` (IT + EN).

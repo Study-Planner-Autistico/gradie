@@ -1,9 +1,9 @@
 // Localizzazione IT/EN (dec. 46). Minimale finché non si sceglie una libreria.
 const it = {
-  appName: 'Orbita',
-  welcome: { claim: 'Tutta la tua vita\ndi studio, in orbita', start: 'Inizia' },
+  appName: 'Gradie',
   onb: {
     back: 'Indietro',
+    mascot: 'La mascotte di Gradie: una nuvoletta con il tocco da laureato',
     next: 'Continua',
     later: 'Più tardi',
     welcome: {
@@ -360,10 +360,10 @@ const it = {
 type Dict = typeof it;
 
 const en: Dict = {
-  appName: 'Orbita',
-  welcome: { claim: 'Your whole study life,\nin orbit', start: 'Get started' },
+  appName: 'Gradie',
   onb: {
     back: 'Back',
+    mascot: 'The Gradie mascot: a little cloud wearing a graduation cap',
     next: 'Continue',
     later: 'Later',
     welcome: {

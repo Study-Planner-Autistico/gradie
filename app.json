@@ -1,21 +1,20 @@
 {
   "expo": {
-    "name": "Orbita",
-    "slug": "orbita",
+    "name": "Gradie",
+    "slug": "gradie",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.orbita.student"
+      "bundleIdentifier": "app.gradie.student"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#6D5BF0",
         "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundImage": "./assets/android-icon-background.png"
       },
       "predictiveBackGestureEnabled": false
     },
@@ -38,8 +37,20 @@
       ],
       "expo-font",
       "expo-asset",
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 180,
+          "backgroundColor": "#F4F2FF",
+          "dark": {
+            "image": "./assets/splash-icon.png",
+            "backgroundColor": "#18191A"
+          }
+        }
+      ]
     ],
-    "scheme": "orbita"
+    "scheme": "gradie"
   }
 }
