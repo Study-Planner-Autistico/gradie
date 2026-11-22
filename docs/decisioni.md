@@ -74,3 +74,5 @@
 | 128 | 2026-11-22 | Home | Menu laterale: icone **senza sfondo**, a **tratto arrotondato** (Lucide, licenza ISC, `src/components/LineIcons.tsx`); voci con testo **più leggero**; **Impostazioni in fondo**, sopra l'ambiente; l'ambiente non ha più il titolo sopra ma un'**icona** (scuola) nella riga. | Precisa dec. 124 |
 | 129 | 2026-11-22 | Home | Menu laterale: icone con **tratto più spesso** (2,6) e ambiente **senza card**, con le righe allineate alle altre voci. | Precisa dec. 128 |
 | 130 | 2026-11-22 | Generale | **Onboarding disattivato per ora**: l'app si apre direttamente sulla Home. Il flusso resta nel codice (`/onboarding`) e verrà rivisto più avanti. | Sospende l'ingresso dall'onboarding (modulo 01) |
+| 131 | 2026-11-22 | Home | **Prossime scadenze** senza divisori tra le righe. | Precisa dec. 124 |
+| 132 | 2026-11-22 | Home | Il riquadro **Oggi** mostra **solo gli eventi dell'Agenda con il loro orario** (lezioni, appuntamenti, eventi ufficiali, chiusure): **mai compiti, verifiche o altre attività**, che stanno in Prossime scadenze. La riga di domani resta com'è (evento o verifica più importante). | Precisa dec. 121, 124 |

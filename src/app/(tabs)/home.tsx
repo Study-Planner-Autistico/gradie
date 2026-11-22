@@ -52,8 +52,9 @@ export default function Home() {
   const now = new Date();
 
   const todayItems = demoAgenda.filter((i) => i.dayOffset === 0);
-  // Come un orario: prima gli impegni con l'ora, in ordine; poi quelli senza ora (compiti, chiusure).
-  const schedule = [...todayItems].sort((a, b) => (a.start ?? '99').localeCompare(b.start ?? '99'));
+  // Solo gli eventi dell'Agenda con il loro orario (dec. 132): niente compiti, verifiche o altre attività,
+  // che stanno in Prossime scadenze. Prima quelli con l'ora, in ordine; poi quelli di tutto il giorno (chiusure).
+  const schedule = todayItems.filter((i) => i.kind !== 'activity').sort((a, b) => (a.start ?? '99').localeCompare(b.start ?? '99'));
   const tomorrow = demoAgenda
     .filter((i) => i.dayOffset === 1 && RANK[i.kind] !== undefined)
     .sort((a, b) => (RANK[a.kind] ?? 9) - (RANK[b.kind] ?? 9))[0];
@@ -260,7 +261,7 @@ function TodayCard({ items, tomorrow }: { items: DemoAgendaItem[]; tomorrow?: De
   );
 }
 
-/** Prossime scadenze (7 giorni), senza card: righe semplici con separatori sottili. */
+/** Prossime scadenze (7 giorni), senza card né divisori: righe semplici (dec. 131). */
 function Deadlines({ items }: { items: DemoAgendaItem[] }) {
   const { colors, typography, spacing, radius } = useTheme();
   const tint = colors.tints.activity;
@@ -273,9 +274,8 @@ function Deadlines({ items }: { items: DemoAgendaItem[] }) {
         <Text style={[typography.body, { color: colors.textSecondary }]}>{t.home.emptyDeadlines}</Text>
       ) : (
         <View>
-          {items.map((d, idx) => (
+          {items.map((d) => (
             <Fragment key={d.id}>
-              {idx > 0 && <View style={{ height: 1, backgroundColor: colors.border, marginLeft: 36 + spacing.md }} />}
               <Pressable
                 onPress={() => {
                   tap();
