@@ -2,16 +2,19 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Circle, Path } from 'react-native-svg';
+import { Avatar } from '../../components/avatar/Avatar';
+import { AvatarPlaceholder } from '../../components/avatar/Placeholder';
 import { tap } from '../../components/haptics';
 import { LineIcon } from '../../components/LineIcons';
 import { Mascot } from '../../components/Mascot';
 import { Flag } from '../../components/Flag';
 import { Button, Chip } from '../../components/ui';
-import { demoCountries, demoFriends, demoGrades, demoMe, demoUser } from '../../data/demo';
+import { demoCountries, demoFriends, demoGrades, demoMe } from '../../data/demo';
 import { locale, t } from '../../i18n';
-import { missingSteps, myTag, useProfile, type InterestId } from '../../state/profile';
-import { useTheme } from '../../theme';
+import { missingSteps, myTag, useProfile, type InterestId, type ProfileState } from '../../state/profile';
+import { avatarPalette, useTheme } from '../../theme';
+import { registerTabScreen, TabSwipe } from '../../components/TabSwipe';
+import { useTabScroll } from '../../state/tabScroll';
 
 const countryName = (code: string) => {
   const c = demoCountries.find((x) => x.code === code);
@@ -20,22 +23,30 @@ const countryName = (code: string) => {
 
 /**
  * Profilo (dec. 133), ispirato a Duolingo: in alto nome e impostazioni su un fondo colorato con l'avatar
- * (per ora una sagoma da completare); sotto iscrizione e codice, bandiera modificabile, seguiti e follower,
+ * (sagoma da completare finché non si crea l'avatar); sotto iscrizione e codice, bandiera modificabile, seguiti e follower,
  * card "Completa il profilo", panoramica (media voti solo per te, bio, interessi) e amici.
  * Niente streak, punti o classifiche (dec. 57).
  */
-export default function Profilo() {
+function ProfiloScreen() {
   const { colors, layout, spacing } = useTheme();
   const insets = useSafeAreaInsets();
   const profile = useProfile();
   const steps = missingSteps(profile);
+  const tabScroll = useTabScroll();
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ paddingBottom: layout.tabBarClearance }}>
-      <Header topInset={insets.top} />
+    <ScrollView
+      style={{ flex: 1, backgroundColor: colors.bg }}
+      contentContainerStyle={{ paddingBottom: layout.tabBarClearance }}
+      onScroll={(e) => tabScroll.record(e.nativeEvent.contentOffset.y)}
+      scrollEventThrottle={16}
+      contentOffset={tabScroll.contentOffset}
+      ref={tabScroll.ref}
+    >
+      <Header topInset={insets.top} avatar={profile.avatar} name={`${profile.firstName} ${profile.lastName}`} />
 
       <View style={{ paddingHorizontal: spacing.xxl, paddingTop: spacing.xxxl, gap: spacing.xxxl }}>
-        <MetaAndStats country={profile.country} />
+        <MetaAndStats country={profile.country} isPrivate={profile.isPrivate} />
         {steps > 0 && <CompleteCard steps={steps} />}
         <Overview bio={profile.bio} interests={profile.interests as InterestId[]} />
         <Friends />
@@ -44,14 +55,21 @@ export default function Profilo() {
   );
 }
 
-/** Fondo colorato con nome, ingranaggio e avatar (sagoma tratteggiata con il + finché non ci sono gli avatar). */
-function Header({ topInset }: { topInset: number }) {
+/**
+ * Fascia colorata con nome, ingranaggio e avatar (come Duolingo). Con l'avatar prende il suo colore e il testo
+ * resta scuro su quei pastello; senza, la sagoma tratteggiata apre l'invito a crearlo.
+ */
+function Header({ topInset, avatar, name }: { topInset: number; avatar: ProfileState['avatar']; name: string }) {
   const { colors, typography, spacing, layout } = useTheme();
+  const bg = avatar ? avatar.bg : colors.selected;
+  const fg = avatar ? avatarPalette.ink : colors.text;
   return (
-    <View style={{ backgroundColor: colors.selected, paddingTop: topInset + spacing.md, overflow: 'hidden' }}>
+    <View style={{ backgroundColor: bg, paddingTop: topInset + spacing.md }}>
+      {/* Il colore continua sopra: tirando giù la pagina (rimbalzo di iOS) non compare lo sfondo grigio. */}
+      <View style={{ position: 'absolute', left: 0, right: 0, bottom: '100%', height: 1000, backgroundColor: bg }} />
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.xxl }}>
-        <Text accessibilityRole="header" style={[typography.title1, { color: colors.text, flex: 1 }]} numberOfLines={1}>
-          {demoUser.firstName} {demoUser.lastName}
+        <Text accessibilityRole="header" style={[typography.title1, { color: fg, flex: 1 }]} numberOfLines={1}>
+          {name}
         </Text>
         <Pressable
           onPress={() => {
@@ -62,40 +80,36 @@ function Header({ topInset }: { topInset: number }) {
           accessibilityLabel={t.profile.settingsTitle}
           style={({ pressed }) => ({ width: layout.iconButton, height: layout.iconButton, alignItems: 'center', justifyContent: 'center', marginRight: -10, opacity: pressed ? 0.6 : 1 })}
         >
-          <LineIcon name="settings" size={26} color={colors.text} />
+          <LineIcon name="settings" size={26} color={fg} />
         </Pressable>
       </View>
 
-      <Pressable onPress={tap} accessibilityRole="button" accessibilityLabel={t.profile.avatarSoon} style={{ alignItems: 'center', marginTop: spacing.xxxl }}>
-        <AvatarPlaceholder size={160} />
+      <Pressable
+        onPress={() => {
+          tap();
+          router.push(avatar ? '/avatar' : '/avatar-intro');
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={avatar ? t.profile.editAvatar : t.profile.createAvatar}
+        style={({ pressed }) => ({ alignItems: 'center', marginTop: avatar ? spacing.md : spacing.xxxl, overflow: 'hidden', opacity: pressed ? 0.85 : 1 })}
+      >
+        {avatar ? <Avatar config={avatar} size={200} shape="square" background={false} /> : <AvatarPlaceholder size={160} />}
       </Pressable>
     </View>
   );
 }
 
-/** Sagoma generica tratteggiata con il +: il posto dell'avatar, che disegneremo noi (dec. 133). */
-function AvatarPlaceholder({ size }: { size: number }) {
-  const { colors } = useTheme();
-  const fill = colors.accent;
-  return (
-    <Svg width={size} height={size} viewBox="0 0 200 200">
-      <Path d="M30,200 C30,150 62,124 100,124 C138,124 170,150 170,200 Z" fill={fill} opacity={0.22} />
-      <Circle cx={100} cy={72} r={42} fill={fill} opacity={0.22} />
-      <Path d="M30,200 C30,150 62,124 100,124 C138,124 170,150 170,200" fill="none" stroke={fill} strokeWidth={3} strokeDasharray="8 7" strokeLinecap="round" opacity={0.7} />
-      <Circle cx={100} cy={72} r={42} fill="none" stroke={fill} strokeWidth={3} strokeDasharray="8 7" strokeLinecap="round" opacity={0.7} />
-      <Path d="M100,56 V88 M84,72 H116" stroke="#FFFFFF" strokeWidth={6} strokeLinecap="round" />
-    </Svg>
-  );
-}
-
-/** "Su Gradie dal 2026 · #1234", poi bandiera modificabile, seguiti e follower; il QR resta per il futuro. */
-function MetaAndStats({ country }: { country: string }) {
+/** "Su Gradie dal 2026 · #1234", poi bandiera modificabile, seguiti e follower e il QR del profilo. */
+function MetaAndStats({ country, isPrivate }: { country: string; isPrivate: boolean }) {
   const { colors, typography, spacing, radius, layout } = useTheme();
   return (
     <View style={{ gap: spacing.xl }}>
-      <Text style={[typography.label, { color: colors.textTertiary }]}>
-        {t.profile.joined(demoMe.joinedYear)} · {myTag}
-      </Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm }}>
+        <Text style={[typography.label, { color: colors.textTertiary }]}>
+          {t.profile.joined(demoMe.joinedYear)} · {myTag}
+        </Text>
+        {isPrivate && <Chip variant="muted" icon="lock-closed" label={t.profile.private} />}
+      </View>
       <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
         <Pressable
           onPress={() => {
@@ -117,7 +131,10 @@ function MetaAndStats({ country }: { country: string }) {
         <Stat value={demoMe.following} label={t.profile.followingLabel} />
         <Stat value={demoMe.followers} label={t.profile.followersLabel} />
         <Pressable
-          onPress={tap}
+          onPress={() => {
+            tap();
+            router.push('/qr');
+          }}
           accessibilityRole="button"
           accessibilityLabel={t.profile.qr}
           style={({ pressed }) => ({
@@ -227,5 +244,15 @@ function Friends() {
         </Pressable>
       </ScrollView>
     </View>
+  );
+}
+
+// Scorrendo a destra/sinistra si cambia scheda (dec. 140).
+registerTabScreen('profilo', ProfiloScreen);
+export default function Profilo() {
+  return (
+    <TabSwipe name="profilo">
+      <ProfiloScreen />
+    </TabSwipe>
   );
 }

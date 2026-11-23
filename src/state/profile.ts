@@ -1,15 +1,21 @@
 // Profilo dell'utente (dec. 133). Stato solo in memoria: nessun backend è stato scelto (dec. 53).
 import { useSyncExternalStore } from 'react';
+import type { AvatarConfig } from '../components/avatar/Avatar';
 import { demoUser } from '../data/demo';
 
 export type ProfileState = {
+  /** Nome e cognome, modificabili da "I miei dati"; l'email no (servirebbe la verifica via posta). */
+  firstName: string;
+  lastName: string;
+  /** Profilo privato (dec. 15): gli altri vedono solo nome e avatar. */
+  isPrivate: boolean;
   /** Paese della bandiera, codice ISO a 2 lettere (es. "IT"). Modificabile. */
   country: string;
   bio: string;
   /** Id degli interessi (vedi INTEREST_IDS), al massimo MAX_INTERESTS. */
   interests: string[];
-  /** Avatar: non ancora disponibile, li disegneremo noi (dec. 133). */
-  avatar: null;
+  /** Avatar disegnato con l'editor (dec. 133, 136); null finché non lo crea. */
+  avatar: AvatarConfig | null;
 };
 
 export const MAX_INTERESTS = 5;
@@ -28,12 +34,20 @@ export function userTag(seed: string) {
   return `#${String(h % 10000).padStart(4, '0')}`;
 }
 
-let state: ProfileState = { country: 'IT', bio: '', interests: [], avatar: null };
+const initial: ProfileState = { firstName: demoUser.firstName, lastName: demoUser.lastName, isPrivate: false, country: 'IT', bio: '', interests: [], avatar: null };
+let state: ProfileState = initial;
 const listeners = new Set<() => void>();
 
 export function updateProfile(patch: Partial<ProfileState>) {
   state = { ...state, ...patch };
   listeners.forEach((l) => l());
+}
+
+export const getProfile = () => state;
+
+/** Torna ai valori iniziali (uscita o eliminazione dell'account). */
+export function resetProfile() {
+  updateProfile(initial);
 }
 
 export function useProfile() {
@@ -49,9 +63,12 @@ export function useProfile() {
   );
 }
 
-/** Passi che mancano per completare il profilo: avatar (in arrivo), bio, interessi. */
+/** Passi che mancano per completare il profilo: avatar, bio, interessi. */
 export function missingSteps(p: ProfileState) {
   return [p.avatar === null, p.bio.trim() === '', p.interests.length === 0].filter(Boolean).length;
 }
 
 export const myTag = userTag(demoUser.email);
+
+// shortcut: link con lo schema dell'app (app.json "scheme"); per i link condivisi serve un dominio web, decisione aperta.
+export const profileLink = `gradie://u/${myTag.slice(1)}`;

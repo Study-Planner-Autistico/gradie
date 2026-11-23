@@ -3,6 +3,14 @@ import type { TintName } from '../theme';
 
 export const demoUser = { firstName: 'Giulia', lastName: 'Rossi', email: 'giulia.rossi@example.com' };
 
+/** Dispositivi collegati all'account (dec. 56), solo dimostrativi. Il primo è quello in uso. */
+export const demoDevices = [
+  { id: 'd1', name: 'iPhone 16', kind: 'phone', place: 'Milano', lastSeen: 'now' },
+  { id: 'd2', name: 'iPad Air', kind: 'tablet', place: 'Milano', lastSeen: '2026-11-21' },
+  { id: 'd3', name: 'Safari su Mac', kind: 'desktop', place: 'Bergamo', lastSeen: '2026-11-15' },
+] as const;
+export type DemoDevice = (typeof demoDevices)[number];
+
 /** Profilo social (dec. 33): foto, nome, bio, follower/seguiti, interessi, post, salvati. Privato di default (dec. 15). */
 export const demoProfile = {
   bio: '',
@@ -135,6 +143,8 @@ export const demoSubjects = {
   universita: ['Analisi I', 'Fisica I', 'Programmazione', 'Geometria', 'Inglese B2'],
 };
 
+/** Chiave dimostrativa per l'app di autenticazione (TOTP, base32). */
+export const demoTotpSecret = 'JBSWY3DPEHPK3PXP';
 export const demoRecoveryCodes = ['4F7K-92QX', 'M2PD-81ZT', 'R9WC-37HB', 'J6LN-05EV', 'T3YA-64GU', 'B8SK-29MF', 'Q1XE-73DR', 'H5VO-48NC'];
 
 /** Media dal registro voti personale (dec. 26: solo medie, nessuna previsione). */

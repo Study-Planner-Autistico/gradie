@@ -30,6 +30,12 @@
         }
       ],
       [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Face ID serve per sbloccare l'app se attivi lo sblocco nelle Impostazioni."
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "Le foto servono per aggiungere immagini alla lavagna."

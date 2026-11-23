@@ -67,7 +67,7 @@ export default function NuovaNota() {
             onChangeText={setTitle}
             placeholder={t.newNote.defaultTitle}
             placeholderTextColor={colors.textTertiary}
-            style={[typography.body, { color: colors.text, backgroundColor: colors.surface, borderRadius: radius.md, paddingHorizontal: spacing.md, height: 44 }]}
+            style={[typography.input, { color: colors.text, backgroundColor: colors.surface, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: 0, height: 44, textAlignVertical: 'center', includeFontPadding: false }]}
           />
         </View>
 

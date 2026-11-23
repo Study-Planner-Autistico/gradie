@@ -113,6 +113,9 @@ Alta 24, raggio 4, testo `overline`, icona 12 facoltativa. Varianti: tinta per t
 Celle 40 raggio 8; selezionato = brand bold, oggi = numero brand, puntino 4 se ci sono elementi.
 ### 5.8 `Avatar`
 Cerchio con iniziali (dec. 16) su `lesson.bg`, bordo 2 `surface`. Nel profilo: 128 con gradiente.
+- **Avatar disegnato** (dec. 136, `src/components/avatar/`): disegni di react-nice-avatar (MIT) in un unico SVG 100×100; colori fissi in `avatarPalette`, sfondi pastello con testo `avatarPalette.ink`. Nel Profilo 200 senza sfondo proprio, sopra il fondo del suo colore.
+- **Editor** (`/avatar`): schede con icona e barra brand sotto quella attiva; colori in riquadri 64 (raggio 16, bordo 2 con base 4), forme in griglia a 3 colonne con l'avatar inquadrato sulla parte che cambia. Selezionato = bordo `borderFocused` + fondo `selected`.
+- **Codice QR** (`/qr`): card `surfaceOverlay` raggio 16 su `blanket`; QR sempre scuro su bianco (`qrColors`), moduli a puntini, occhi e allineamento arrotondati e pieni, avatar al centro; azioni quadrate 72 con etichetta sotto.
 ### 5.9 Profilo social
 Pill interesse (44, bordo 1.5, icona in quadratino tinto), righe azione (cerchio 48), "Profilo privato" come lozenge (dec. 15). Niente spunte "verificato".
 ### 5.10 `TextField`
@@ -199,5 +202,6 @@ Il web usa una tab bar flottante con blur come fallback (`FloatingTabBar`).
 4. Layout per iPad (priorità alta per gli appunti, dec. 28).
 5. A che ora arriva il promemoria "il giorno prima" (dec. 107).
 6. Profilo social: @handle, istituto/città/link visibili? Chi vede contatori e interessi con profilo privato?
+9. Link del profilo condiviso (QR, "Condividi link"): serve un dominio web; ora `gradie://u/1234`.
 7. Onboarding: requisiti reali della password (ora "almeno 8 caratteri" come segnaposto), testi dei consensi, durata del "Reinvia" (ora 30 s), ordine Apple/Google/Email.
 8. Onboarding: suggerimenti di materie per indirizzo (ora elenco dimostrativo) e date del periodo didattico (non ancora chieste).

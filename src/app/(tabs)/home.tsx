@@ -14,6 +14,7 @@ import { useEnvironment } from '../../state/environment';
 import { setMenuOpen, useMenuOpen } from '../../state/menu';
 import { useNotes } from '../../state/whiteboard';
 import { covers, fonts, useTheme } from '../../theme';
+import { registerTabScreen, TabSwipe } from '../../components/TabSwipe';
 
 /** Ordine di importanza per scegliere l'impegno di domani. */
 const RANK: Partial<Record<DemoAgendaItem['kind'], number>> = { activity: 0, holiday: 1, official: 2, appointment: 3 };
@@ -45,7 +46,7 @@ function useMinutesNow() {
  * Home (dec. 120–124). Dall'alto: menu, notifiche e messaggi (fissi); giorno e data; "Riprendi";
  * riquadro "Oggi" come un orario; prossime scadenze; appunti delle materie di oggi; la tua classe.
  */
-export default function Home() {
+function HomeScreen() {
   const { spacing } = useTheme();
   const { active } = useEnvironment();
   const menuOpen = useMenuOpen();
@@ -436,5 +437,15 @@ function ClassTile({ klass }: { klass: DemoClass }) {
         </View>
       </Pressable>
     </View>
+  );
+}
+
+// Scorrendo a destra/sinistra si cambia scheda (dec. 140); verso destra resta il menu laterale.
+registerTabScreen('home', HomeScreen);
+export default function Home() {
+  return (
+    <TabSwipe name="home" noPrev>
+      <HomeScreen />
+    </TabSwipe>
   );
 }

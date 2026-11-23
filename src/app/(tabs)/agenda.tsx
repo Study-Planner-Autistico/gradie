@@ -7,6 +7,7 @@ import { demoAgenda } from '../../data/demo';
 import { locale, t } from '../../i18n';
 import { useEnvironment } from '../../state/environment';
 import { useTheme } from '../../theme';
+import { registerTabScreen, TabSwipe } from '../../components/TabSwipe';
 
 function dayOffset(d: Date) {
   const a = new Date();
@@ -17,7 +18,7 @@ function dayOffset(d: Date) {
 }
 
 /** Agenda (modulo 02 §5 AG-01). Viste giorno/settimana/mese rinviate (dec. 95). */
-export default function Agenda() {
+function AgendaScreen() {
   const { colors, typography, spacing } = useTheme();
   const { active } = useEnvironment();
   const [selected, setSelected] = useState(new Date());
@@ -69,5 +70,15 @@ export default function Agenda() {
         />
       </ListGroup>
     </Screen>
+  );
+}
+
+// Scorrendo a destra/sinistra si cambia scheda (dec. 140).
+registerTabScreen('agenda', AgendaScreen);
+export default function Agenda() {
+  return (
+    <TabSwipe name="agenda">
+      <AgendaScreen />
+    </TabSwipe>
   );
 }

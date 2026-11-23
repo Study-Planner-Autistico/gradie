@@ -6,12 +6,12 @@ import { useTheme } from '../theme';
 
 // Sidebar per funzioni secondarie (dec. 18-19), in un form sheet. Moduli non ancora progettati.
 const ITEMS: { label: string; icon: IconName }[] = [
-  { label: t.menu.materials, icon: 'folder-outline' },
-  { label: t.menu.notes, icon: 'create-outline' },
-  { label: t.menu.grades, icon: 'stats-chart-outline' },
-  { label: t.menu.messages, icon: 'chatbubbles-outline' },
-  { label: t.menu.groups, icon: 'people-circle-outline' },
-  { label: t.menu.notifications, icon: 'notifications-outline' },
+  { get label() { return t.menu.materials; }, icon: 'folder-outline' },
+  { get label() { return t.menu.notes; }, icon: 'create-outline' },
+  { get label() { return t.menu.grades; }, icon: 'stats-chart-outline' },
+  { get label() { return t.menu.messages; }, icon: 'chatbubbles-outline' },
+  { get label() { return t.menu.groups; }, icon: 'people-circle-outline' },
+  { get label() { return t.menu.notifications; }, icon: 'notifications-outline' },
 ];
 
 export default function Menu() {

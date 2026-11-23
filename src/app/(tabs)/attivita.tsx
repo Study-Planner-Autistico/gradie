@@ -1,8 +1,9 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Alert, Animated, Modal, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Chip, IconButton, Screen, ScreenHeader, SectionHeader, type IconName } from '../../components/ui';
+import { confirm, notify } from '../../components/dialogs';
 import { Glass } from '../../components/Glass';
 import { tap } from '../../components/haptics';
 import { downloadNotes } from '../../components/whiteboard/exportPdf';
@@ -30,6 +31,7 @@ import {
   type StudyStatus,
 } from '../../state/whiteboard';
 import { useTheme } from '../../theme';
+import { registerTabScreen, TabSwipe } from '../../components/TabSwipe';
 
 type QuickAction = { key: keyof typeof t.activitiesHub.actions; icon: IconName; brand?: boolean };
 
@@ -40,7 +42,7 @@ const ACTIONS: QuickAction[] = [
 ];
 
 /** Attività: azioni rapide e note (dec. 109, modifica dec. 25). */
-export default function Attivita() {
+function AttivitaScreen() {
   const { colors, spacing, layout } = useTheme();
   const { active } = useEnvironment();
   const pages = usePages();
@@ -245,23 +247,6 @@ function BarButton({ icon, label, onPress, disabled, danger }: { icon: IconName;
   );
 }
 
-/** Conferma prima di un'azione irreversibile; sul web Alert non mostra pulsanti. */
-function confirm(message: string, action: string, onYes: () => void) {
-  if (Platform.OS === 'web') {
-    if (globalThis.confirm?.(message)) onYes();
-    return;
-  }
-  Alert.alert(message, undefined, [
-    { text: t.manage.cancel, style: 'cancel' },
-    { text: action, style: 'destructive', onPress: onYes },
-  ]);
-}
-
-function notify(message: string) {
-  if (Platform.OS === 'web') globalThis.alert?.(message);
-  else Alert.alert(message);
-}
-
 function ActionButton({ icon, label, iconColor, onPress }: { icon: IconName; label: string; iconColor: string; onPress?: () => void }) {
   const { colors, typography, radius, spacing } = useTheme();
   return (
@@ -429,8 +414,9 @@ function NoteCard({
   };
   const pan = useRef(
     PanResponder.create({
-      // Solo trascinamenti orizzontali: quelli verticali restano allo scorrimento della pagina.
-      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 10 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+      // Solo trascinamenti orizzontali (i verticali restano alla pagina), e solo nel verso che fa qualcosa:
+      // chiusa → verso sinistra, aperta → verso destra. L'altro verso passa al cambio scheda (dec. 140).
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 10 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5 && (open.current ? g.dx > 0 : g.dx < 0),
       onPanResponderTerminationRequest: () => false,
       onPanResponderMove: (_, g) => x.setValue(Math.max(-SWIPE_W - 24, Math.min(0, (open.current ? -SWIPE_W : 0) + g.dx))),
       onPanResponderRelease: (_, g) => {
@@ -587,4 +573,14 @@ function NoteMenu({ title, items, onClose }: { title: string; items: MenuItem[];
 /** "Oggi, 09:12" per le pagine create in questa sessione. */
 function editedLabel(at: number) {
   return `${t.home.today}, ${new Date(at).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}`;
+}
+
+// Scorrendo a destra/sinistra si cambia scheda (dec. 140).
+registerTabScreen('attivita', AttivitaScreen);
+export default function Attivita() {
+  return (
+    <TabSwipe name="attivita">
+      <AttivitaScreen />
+    </TabSwipe>
+  );
 }

@@ -49,6 +49,8 @@ export const lightColors = {
   accentHovered: '#5149C9',
   accentPressed: '#463FB5',
   onAccent: '#FFFFFF',
+  /** Pallino degli interruttori: bianco in entrambi i temi, come quello nativo di iOS. */
+  switchThumb: '#FFFFFF',
   link: '#5149C9',
   /** Brand tenue: selezione, opzioni scelte */
   selected: '#EEECFF',
@@ -110,6 +112,7 @@ export const darkColors: ColorTokens = {
   accentHovered: '#B0A9FF',
   accentPressed: '#C4BEFF',
   onAccent: '#1F1F21',
+  switchThumb: '#FFFFFF',
   link: '#A9A2FF',
   selected: '#29254F',
   selectedText: '#B3ACFF',
@@ -158,6 +161,22 @@ export const mascot = {
   cheek: '#F5B8D8',
 } as const;
 
+/**
+ * Avatar (react-nice-avatar): colori fissi, uguali in chiaro e in scuro, come la mascotte.
+ * Gli sfondi sono pastello perché nel Profilo ci si scrive sopra con `ink` (contrasto ≥ 4.5:1).
+ */
+export const avatarPalette = {
+  skin: ['#F9C9B6', '#F1C6A0', '#DDA47A', '#C58556', '#AC6651', '#7A4A36'],
+  hair: ['#000000', '#77311D', '#B8763E', '#E8C26A', '#FFFFFF', '#FC909F', '#506AF4', '#F48150'],
+  hat: ['#000000', '#FFFFFF', '#77311D', '#FC909F', '#D2EFF3', '#506AF4', '#F48150', '#5D55D7'],
+  shirt: ['#9287FF', '#5D55D7', '#6BD9E9', '#74D153', '#F4D150', '#FC909F', '#F48150', '#77311D'],
+  bg: ['#E0DDFF', '#D2EFF3', '#DCFFF1', '#FFEBA4', '#FFEDEF', '#F0F1F2'],
+  ink: '#292A2E',
+} as const;
+
+/** Codice QR: sempre scuro su bianco, anche in tema scuro, perché tutti i lettori lo riconoscano. */
+export const qrColors = { bg: '#FFFFFF', fg: '#292A2E' } as const;
+
 export type TintName = keyof typeof lightTints;
 
 /** space.050 … space.1000 (base 8). */
@@ -187,6 +206,11 @@ export const typography = {
   headline: { fontSize: 16, lineHeight: 20, fontWeight: '700' },
   /** font.body.large — testo su mobile */
   body: { fontSize: 16, lineHeight: 24, fontWeight: '400' },
+  /**
+   * Testo dei campi su una riga: come body ma senza lineHeight. Su iOS un lineHeight più alto del font
+   * spinge il testo sotto il centro del campo; senza, il sistema lo centra da solo.
+   */
+  input: { fontSize: 16, fontWeight: '400' },
   /** font.body + medium — bottoni, link, etichette */
   callout: { fontSize: 14, lineHeight: 20, fontWeight: '500' },
   /** font.body.small */

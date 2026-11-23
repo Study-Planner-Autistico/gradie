@@ -21,6 +21,7 @@ import { useTheme, type TintName } from '../theme';
 import { tap } from './haptics';
 import type { IconName } from './icons';
 import { Mascot } from './Mascot';
+import { useTabScroll } from '../state/tabScroll';
 
 export type { IconName } from './icons';
 
@@ -31,7 +32,8 @@ export type TextInputRef = ComponentRef<typeof TextInput>;
 /** Schermata con scorrimento. `header` resta fisso in alto, fuori dallo scorrimento. */
 export function Screen({ children, withTabBar = true, header }: { children: ReactNode; withTabBar?: boolean; header?: ReactNode }) {
   const { colors, spacing, layout } = useTheme();
-  const scrollY = useRef(new Animated.Value(0)).current;
+  const tabScroll = useTabScroll();
+  const scrollY = useRef(new Animated.Value(tabScroll.initialY)).current;
   // Sfumatura sotto l'header fisso: compare appena il contenuto ci passa sotto.
   const fade = scrollY.interpolate({ inputRange: [0, 24], outputRange: [0, 1], extrapolate: 'clamp' });
   return (
@@ -50,8 +52,13 @@ export function Screen({ children, withTabBar = true, header }: { children: Reac
         </View>
       )}
       <Animated.ScrollView
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+          useNativeDriver: true,
+          listener: (e: { nativeEvent: { contentOffset: { y: number } } }) => tabScroll.record(e.nativeEvent.contentOffset.y),
+        })}
         scrollEventThrottle={16}
+        contentOffset={tabScroll.contentOffset}
+        ref={tabScroll.ref}
         contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{
@@ -414,9 +421,11 @@ export function TextField({
         }}
         accessibilityLabel={label}
         style={[
-          typography.body,
+          props.multiline ? typography.body : typography.input,
           {
             minHeight: layout.input,
+            // Una riga: niente padding verticale, il testo resta al centro (Android: anche senza il padding del font).
+            ...(props.multiline ? null : { paddingVertical: 0, textAlignVertical: 'center' as const, includeFontPadding: false }),
             paddingHorizontal: spacing.md,
             borderRadius: radius.md,
             borderWidth: focused || error ? 2 : 1,

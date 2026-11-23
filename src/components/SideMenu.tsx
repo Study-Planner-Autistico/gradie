@@ -14,9 +14,9 @@ import { Chip } from './ui';
 
 /** Pagine del menu: moduli ancora da progettare (dec. 124), si definiranno più avanti. Impostazioni stanno in fondo (dec. 128). */
 const ITEMS: { label: string; icon: LineIconName }[] = [
-  { label: t.menu.materials, icon: 'folder' },
-  { label: t.menu.grades, icon: 'chart' },
-  { label: t.menu.groups, icon: 'users' },
+  { get label() { return t.menu.materials; }, icon: 'folder' },
+  { get label() { return t.menu.grades; }, icon: 'chart' },
+  { get label() { return t.menu.groups; }, icon: 'users' },
 ];
 
 /** Apertura rapida (dec. 127): 200 ms, nessun rimbalzo, così non si aspetta. */
