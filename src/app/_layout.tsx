@@ -20,6 +20,7 @@ export default function RootLayout() {
           name="ambienti"
           options={{ presentation: 'formSheet', sheetAllowedDetents: [0.5, 1], sheetGrabberVisible: true, contentStyle: { backgroundColor: 'transparent' } }}
         />
+        <Stack.Screen name="quaderno/[name]" />
         <Stack.Screen name="lavagna/[id]" options={{ gestureEnabled: false, animation: 'fade' }} />
         <Stack.Screen name="nuova-nota" options={{ presentation: 'formSheet', sheetAllowedDetents: [0.92], sheetGrabberVisible: true }} />
         <Stack.Screen name="impostazioni" options={{ presentation: 'formSheet', sheetAllowedDetents: [0.7, 1], sheetGrabberVisible: true }} />

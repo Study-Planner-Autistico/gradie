@@ -31,6 +31,7 @@ import {
   demoTracks,
 } from '../data/demo';
 import { t } from '../i18n';
+import { setSubjects } from '../state/subjects';
 import { useTheme } from '../theme';
 
 /**
@@ -1043,6 +1044,8 @@ function Summary({ ctx }: { ctx: Ctx }) {
 
 function Done({ ctx }: { ctx: Ctx }) {
   const { colors, typography, spacing } = useTheme();
+  // Le materie scelte diventano le categorie degli Appunti (dec. 141).
+  useEffect(() => setSubjects(ctx.a.subjects), [ctx.a.subjects]);
   return (
     <View style={{ flex: 1, padding: spacing.xxl, justifyContent: 'center', gap: spacing.xxl, overflow: 'hidden' }}>
       <Confetti />

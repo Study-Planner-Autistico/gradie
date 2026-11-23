@@ -13,17 +13,22 @@ import { covers, paperColors, useTheme } from '../theme';
 const TEMPLATES: PaperTemplate[] = ['blank', 'lined', 'narrow', 'wide', 'margin', 'cornell', 'grid', 'smallGrid', 'dots', 'music'];
 const SIZES: PageSize[] = ['a4', 'letter'];
 
-/** Nuova nota (dec. 112) o modifica di una nota esistente (dec. 113, con `?id=`): nome, copertina e carta. */
+/** Nuovo foglio di un quaderno (dec. 112, 143, con `?subject=`) o modifica di un foglio (dec. 113, con `?id=`): nome, copertina e carta. */
 export default function NuovaNota() {
   const { colors, typography, spacing, radius } = useTheme();
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, subject: subjectParam } = useLocalSearchParams<{ id?: string; subject?: string }>();
   const editing = !!id;
   const meta = id ? getNoteMeta(id) : undefined;
-  const fallbackTitle = id ? (demoNotes.find((n) => n.id === id)?.title ?? '') : '';
+  const demo = id ? demoNotes.find((n) => n.id === id) : undefined;
+  const fallbackTitle = demo?.title ?? '';
+  // Il foglio resta nel suo quaderno: la materia non si cambia da qui.
+  const subject = meta?.subject ?? demo?.subject ?? subjectParam ?? '';
   const [title, setTitle] = useState(meta?.title ?? fallbackTitle);
-  const [hasCover, setHasCover] = useState(editing ? !!meta?.cover : true);
-  const [tab, setTab] = useState<'cover' | 'paper'>(editing && !meta?.cover ? 'paper' : 'cover');
-  const [cover, setCover] = useState<string>(covers.find((c) => c.color === meta?.cover)?.id ?? covers[0].id);
+  // Un foglio nuovo parte senza copertina: si vede la carta, di cui si sceglie tipo e colore.
+  const startCover = meta ? meta.cover : (demo?.cover ?? null);
+  const [hasCover, setHasCover] = useState(editing ? !!startCover : false);
+  const [tab, setTab] = useState<'cover' | 'paper'>(editing && startCover ? 'cover' : 'paper');
+  const [cover, setCover] = useState<string>(covers.find((c) => c.color === startCover)?.id ?? covers[0].id);
   const [template, setTemplate] = useState<PaperTemplate>(meta?.paper.template ?? (editing ? 'blank' : 'lined'));
   const [paperId, setPaperId] = useState<string>(paperColors.find((p) => p.color === meta?.paper.color)?.id ?? paperColors[0].id);
   const [size, setSize] = useState<PageSize>(meta?.paper.size ?? 'a4');
@@ -37,6 +42,7 @@ export default function NuovaNota() {
       title: title.trim() || t.newNote.defaultTitle,
       cover: hasCover ? coverColor : null,
       paper: { template, color: paper.color, dark: paper.dark, size, landscape },
+      subject,
     };
     if (id) {
       saveNoteMeta(id, data);
@@ -67,7 +73,12 @@ export default function NuovaNota() {
             onChangeText={setTitle}
             placeholder={t.newNote.defaultTitle}
             placeholderTextColor={colors.textTertiary}
-            style={[typography.input, { color: colors.text, backgroundColor: colors.surface, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: 0, height: 44, textAlignVertical: 'center', includeFontPadding: false }]}
+            accessibilityLabel={t.newNote.name}
+            maxLength={40}
+            style={[
+              typography.input,
+              { color: colors.text, backgroundColor: colors.surface, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: 0, height: 44, textAlignVertical: 'center', includeFontPadding: false },
+            ]}
           />
         </View>
 

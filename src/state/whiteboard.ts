@@ -26,7 +26,8 @@ export type Viewport = { x: number; y: number; w: number; h: number };
 export type PaperTemplate = 'blank' | 'lined' | 'narrow' | 'wide' | 'margin' | 'cornell' | 'grid' | 'smallGrid' | 'dots' | 'music';
 export type PageSize = 'a4' | 'letter';
 export type Paper = { template: PaperTemplate; color: string; dark: boolean; size: PageSize; landscape: boolean };
-export type NoteMeta = { id: string; title: string; cover: string | null; paper: Paper; created: number };
+/** `subject`: materia in cui sta la nota negli Appunti (dec. 141); vuota = Senza materia. */
+export type NoteMeta = { id: string; title: string; cover: string | null; paper: Paper; created: number; subject?: string };
 
 /** Pagina modificata: id della lavagna e ora dell'ultima modifica. */
 export type PageInfo = { id: string; edited: number };
