@@ -9,7 +9,7 @@ import { downloadNotes } from '../../components/whiteboard/exportPdf';
 import { CoverThumb, PaperThumb } from '../../components/whiteboard/Paper';
 import { t } from '../../i18n';
 import { metaOf, NO_SUBJECT, renameNotebook, sheetsOf, useSheets, type Sheet } from '../../state/notebooks';
-import { setSubjectColor, subjectColor, useSubjectColors, useSubjects } from '../../state/subjects';
+import { setSubjectLook, subjectLook, useSubjectLooks, useSubjects } from '../../state/subjects';
 import { deleteNote, duplicateNote, getBoardItems, getNoteMeta, getViewport, useBoards } from '../../state/whiteboard';
 import { useTheme } from '../../theme';
 
@@ -19,7 +19,7 @@ export default function Quaderno() {
   const { name = '' } = useLocalSearchParams<{ name: string }>();
   const sheets = useSheets();
   const subjects = useSubjects();
-  const subjectColors = useSubjectColors();
+  const looks = useSubjectLooks();
   const itemsOf = useBoards();
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -28,7 +28,7 @@ export default function Quaderno() {
   const others = name === NO_SUBJECT;
   const label = others ? t.activitiesHub.otherSheets : name;
   const list = sheetsOf(sheets, name);
-  const color = subjectColor(subjectColors, name, subjects.findIndex((s) => s.toLocaleLowerCase() === name.toLocaleLowerCase()));
+  const look = subjectLook(looks, name, subjects.findIndex((s) => s.toLocaleLowerCase() === name.toLocaleLowerCase()));
 
   // Due fogli per riga, come i quaderni; su iPad e in orizzontale quattro.
   const gap = spacing.md;
@@ -90,11 +90,11 @@ export default function Quaderno() {
       )}
       {editing && (
         <NotebookEditor
-          initial={{ name, color }}
+          initial={{ name, look }}
           onClose={() => setEditing(false)}
-          onSave={(next, c) => {
+          onSave={(next, l) => {
             if (!renameNotebook(name, next, sheets)) return t.activitiesHub.subjectDup;
-            setSubjectColor(next, c);
+            setSubjectLook(next, l);
             setEditing(false);
             router.setParams({ name: next });
             return undefined;

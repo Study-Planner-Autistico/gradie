@@ -1,0 +1,118 @@
+// Copertine dei quaderni (dec. 144): 8 temi x 8 colori, ritagliate dalle tavole fornite.
+// File generato: le immagini stanno in assets/covers/<tema>-<colore>.jpg, senza la scritta originale.
+import type { ImageSourcePropType } from 'react-native';
+
+export const COVER_THEMES = ["stripes","watercolor","leopard","plaid","zebra","spots","polka","stars"] as const;
+export type CoverTheme = (typeof COVER_THEMES)[number];
+export const COVER_COLORS = ["blue","red","yellow","teal","lilac","orange","pink","purple"] as const;
+export type CoverColor = (typeof COVER_COLORS)[number];
+
+/** Colore del pallino nella scelta del colore. */
+export const COVER_SWATCH: Record<CoverColor, string> = {
+  "blue": "#3D6FB0",
+  "red": "#C7343C",
+  "yellow": "#E8B532",
+  "teal": "#2E9C8C",
+  "lilac": "#A27FC6",
+  "orange": "#E07028",
+  "pink": "#E04A82",
+  "purple": "#5E3478"
+};
+
+/** Zona del titolo sull'etichetta (sopra la prima riga), in proporzione alla copertina. */
+export const COVER_TITLE: Record<CoverTheme, { left: number; right: number; top: number; bottom: number }> = {
+  stripes: { left: 0.269, right: 0.806, top: 0.138, bottom: 0.296 },
+  watercolor: { left: 0.263, right: 0.786, top: 0.133, bottom: 0.286 },
+  leopard: { left: 0.287, right: 0.78, top: 0.235, bottom: 0.329 },
+  plaid: { left: 0.327, right: 0.767, top: 0.172, bottom: 0.253 },
+  zebra: { left: 0.319, right: 0.752, top: 0.195, bottom: 0.273 },
+  spots: { left: 0.297, right: 0.746, top: 0.199, bottom: 0.281 },
+  polka: { left: 0.298, right: 0.777, top: 0.217, bottom: 0.304 },
+  stars: { left: 0.318, right: 0.745, top: 0.332, bottom: 0.402 },
+};
+
+/** Rapporto larghezza/altezza delle copertine (420 x 572). */
+export const COVER_RATIO = 420 / 572;
+
+export const COVER_ART: Record<CoverTheme, Record<CoverColor, ImageSourcePropType>> = {
+  stripes: {
+    blue: require('../../assets/covers/stripes-blue.jpg'),
+    red: require('../../assets/covers/stripes-red.jpg'),
+    yellow: require('../../assets/covers/stripes-yellow.jpg'),
+    teal: require('../../assets/covers/stripes-teal.jpg'),
+    lilac: require('../../assets/covers/stripes-lilac.jpg'),
+    orange: require('../../assets/covers/stripes-orange.jpg'),
+    pink: require('../../assets/covers/stripes-pink.jpg'),
+    purple: require('../../assets/covers/stripes-purple.jpg'),
+  },
+  watercolor: {
+    blue: require('../../assets/covers/watercolor-blue.jpg'),
+    red: require('../../assets/covers/watercolor-red.jpg'),
+    yellow: require('../../assets/covers/watercolor-yellow.jpg'),
+    teal: require('../../assets/covers/watercolor-teal.jpg'),
+    lilac: require('../../assets/covers/watercolor-lilac.jpg'),
+    orange: require('../../assets/covers/watercolor-orange.jpg'),
+    pink: require('../../assets/covers/watercolor-pink.jpg'),
+    purple: require('../../assets/covers/watercolor-purple.jpg'),
+  },
+  leopard: {
+    blue: require('../../assets/covers/leopard-blue.jpg'),
+    red: require('../../assets/covers/leopard-red.jpg'),
+    yellow: require('../../assets/covers/leopard-yellow.jpg'),
+    teal: require('../../assets/covers/leopard-teal.jpg'),
+    lilac: require('../../assets/covers/leopard-lilac.jpg'),
+    orange: require('../../assets/covers/leopard-orange.jpg'),
+    pink: require('../../assets/covers/leopard-pink.jpg'),
+    purple: require('../../assets/covers/leopard-purple.jpg'),
+  },
+  plaid: {
+    blue: require('../../assets/covers/plaid-blue.jpg'),
+    red: require('../../assets/covers/plaid-red.jpg'),
+    yellow: require('../../assets/covers/plaid-yellow.jpg'),
+    teal: require('../../assets/covers/plaid-teal.jpg'),
+    lilac: require('../../assets/covers/plaid-lilac.jpg'),
+    orange: require('../../assets/covers/plaid-orange.jpg'),
+    pink: require('../../assets/covers/plaid-pink.jpg'),
+    purple: require('../../assets/covers/plaid-purple.jpg'),
+  },
+  zebra: {
+    blue: require('../../assets/covers/zebra-blue.jpg'),
+    red: require('../../assets/covers/zebra-red.jpg'),
+    yellow: require('../../assets/covers/zebra-yellow.jpg'),
+    teal: require('../../assets/covers/zebra-teal.jpg'),
+    lilac: require('../../assets/covers/zebra-lilac.jpg'),
+    orange: require('../../assets/covers/zebra-orange.jpg'),
+    pink: require('../../assets/covers/zebra-pink.jpg'),
+    purple: require('../../assets/covers/zebra-purple.jpg'),
+  },
+  spots: {
+    blue: require('../../assets/covers/spots-blue.jpg'),
+    red: require('../../assets/covers/spots-red.jpg'),
+    yellow: require('../../assets/covers/spots-yellow.jpg'),
+    teal: require('../../assets/covers/spots-teal.jpg'),
+    lilac: require('../../assets/covers/spots-lilac.jpg'),
+    orange: require('../../assets/covers/spots-orange.jpg'),
+    pink: require('../../assets/covers/spots-pink.jpg'),
+    purple: require('../../assets/covers/spots-purple.jpg'),
+  },
+  polka: {
+    blue: require('../../assets/covers/polka-blue.jpg'),
+    red: require('../../assets/covers/polka-red.jpg'),
+    yellow: require('../../assets/covers/polka-yellow.jpg'),
+    teal: require('../../assets/covers/polka-teal.jpg'),
+    lilac: require('../../assets/covers/polka-lilac.jpg'),
+    orange: require('../../assets/covers/polka-orange.jpg'),
+    pink: require('../../assets/covers/polka-pink.jpg'),
+    purple: require('../../assets/covers/polka-purple.jpg'),
+  },
+  stars: {
+    blue: require('../../assets/covers/stars-blue.jpg'),
+    red: require('../../assets/covers/stars-red.jpg'),
+    yellow: require('../../assets/covers/stars-yellow.jpg'),
+    teal: require('../../assets/covers/stars-teal.jpg'),
+    lilac: require('../../assets/covers/stars-lilac.jpg'),
+    orange: require('../../assets/covers/stars-orange.jpg'),
+    pink: require('../../assets/covers/stars-pink.jpg'),
+    purple: require('../../assets/covers/stars-purple.jpg'),
+  },
+};

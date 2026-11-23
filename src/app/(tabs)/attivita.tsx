@@ -3,14 +3,14 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { confirm } from '../../components/dialogs';
-import { AddCard, CoverCard, ItemMenu, NotebookEditor } from '../../components/notebooks';
+import { COVER_RATIO } from '../../components/coverArt';
+import { AddCard, CoverCard, ItemMenu, NotebookCover, NotebookEditor } from '../../components/notebooks';
 import { registerTabScreen, TabSwipe } from '../../components/TabSwipe';
 import { Chip, IconButton, Screen, ScreenHeader, type IconName } from '../../components/ui';
-import { CoverThumb } from '../../components/whiteboard/Paper';
 import { t } from '../../i18n';
 import { useEnvironment } from '../../state/environment';
 import { deleteNotebook, NO_SUBJECT, renameNotebook, sheetsOf, useSheets } from '../../state/notebooks';
-import { addSubject, setSubjectColor, subjectColor, useSubjectColors, useSubjects } from '../../state/subjects';
+import { addSubject, setSubjectLook, subjectLook, useSubjectLooks, useSubjects, type NotebookLook } from '../../state/subjects';
 import { useTheme } from '../../theme';
 
 type QuickAction = { key: keyof typeof t.activitiesHub.actions; icon: IconName; brand?: boolean };
@@ -22,7 +22,7 @@ const ACTIONS: QuickAction[] = [
 ];
 
 /** Quaderno: una materia con i suoi fogli (dec. 143). */
-type Notebook = { subject: string; label: string; color: string; count: number };
+type Notebook = { subject: string; label: string; look: NotebookLook; count: number };
 
 /** Appunti: i quaderni, uno per materia, due per riga (dec. 141-143; prima Attività, dec. 109 e 135). */
 function AttivitaScreen() {
@@ -30,21 +30,21 @@ function AttivitaScreen() {
   const { active } = useEnvironment();
   const sheets = useSheets();
   const subjects = useSubjects();
-  const subjectColors = useSubjectColors();
+  const looks = useSubjectLooks();
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [editing, setEditing] = useState<Notebook | 'new' | null>(null);
   const [listW, setListW] = useState(0);
 
-  const books: Notebook[] = subjects.map((s, i) => ({ subject: s, label: s, color: subjectColor(subjectColors, s, i), count: sheetsOf(sheets, s).length }));
+  const books: Notebook[] = subjects.map((s, i) => ({ subject: s, label: s, look: subjectLook(looks, s, i), count: sheetsOf(sheets, s).length }));
   // I fogli senza materia restano raggiungibili in un quaderno a parte.
   const others = sheetsOf(sheets, NO_SUBJECT).length;
-  if (others) books.push({ subject: NO_SUBJECT, label: t.activitiesHub.otherSheets, color: colors.textTertiary, count: others });
+  if (others) books.push({ subject: NO_SUBJECT, label: t.activitiesHub.otherSheets, look: { theme: 'polka', color: 'lilac' }, count: others });
 
   // Due quaderni per riga (dec. 143); su iPad e in orizzontale quattro.
   const gap = spacing.md;
   const cols = listW >= 700 ? 4 : 2;
   const bookW = listW > 0 ? (listW - gap * (cols - 1)) / cols : 0;
-  const bookH = Math.round(bookW * 1.32);
+  const bookH = Math.round(bookW / COVER_RATIO);
 
   const open = (b: Notebook) => router.push({ pathname: '/quaderno/[name]', params: { name: b.subject } });
   const remove = (b: Notebook) => confirm(t.activitiesHub.confirmDeleteBook(b.label), t.manage.delete, () => deleteNotebook(b.subject, sheets));
@@ -79,7 +79,7 @@ function AttivitaScreen() {
                   onOpen={() => open(b)}
                   onMenu={() => setMenuFor(b.subject)}
                 >
-                  <CoverThumb color={b.color} title={b.label} width={bookW} height={bookH} />
+                  <NotebookCover look={b.look} name={b.label} width={bookW} height={bookH} />
                 </CoverCard>
               ))}
               <AddCard width={bookW} height={bookH} label={t.activitiesHub.newBook} onPress={() => setEditing('new')} />
@@ -104,12 +104,12 @@ function AttivitaScreen() {
       )}
       {editing && (
         <NotebookEditor
-          initial={editing === 'new' ? undefined : { name: editing.subject, color: editing.color }}
+          initial={editing === 'new' ? undefined : { name: editing.subject, look: editing.look }}
           onClose={() => setEditing(null)}
-          onSave={(name, color) => {
+          onSave={(name, look) => {
             const ok = editing === 'new' ? addSubject(name) : renameNotebook(editing.subject, name, sheets);
             if (!ok) return t.activitiesHub.subjectDup;
-            setSubjectColor(name, color);
+            setSubjectLook(name, look);
             setEditing(null);
             return undefined;
           }}

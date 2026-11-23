@@ -1,12 +1,14 @@
 // Materie degli appunti, una per quaderno (dec. 141-143). Stato solo in memoria: nessun backend è stato scelto (dec. 53).
 import { useSyncExternalStore } from 'react';
 import { demoSubjects } from '../data/demo';
-import { covers } from '../theme';
+import { COVER_COLORS, COVER_THEMES, type CoverColor, type CoverTheme } from '../components/coverArt';
 
 // Si parte dalle materie dell'onboarding; finché l'onboarding è disattivato (dec. 130) quelle predefinite delle superiori.
 let subjects: string[] = [...demoSubjects.superiori];
-/** Colore della copertina del quaderno, per materia (chiave in minuscolo). */
-let colors: Record<string, string> = {};
+/** Copertina del quaderno: tema (fantasia) e colore (dec. 144). */
+export type NotebookLook = { theme: CoverTheme; color: CoverColor };
+/** Copertine scelte, per materia (chiave in minuscolo). */
+let looks: Record<string, NotebookLook> = {};
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 const subscribe = (l: () => void) => {
@@ -41,9 +43,9 @@ export function renameSubject(from: string, to: string) {
   const i = subjects.findIndex((s) => same(s, from));
   if (!v || subjects.some((s, j) => j !== i && same(s, v))) return false;
   subjects = i < 0 ? [...subjects, v] : subjects.map((s, j) => (j === i ? v : s));
-  if (colors[key(from)] && key(from) !== key(v)) {
-    const { [key(from)]: c, ...rest } = colors;
-    colors = { ...rest, [key(v)]: c };
+  if (looks[key(from)] && key(from) !== key(v)) {
+    const { [key(from)]: c, ...rest } = looks;
+    looks = { ...rest, [key(v)]: c };
   }
   emit();
   return true;
@@ -52,26 +54,27 @@ export function renameSubject(from: string, to: string) {
 /** Toglie una materia, insieme al suo quaderno (dec. 142). */
 export function removeSubject(name: string) {
   subjects = subjects.filter((s) => !same(s, name));
-  const { [key(name)]: _, ...rest } = colors;
-  colors = rest;
+  const { [key(name)]: _, ...rest } = looks;
+  looks = rest;
   emit();
 }
 
-/** Cambia il colore della copertina del quaderno (dec. 143). */
-export function setSubjectColor(name: string, color: string) {
-  colors = { ...colors, [key(name)]: color };
+/** Cambia tema e colore della copertina del quaderno (dec. 143-144). */
+export function setSubjectLook(name: string, look: NotebookLook) {
+  looks = { ...looks, [key(name)]: look };
   emit();
 }
 
-/** Colore del quaderno: quello scelto o, se non c'è, uno della tavolozza in base alla posizione. */
-export function subjectColor(all: Record<string, string>, name: string, index: number) {
-  return all[key(name)] ?? covers[Math.max(0, index) % covers.length].color;
+/** Copertina del quaderno: quella scelta o, se non c'è, una diversa per posizione (temi e colori a rotazione). */
+export function subjectLook(all: Record<string, NotebookLook>, name: string, index: number): NotebookLook {
+  const i = Math.max(0, index);
+  return all[key(name)] ?? { theme: COVER_THEMES[i % COVER_THEMES.length], color: COVER_COLORS[(i * 3) % COVER_COLORS.length] };
 }
 
 export function useSubjects() {
   return useSyncExternalStore(subscribe, () => subjects, () => subjects);
 }
 
-export function useSubjectColors() {
-  return useSyncExternalStore(subscribe, () => colors, () => colors);
+export function useSubjectLooks() {
+  return useSyncExternalStore(subscribe, () => looks, () => looks);
 }
