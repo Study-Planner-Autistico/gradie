@@ -177,7 +177,7 @@ const it = {
       recovery: 'Usa un codice di recupero',
     },
   },
-  tabs: { home: 'Inizio', agenda: 'Agenda', activities: 'Attività', community: 'Comunità', profile: 'Profilo' },
+  tabs: { home: 'Inizio', agenda: 'Agenda', activities: 'Appunti', community: 'Comunità', profile: 'Profilo' },
   greeting: { morning: 'Buongiorno', afternoon: 'Buon pomeriggio', evening: 'Buonasera' },
   home: {
     today: 'Oggi',
@@ -596,7 +596,7 @@ const en: Dict = {
       recovery: 'Use a recovery code',
     },
   },
-  tabs: { home: 'Home', agenda: 'Agenda', activities: 'Tasks', community: 'Community', profile: 'Profile' },
+  tabs: { home: 'Home', agenda: 'Agenda', activities: 'Notes', community: 'Community', profile: 'Profile' },
   greeting: { morning: 'Good morning', afternoon: 'Good afternoon', evening: 'Good evening' },
   home: {
     today: 'Today',
