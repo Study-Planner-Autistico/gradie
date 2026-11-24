@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulatori Gradie</title>
+<!--
+  Simulatori di iPhone e iPad per provare Gradie dal PC (dec. 184).
+  Mostrano la versione web dell'app (Expo Web, `npx expo start --web --port 8090`) dentro due cornici
+  alla misura vera dei dispositivi. Non sono il Simulatore di iOS (che su Windows non esiste):
+  Pencil, menu nativi di iOS e vibrazione si provano sul dispositivo vero con Expo Go.
+-->
+<style>
+  :root {
+    --bg: #ECECF0;
+    --panel: #FFFFFF;
+    --text: #16161A;
+    --muted: #5E5E66;
+    --border: #D6D6DC;
+    --accent: #1F6FEB;
+    --bezel: #1B1B1F;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0C0C0F;
+      --panel: #1B1B1F;
+      --text: #F2F2F5;
+      --muted: #A5A5AE;
+      --border: #34343A;
+      --accent: #3B8BFF;
+      --bezel: #000000;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0C0C0F;
+    --panel: #1B1B1F;
+    --text: #F2F2F5;
+    --muted: #A5A5AE;
+    --border: #34343A;
+    --accent: #3B8BFF;
+    --bezel: #000000;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.4 -apple-system, "Segoe UI", system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    padding: 10px 16px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 { font-size: 16px; margin: 0; margin-right: auto; }
+  label { display: flex; align-items: center; gap: 6px; color: var(--muted); }
+  input[type="text"] {
+    width: 220px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+  }
+  button {
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  main {
+    flex: 1;
+    display: flex;
+    gap: 32px;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    min-height: 0;
+  }
+  .device { display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 0; }
+  .device .bar { display: flex; gap: 8px; align-items: center; color: var(--muted); }
+  .device .name { font-weight: 600; color: var(--text); }
+  .slot { position: relative; }
+  .frame {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: top left;
+    background: var(--bezel);
+    padding: var(--pad);
+    border-radius: var(--outer);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  }
+  .screen {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--inner);
+    background: #FFFFFF;
+  }
+  iframe { display: block; border: 0; width: 100%; height: 100%; }
+  .island {
+    position: absolute;
+    top: 11px;
+    left: 50%;
+    width: 120px;
+    height: 34px;
+    margin-left: -60px;
+    border-radius: 20px;
+    background: #000;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .hidden { display: none; }
+  @media (max-width: 700px) {
+    main { flex-direction: column; overflow: auto; justify-content: flex-start; }
+    input[type="text"] { width: 140px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Simulatori Gradie</h1>
+  <label>Indirizzo <input id="url" type="text" value="http://localhost:8090/home" spellcheck="false"></label>
+  <button id="go">Apri in entrambi</button>
+  <label><input id="show-phone" type="checkbox" checked> iPhone</label>
+  <label><input id="show-pad" type="checkbox" checked> iPad</label>
+</header>
+<main id="stage">
+  <section class="device" id="phone">
+    <div class="bar"><span class="name">iPhone 16</span><span class="size"></span>
+      <button data-rotate>Ruota</button><button data-reload>Ricarica</button></div>
+    <div class="slot"><div class="frame" style="--pad:12px; --outer:58px; --inner:47px">
+      <div class="screen"><div class="island"></div><iframe title="Gradie su iPhone"></iframe></div>
+    </div></div>
+  </section>
+  <section class="device" id="pad">
+    <div class="bar"><span class="name">iPad Air 11"</span><span class="size"></span>
+      <button data-rotate>Ruota</button><button data-reload>Ricarica</button></div>
+    <div class="slot"><div class="frame" style="--pad:18px; --outer:38px; --inner:20px">
+      <div class="screen"><iframe title="Gradie su iPad"></iframe></div>
+    </div></div>
+  </section>
+</main>
+<script>
+  // Misure in punti dei dispositivi veri, in verticale.
+  const DEVICES = {
+    phone: { w: 393, h: 852, pad: 12, landscape: false },
+    pad: { w: 820, h: 1180, pad: 18, landscape: false },
+  };
+  const stage = document.getElementById('stage');
+  const urlInput = document.getElementById('url');
+
+  function load(id) {
+    document.querySelector(`#${id} iframe`).src = urlInput.value.trim();
+  }
+
+  // Ogni dispositivo è rimpicciolito per stare nella finestra, senza cambiare la sua misura in punti.
+  function layout() {
+    const shown = Object.keys(DEVICES).filter((id) => !document.getElementById(id).classList.contains('hidden'));
+    const narrow = window.innerWidth <= 700;
+    const availH = stage.clientHeight - 60;
+    const totalW = shown.reduce((s, id) => {
+      const d = DEVICES[id];
+      return s + (d.landscape ? d.h : d.w) + d.pad * 2;
+    }, 0);
+    const availW = stage.clientWidth - 32 * (shown.length - 1) - 32;
+    for (const id of shown) {
+      const d = DEVICES[id];
+      const w = d.landscape ? d.h : d.w;
+      const h = d.landscape ? d.w : d.h;
+      const fw = w + d.pad * 2;
+      const fh = h + d.pad * 2;
+      const byH = availH / fh;
+      const byW = narrow ? (stage.clientWidth - 32) / fw : availW / totalW;
+      const s = Math.min(1, narrow ? byW : Math.min(byH, byW));
+      const el = document.getElementById(id);
+      const frame = el.querySelector('.frame');
+      const screen = el.querySelector('.screen');
+      screen.style.width = w + 'px';
+      screen.style.height = h + 'px';
+      frame.style.transform = `scale(${s})`;
+      const slot = el.querySelector('.slot');
+      slot.style.width = fw * s + 'px';
+      slot.style.height = fh * s + 'px';
+      el.querySelector('.size').textContent = `${w}×${h} · ${Math.round(s * 100)}%`;
+      const island = el.querySelector('.island');
+      if (island) island.style.display = d.landscape ? 'none' : '';
+    }
+  }
+
+  for (const id of Object.keys(DEVICES)) {
+    const el = document.getElementById(id);
+    el.querySelector('[data-rotate]').addEventListener('click', () => {
+      DEVICES[id].landscape = !DEVICES[id].landscape;
+      layout();
+    });
+    el.querySelector('[data-reload]').addEventListener('click', () => load(id));
+    document.getElementById(`show-${id}`).addEventListener('change', (e) => {
+      el.classList.toggle('hidden', !e.target.checked);
+      layout();
+    });
+    load(id);
+  }
+  document.getElementById('go').addEventListener('click', () => Object.keys(DEVICES).forEach(load));
+  urlInput.addEventListener('keydown', (e) => e.key === 'Enter' && Object.keys(DEVICES).forEach(load));
+  window.addEventListener('resize', layout);
+  layout();
+</script>
+</body>
+</html>

@@ -1,9 +1,8 @@
-import { Button, Divider, Host, Menu, RNHostView, Toggle } from '@expo/ui/swift-ui';
-import { accessibilityLabel, buttonStyle, menuIndicator, menuStyle } from '@expo/ui/swift-ui/modifiers';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';
 import { COVER_RATIO } from '../../components/coverArt';
+import { NativeMoreMenu } from '../../components/NativeMoreMenu';
 import { AddCard, CoverCard, downloadNotebook, ItemMenu, NotebookCover, NotebookEditor } from '../../components/notebooks';
 import { SortableGrid } from '../../components/SortableGrid';
 import { registerTabScreen, TabSwipe } from '../../components/TabSwipe';
@@ -266,20 +265,7 @@ function MoreMenu({
       </Pressable>
     );
   }
-  return (
-    <Host matchContents>
-      <Menu label={<RNHostView matchContents>{icon}</RNHostView>} modifiers={[menuStyle('button'), buttonStyle('plain'), menuIndicator('hidden'), accessibilityLabel(t.activitiesHub.more)]}>
-        <Menu label={t.activitiesHub.sortLabel} systemImage="arrow.up.arrow.down">
-          {SORTS.map((m) => (
-            <Button key={m} label={t.activitiesHub.sort[m]} systemImage={sort === m ? 'checkmark' : undefined} onPress={() => onSort(m)} />
-          ))}
-        </Menu>
-        <Toggle label={t.settings.plainCovers} systemImage="paintpalette" isOn={plainCovers} onIsOnChange={onPlainCovers} />
-        <Divider />
-        <Button label={t.trash.title} systemImage="trash" onPress={onTrash} />
-      </Menu>
-    </Host>
-  );
+  return <NativeMoreMenu icon={icon} sorts={SORTS} sort={sort} plainCovers={plainCovers} onSort={onSort} onPlainCovers={onPlainCovers} onTrash={onTrash} />;
 }
 
 function ActionButton({ icon, label, onPress }: { icon: IconName; label: string; onPress?: () => void }) {
