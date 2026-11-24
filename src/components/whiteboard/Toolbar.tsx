@@ -85,8 +85,8 @@ export function Toolbar({
     if (key === 'more') return setMore(true);
     if (key === 'less') return setMore(false);
     if (key === tool && hasOptions(key)) return setPanel(panel === 'none' ? 'options' : 'none');
-    // Le forme si scelgono subito: il pannello si apre insieme allo strumento.
-    setPanel(key === 'shapes' ? 'options' : 'none');
+    // Forme e gomma si scelgono subito: il pannello si apre insieme allo strumento (gomma: dec. 177).
+    setPanel(key === 'shapes' || key === 'eraser' ? 'options' : 'none');
     onTool(key);
   };
 

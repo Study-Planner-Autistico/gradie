@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Glass } from '../../components/Glass';
 import { IconButton } from '../../components/ui';
@@ -165,6 +165,9 @@ export default function Lavagna() {
         onRedo={redo}
         onRevert={(g) => revertGroup(boardId, g)}
       />
+
+      {/* Con un pannello dello strumento aperto, il primo tocco sulla lavagna lo chiude soltanto, senza scrivere (dec. 177). */}
+      {panel !== 'none' && <View style={StyleSheet.absoluteFill} onStartShouldSetResponder={() => true} onResponderGrant={() => setPanel('none')} />}
 
       {/* Annulla e ripeti, a destra a metà altezza (dec. 116). */}
       <SafeAreaView edges={['right']} pointerEvents="box-none" style={{ position: 'absolute', top: 0, bottom: 0, right: 0, justifyContent: 'center' }}>
