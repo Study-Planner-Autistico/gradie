@@ -35,7 +35,8 @@ const initialBrush = (tool: StrokeTool, dark: boolean): Brush => ({
   color: (dark ? ink[tool].dark : ink[tool].light)[0],
   width: ink.widths[tool][1],
   style: 'solid',
-  stabilization: 1,
+  // Stabilizzazione bassa di partenza in ogni nuova pagina (dec. 181).
+  stabilization: 0,
 });
 
 /** Lavagna di una nota (dec. 110): scrittura libera e strumenti in basso. */
@@ -230,12 +231,15 @@ export default function Lavagna() {
           <Toolbar
             tool={tool}
             onTool={chooseTool}
+            sheet={sheet.kind === 'add' ? 'add' : sheet.kind === 'record' ? 'audio' : null}
             onAdd={() => {
               setPanel('none');
+              setSelected([]);
               setSheet(sheet.kind === 'add' ? { kind: 'none' } : { kind: 'add' });
             }}
             onAudio={() => {
               setPanel('none');
+              setSelected([]);
               setSheet(sheet.kind === 'record' ? { kind: 'none' } : { kind: 'record' });
             }}
             brush={brush}

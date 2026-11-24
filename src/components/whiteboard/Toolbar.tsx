@@ -41,6 +41,7 @@ export function Toolbar({
   onTool,
   onAdd,
   onAudio,
+  sheet = null,
   brush,
   setBrush,
   panel,
@@ -59,6 +60,8 @@ export function Toolbar({
   onTool: (t: Tool) => void;
   onAdd: () => void;
   onAudio: () => void;
+  /** Pannello Aggiungi o audio aperto: è lui il pulsante attivo, lo strumento di prima non è più evidenziato (dec. 181). */
+  sheet?: 'add' | 'audio' | null;
   brush: Brush | null;
   setBrush: (b: Partial<Brush>) => void;
   panel: Panel;
@@ -141,7 +144,7 @@ export function Toolbar({
           contentContainerStyle={{ padding: spacing.xs, gap: 0, flexGrow: 1, justifyContent: 'center' }}
         >
           {keys.map((tl) => {
-            const active = tl.key === tool || (tl.key === 'ruler' && rulerOn);
+            const active = (sheet ? tl.key === sheet : tl.key === tool) || (tl.key === 'ruler' && rulerOn);
             const label = t.whiteboard.tools[tl.key];
             const icon: IconName = tl.key === 'select' && selectMode === 'lasso' ? 'lasso' : tl.key === 'eraser' && eraserMode === 'whole' ? 'eraser-whole' : tl.icon;
             return (
