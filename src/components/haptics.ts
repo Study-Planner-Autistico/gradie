@@ -17,3 +17,8 @@ export function success() {
 export function warn() {
   if (enabled) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
 }
+
+/** Un oggetto sollevato per essere trascinato (dec. 147). */
+export function lift() {
+  if (enabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+}
