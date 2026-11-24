@@ -265,10 +265,11 @@ export const ink = {
     dark: ['#FFFFFF', '#3B8BFF', '#FF453A'],
     extra: ['#24894F', '#B86E00', '#8E44AD', '#E91E63', '#00A3A3', '#6B4F2A'],
   },
+  // Matita: una gradazione più chiara della penna, anche il primo grigio (dec. 178).
   pencil: {
-    light: ['#2B2B2F', '#5E5E66', '#8E8E97'],
-    dark: ['#E4E4E8', '#B4B4BC', '#85858E'],
-    extra: ['#1A1A1D', '#45454C', '#75757E', '#A5A5AE', '#C8C8CF', '#E0E0E5'],
+    light: ['#55555C', '#7E7E87', '#A5A5AE'],
+    dark: ['#C8C8CF', '#9E9EA6', '#75757E'],
+    extra: ['#3A3A40', '#5E5E66', '#8E8E97', '#B4B4BC', '#D2D2D8', '#E8E8EC'],
   },
   highlighter: {
     light: ['#FFE14D', '#7CF29A', '#FF8AD8'],

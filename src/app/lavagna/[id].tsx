@@ -29,7 +29,7 @@ import { pageSize } from '../../components/whiteboard/Paper';
 import { ink, useTheme } from '../../theme';
 import { Icon } from '../../components/icons';
 
-type Sheet = { kind: 'none' } | { kind: 'add' } | { kind: 'record' } | { kind: 'audio'; id: string };
+type Sheet = { kind: 'none' } | { kind: 'add' } | { kind: 'record' } | { kind: 'audio'; id: string; fresh?: boolean };
 
 const initialBrush = (tool: StrokeTool, dark: boolean): Brush => ({
   color: (dark ? ink[tool].dark : ink[tool].light)[0],
@@ -160,6 +160,11 @@ export default function Lavagna() {
           if (v) setPanel('none');
         }}
         onOpenAudio={(aid) => setSheet({ kind: 'audio', id: aid })}
+        activeAudio={sheet.kind === 'audio' ? sheet.id : null}
+        onDeleteAudio={(aid) => {
+          update((prev) => prev.filter((i) => i.id !== aid));
+          setSheet({ kind: 'none' });
+        }}
         onSize={setSize}
         onUndo={undo}
         onRedo={redo}
@@ -203,7 +208,12 @@ export default function Lavagna() {
           {sheet.kind === 'record' && (
             <RecordPanel
               onClose={() => setSheet({ kind: 'none' })}
-              onDone={(uri, seconds) => add({ kind: 'audio', id: newId('au'), ...center(44, 44), uri, seconds, comment: '' })}
+              onDone={(uri, seconds) => {
+                // Appena registrata resta aperta: si riascolta, si sposta trascinandola o si elimina con la x (dec. 178).
+                const aid = newId('au');
+                add({ kind: 'audio', id: aid, ...center(44, 44), uri, seconds, comment: '' });
+                setSheet({ kind: 'audio', id: aid, fresh: true });
+              }}
             />
           )}
           {audio?.kind === 'audio' && (
@@ -212,6 +222,7 @@ export default function Lavagna() {
               uri={audio.uri}
               seconds={audio.seconds}
               comment={audio.comment}
+              autoPlay={!(sheet.kind === 'audio' && sheet.fresh)}
               onComment={(c) => update((prev) => prev.map((i) => (i.id === audio.id && i.kind === 'audio' ? { ...i, comment: c } : i)))}
               onClose={() => setSheet({ kind: 'none' })}
             />

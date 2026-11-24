@@ -16,7 +16,8 @@ const SIZED: PaperTemplate[] = ['lined', 'grid'];
 const OTHERS: PaperTemplate[] = ['blank', 'margin', 'cornell', 'dots', 'music'];
 const SIZES: PageSize[] = ['a4', 'letter'];
 /** Distanza delle righe / lato dei quadri, in punti del foglio (28 = righe normali, 16 = quadretti piccoli). */
-const GAP = { lined: { min: 16, max: 44 }, grid: { min: 12, max: 40 } } as const;
+/** Distanza tra le righe e lato dei quadretti: 20% più fitti di prima (dec. 178). */
+const GAP = { lined: { min: 13, max: 35 }, grid: { min: 10, max: 32 } } as const;
 // Le vecchie carte a misura fissa diventano righe o quadri con la loro misura.
 const LEGACY: Partial<Record<PaperTemplate, [PaperTemplate, number]>> = { narrow: ['lined', 20], wide: ['lined', 38], smallGrid: ['grid', 16] };
 

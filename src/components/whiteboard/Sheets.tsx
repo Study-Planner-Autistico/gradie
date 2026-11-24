@@ -6,6 +6,7 @@ import {
   useAudioPlayerStatus,
   useAudioRecorder,
 } from 'expo-audio';
+import Slider from '@react-native-community/slider';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
@@ -112,6 +113,21 @@ function ErrorText({ text }: { text: string }) {
   return <Text style={[typography.caption, { color: colors.danger }]}>{text}</Text>;
 }
 
+/** -10 / +10 secondi nel lettore della nota audio. */
+function SkipButton({ label, a11y, onPress }: { label: string; a11y: string; onPress: () => void }) {
+  const { colors, radius, spacing, typography } = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={a11y}
+      style={({ pressed }) => ({ minWidth: 48, height: 40, paddingHorizontal: spacing.sm, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceMuted, opacity: pressed ? 0.6 : 1 })}
+    >
+      <Text style={[typography.callout, { color: colors.text, fontWeight: '600' }]}>{label}</Text>
+    </Pressable>
+  );
+}
+
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
 /** Nono strumento: registra un audio e lo mette sulla lavagna. */
@@ -188,21 +204,30 @@ export function AudioPanel({
   comment,
   onComment,
   onClose,
+  autoPlay = true,
 }: {
   uri: string;
   seconds: number;
   comment: string;
   onComment: (c: string) => void;
   onClose: () => void;
+  /** Parte da sola quando la si apre toccandola; appena registrata no (dec. 178). */
+  autoPlay?: boolean;
 }) {
   const { colors, radius, spacing, typography } = useTheme();
   const player = useAudioPlayer(uri);
   const status = useAudioPlayerStatus(player);
+  // Mentre si trascina la barra, il tempo mostrato è quello del dito.
+  const [scrub, setScrub] = useState<number | null>(null);
+  const total = status.duration || seconds;
+  const now = scrub ?? status.currentTime;
 
   useEffect(() => {
     setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
-    player.play();
-  }, [player]);
+    if (autoPlay) player.play();
+  }, [player]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const seek = (sec: number) => player.seekTo(Math.max(0, Math.min(total, sec)));
 
   const toggle = () => {
     if (status.playing) return player.pause();
@@ -221,10 +246,28 @@ export function AudioPanel({
         >
           <Icon name={status.playing ? 'pause' : 'play'} size={26} color={colors.onAccent} />
         </Pressable>
-        <Text style={[typography.time, { color: colors.textSecondary }]}>
-          {fmt(status.currentTime)} / {fmt(status.duration || seconds)}
+        <SkipButton label="−10" a11y={t.whiteboard.audio.back10} onPress={() => seek(status.currentTime - 10)} />
+        <SkipButton label="+10" a11y={t.whiteboard.audio.forward10} onPress={() => seek(status.currentTime + 10)} />
+        <Text style={[typography.time, { color: colors.textSecondary, marginLeft: 'auto' }]}>
+          {fmt(now)} / {fmt(total)}
         </Text>
       </View>
+      {/* Barra: si va a qualsiasi secondo della registrazione (dec. 178). */}
+      <Slider
+        value={now}
+        minimumValue={0}
+        maximumValue={Math.max(total, 0.1)}
+        onValueChange={setScrub}
+        onSlidingComplete={(v) => {
+          seek(v);
+          setScrub(null);
+        }}
+        minimumTrackTintColor={colors.accent}
+        maximumTrackTintColor={colors.border}
+        thumbTintColor={colors.accent}
+        accessibilityLabel={t.whiteboard.audio.position}
+        style={{ alignSelf: 'stretch', height: 36 }}
+      />
       <TextInput
         multiline
         value={comment}

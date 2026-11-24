@@ -1,5 +1,5 @@
 import { useState, type ComponentProps } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { t } from '../../i18n';
 import type { LineStyle, Stabilization, StrokeTool } from '../../state/whiteboard';
@@ -82,8 +82,11 @@ export function Toolbar({
     if (key === 'add') return onAdd();
     if (key === 'audio') return onAudio();
     if (key === 'ruler') return onRuler();
-    if (key === 'more') return setMore(true);
-    if (key === 'less') return setMore(false);
+    // Passando all'altra metà della barra si chiude il pannello aperto (es. forme).
+    if (key === 'more' || key === 'less') {
+      setPanel('none');
+      return setMore(key === 'more');
+    }
     if (key === tool && hasOptions(key)) return setPanel(panel === 'none' ? 'options' : 'none');
     // Forme e gomma si scelgono subito: il pannello si apre insieme allo strumento (gomma: dec. 177).
     setPanel(key === 'shapes' || key === 'eraser' ? 'options' : 'none');
@@ -91,7 +94,14 @@ export function Toolbar({
   };
 
   // Righello e forme prendono il posto degli strumenti di scrittura; la freccia iniziale riporta indietro.
-  const keys: { key: Key; icon: IconName }[] = more ? [{ key: 'less', icon: 'chevron-left' }, ...EXTRA] : [...TOOLS, { key: 'more', icon: 'chevron-right' }];
+  // Se c'è posto (iPad, telefono in orizzontale) tutti gli strumenti stanno su una riga, senza freccia (dec. 178).
+  const { width } = useWindowDimensions();
+  const oneRow = width >= (TOOLS.length + EXTRA.length) * 38 + 60;
+  const keys: { key: Key; icon: IconName }[] = oneRow
+    ? [...TOOLS, ...EXTRA]
+    : more
+      ? [{ key: 'less', icon: 'chevron-left' }, ...EXTRA]
+      : [...TOOLS, { key: 'more', icon: 'chevron-right' }];
 
   return (
     <View style={{ gap: spacing.sm, alignItems: 'center', alignSelf: 'stretch' }} pointerEvents="box-none">

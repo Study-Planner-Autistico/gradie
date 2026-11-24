@@ -8,7 +8,8 @@ import { paperLines, useTheme } from '../../theme';
 /** Larghezza del foglio in verticale, in punti della lavagna; l'altezza segue il formato. */
 const PORTRAIT_W = 380;
 const RATIO: Record<PageSize, number> = { a4: Math.SQRT2, letter: 11 / 8.5 };
-export const LINE_GAP = 28;
+/** Passo di righe, quadretti e puntini (dec. 178: 20% più fitto, prima 28). */
+export const LINE_GAP = 22;
 export const MARGIN_X = 52;
 
 export function pageSize(p: Paper) {
@@ -28,12 +29,12 @@ export function pageCount(p: Paper, items: BoardItem[]) {
 const STEP: Record<PaperTemplate, { w: number; h: number }> = {
   blank: { w: 1, h: 1 },
   lined: { w: LINE_GAP, h: LINE_GAP },
-  narrow: { w: 20, h: 20 },
-  wide: { w: 38, h: 38 },
+  narrow: { w: 16, h: 16 },
+  wide: { w: 30, h: 30 },
   margin: { w: LINE_GAP, h: LINE_GAP },
   cornell: { w: LINE_GAP, h: LINE_GAP },
   grid: { w: LINE_GAP, h: LINE_GAP },
-  smallGrid: { w: 16, h: 16 },
+  smallGrid: { w: 13, h: 13 },
   dots: { w: LINE_GAP, h: LINE_GAP },
   music: { w: 40, h: 78 },
 };

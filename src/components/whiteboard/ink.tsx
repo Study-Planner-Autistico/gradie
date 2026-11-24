@@ -20,6 +20,8 @@ const STYLUS = PointerType.STYLUS;
  * `pts`: punti del tratto in corso, piatti (x, y, pressione) in unità del foglio.
  */
 export type RelayPhase = 'start' | 'move' | 'end' | 'cancel';
+/** Rettangolo sullo schermo, relativo alla lavagna. */
+export type Hole = { x: number; y: number; w: number; h: number };
 
 export function usePen({
   enabled,
@@ -29,8 +31,11 @@ export function usePen({
   onUp,
   onStroke,
   onRelay,
+  holes = [],
 }: {
   enabled: boolean;
+  /** Zone in cui la Pencil non scrive ma tocca (note audio e loro x, dec. 178). */
+  holes?: Hole[];
   /** I punti della Pencil vanno al gestore della lavagna invece che all'inchiostro dal vivo (gomma, righello). */
   relay: boolean;
   view: InkView;
@@ -52,6 +57,11 @@ export function usePen({
   useEffect(() => {
     relayOn.value = relay;
   }, [relayOn, relay]);
+  const holesV = useSharedValue<Hole[]>(holes);
+  const holesKey = holes.map((h) => `${Math.round(h.x)},${Math.round(h.y)},${h.w},${h.h}`).join(';');
+  useEffect(() => {
+    holesV.value = holes;
+  }, [holesV, holesKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const v = useSharedValue(view);
   useEffect(() => {
     v.value = view;
@@ -79,7 +89,9 @@ export function usePen({
       'worklet';
       // Si decide al primo tocco; il palmo appoggiato dopo non interrompe la penna.
       if (e.numberOfTouches !== 1) return;
-      if (e.pointerType === STYLUS) {
+      const t0 = e.allTouches[0];
+      const inHole = holesV.value.some((h) => t0.x >= h.x && t0.x <= h.x + h.w && t0.y >= h.y && t0.y <= h.y + h.h);
+      if (e.pointerType === STYLUS && !inHole) {
         down.value = true;
         downAt.value = { x: e.allTouches[0].x, y: e.allTouches[0].y };
         GestureStateManager.activate(e.handlerTag);

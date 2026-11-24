@@ -29,18 +29,18 @@ function paperSvg(p: Paper, r: Rect): string {
       hLines(LINE_GAP);
       break;
     case 'narrow':
-      hLines(20);
+      hLines(16);
       break;
     case 'wide':
-      hLines(38);
+      hLines(30);
       break;
     case 'grid':
       hLines(p.gap ?? LINE_GAP);
       vLines(p.gap ?? LINE_GAP);
       break;
     case 'smallGrid':
-      hLines(16);
-      vLines(16);
+      hLines(13);
+      vLines(13);
       break;
     case 'dots':
       for (let y = LINE_GAP / 2; y < r.h; y += LINE_GAP)

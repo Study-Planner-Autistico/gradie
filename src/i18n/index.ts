@@ -570,6 +570,10 @@ const it = {
       comment: 'Aggiungi un commento',
       micDenied: 'Serve il permesso di usare il microfono.',
       failed: 'Registrazione non riuscita.',
+      back10: 'Indietro di 10 secondi',
+      forward10: 'Avanti di 10 secondi',
+      position: 'Posizione nella registrazione',
+      remove: 'Elimina la nota audio',
     },
   },
   manage: {
@@ -1197,6 +1201,10 @@ const en: Dict = {
       comment: 'Add a comment',
       micDenied: 'Microphone permission is needed.',
       failed: 'Recording failed.',
+      back10: 'Back 10 seconds',
+      forward10: 'Forward 10 seconds',
+      position: 'Position in the recording',
+      remove: 'Delete audio note',
     },
   },
   manage: {

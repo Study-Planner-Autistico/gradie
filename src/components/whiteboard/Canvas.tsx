@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState, type ComponentRef } from 'react';
 import { Animated, Image, Platform, Pressable, Text, TextInput, View, type GestureResponderEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, G, Line, Path, Rect as SvgRect, Text as SvgText } from 'react-native-svg';
@@ -101,6 +101,8 @@ export function Canvas({
   editingId,
   setEditingId,
   onOpenAudio,
+  activeAudio = null,
+  onDeleteAudio,
   onSize,
   paper,
   onUndo,
@@ -133,9 +135,21 @@ export function Canvas({
   editingId: string | null;
   setEditingId: (id: string | null) => void;
   onOpenAudio: (id: string) => void;
+  /** Nota audio aperta o appena registrata: accanto ha la x per eliminarla (dec. 178). */
+  activeAudio?: string | null;
+  onDeleteAudio?: (id: string) => void;
   onSize: (s: { w: number; h: number }) => void;
 }) {
-  const { isDark } = useTheme();
+  const { isDark, colors } = useTheme();
+  // Testo in scrittura: la tastiera si apre anche se l'autoFocus arriva mentre il tocco (o la Pencil) non è finito (dec. 178).
+  const editRef = useRef<ComponentRef<typeof TextInput>>(null);
+  useEffect(() => {
+    if (!editingId) return;
+    const timer = setTimeout(() => editRef.current?.focus(), 80);
+    return () => clearTimeout(timer);
+  }, [editingId]);
+  // Nota audio presa col dito o con la Pencil: si sposta trascinando, un tocco la apre.
+  const audioDrag = useRef<{ id: string; x: number; y: number; moved: boolean; group: string } | null>(null);
   const origin = useRef<Pt>({ x: 0, y: 0 });
   const drag = useRef<Drag | null>(null);
   // Ogni gesto è un solo passo di annulla.
@@ -240,8 +254,15 @@ export function Canvas({
   const pencilSeen = useRef(false);
   const penActive = useRef(false);
   const penCommitted = useRef(false);
+  // Note audio (44 punti) e la loro x: lì la Pencil tocca invece di scrivere.
+  const audioHoles = items.flatMap((i) =>
+    i.kind === 'audio'
+      ? [{ x: i.x * S + tx - 4, y: i.y * S + ty - 4, w: 52, h: 52 }, ...(i.id === activeAudio ? [{ x: i.x * S + tx + 30, y: i.y * S + ty - 18, w: 32, h: 32 }] : [])]
+      : [],
+  );
   const pen = usePen({
     enabled: strokeTool || tool === 'eraser',
+    holes: audioHoles,
     // Gomma e righello: i punti della Pencil passano al gestore della lavagna (aggancio al bordo, gomma), senza pressione.
     relay: tool === 'eraser' || ruler !== null,
     onRelay: (phase, x, y) => {
@@ -678,7 +699,7 @@ export function Canvas({
               style={{ position: 'absolute', left: r.x * S + tx, top: r.y * S + ty, width: r.w, height: r.h, alignItems: 'center', justifyContent: 'center', padding: 8, ...scaled }}
             >
               {editing ? (
-                <TextInput autoFocus multiline value={i.text} onChangeText={(v) => setText(i.id, v)} onBlur={finishEditing} placeholder={t.whiteboard.textPlaceholder} style={[style, { alignSelf: 'stretch' }]} />
+                <TextInput ref={editRef} autoFocus multiline value={i.text} onChangeText={(v) => setText(i.id, v)} onBlur={finishEditing} placeholder={t.whiteboard.textPlaceholder} style={[style, { alignSelf: 'stretch' }]} />
               ) : (
                 <Text style={style}>{i.text}</Text>
               )}
@@ -703,6 +724,7 @@ export function Canvas({
             >
               {editing ? (
                 <TextInput
+                  ref={editRef}
                   autoFocus
                   multiline
                   value={i.text}
@@ -719,7 +741,7 @@ export function Canvas({
           );
         const textStyle = { fontSize: textMetrics.size, lineHeight: textMetrics.lineHeight, color: i.color, padding: 0, minWidth: 40 };
         return editing ? (
-          <TextInput key={i.id} autoFocus multiline value={i.text} onChangeText={(v) => setText(i.id, v)} onBlur={finishEditing} placeholder={t.whiteboard.textPlaceholder} style={[pos, textStyle]} />
+          <TextInput key={i.id} ref={editRef} autoFocus multiline value={i.text} onChangeText={(v) => setText(i.id, v)} onBlur={finishEditing} placeholder={t.whiteboard.textPlaceholder} style={[pos, textStyle]} />
         ) : (
           <Text key={i.id} pointerEvents="none" style={[pos, textStyle]}>
             {i.text}
@@ -763,16 +785,53 @@ export function Canvas({
 
       {items.map((i) =>
         i.kind === 'audio' ? (
-          <Pressable
-            key={i.id}
-            pointerEvents={tool === 'select' ? 'none' : 'auto'}
-            onPress={() => onOpenAudio(i.id)}
-            accessibilityRole="button"
-            accessibilityLabel={t.whiteboard.audio.play}
-            style={{ position: 'absolute', left: i.x * S + tx, top: i.y * S + ty, width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: ink.selection }}
-          >
-            <Icon name={i.comment ? 'message-processing-outline' : 'volume-high'} size={22} color="#FFFFFF" />
-          </Pressable>
+          <View key={i.id} pointerEvents={tool === 'select' ? 'none' : 'box-none'} style={{ position: 'absolute', left: i.x * S + tx, top: i.y * S + ty }}>
+            {/* Si sposta subito trascinandola, senza selezionarla; un tocco la apre (dec. 178). */}
+            <View
+              accessibilityRole="button"
+              accessibilityLabel={t.whiteboard.audio.play}
+              accessibilityActions={[{ name: 'activate' }]}
+              onAccessibilityAction={() => onOpenAudio(i.id)}
+              onStartShouldSetResponder={() => true}
+              onResponderTerminationRequest={() => false}
+              onResponderGrant={(e) => {
+                audioDrag.current = { id: i.id, x: e.nativeEvent.pageX, y: e.nativeEvent.pageY, moved: false, group: newId('g') };
+              }}
+              onResponderMove={(e) => {
+                const a = audioDrag.current;
+                if (!a) return;
+                const dx = e.nativeEvent.pageX - a.x;
+                const dy = e.nativeEvent.pageY - a.y;
+                if (!a.moved && Math.hypot(dx, dy) < 6) return;
+                a.moved = true;
+                a.x = e.nativeEvent.pageX;
+                a.y = e.nativeEvent.pageY;
+                update((prev) => prev.map((it) => (it.id === a.id ? moveItem(it, dx / S, dy / S) : it)), a.group);
+              }}
+              onResponderRelease={() => {
+                const a = audioDrag.current;
+                audioDrag.current = null;
+                if (a && !a.moved) onOpenAudio(a.id);
+              }}
+              onResponderTerminate={() => {
+                audioDrag.current = null;
+              }}
+              style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: ink.selection }}
+            >
+              <Icon name={i.comment ? 'message-processing-outline' : 'volume-high'} size={22} color="#FFFFFF" />
+            </View>
+            {i.id === activeAudio && onDeleteAudio && (
+              <Pressable
+                onPress={() => onDeleteAudio(i.id)}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={t.whiteboard.audio.remove}
+                style={{ position: 'absolute', left: 34, top: -14, width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.danger }}
+              >
+                <Icon name="close" size={15} color="#FFFFFF" />
+              </Pressable>
+            )}
+          </View>
         ) : null,
       )}
 
@@ -791,7 +850,8 @@ export function Canvas({
             borderRadius: 14,
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: ink.selection,
+            // Rossa: elimina ciò che è selezionato (dec. 178).
+            backgroundColor: colors.danger,
           }}
         >
           <Icon name="close" size={18} color="#FFFFFF" />
