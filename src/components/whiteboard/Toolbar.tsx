@@ -87,7 +87,11 @@ export function Toolbar({
       setPanel('none');
       return setMore(key === 'more');
     }
-    if (key === tool && hasOptions(key)) return setPanel(panel === 'none' ? 'options' : 'none');
+    // Anche toccando lo strumento già scelto si chiudono Aggiungi e audio: i pannelli non si sovrappongono, solo il righello sì (dec. 180).
+    if (key === tool && hasOptions(key)) {
+      onTool(key);
+      return setPanel(panel === 'none' ? 'options' : 'none');
+    }
     // Forme e gomma si scelgono subito: il pannello si apre insieme allo strumento (gomma: dec. 177).
     setPanel(key === 'shapes' || key === 'eraser' ? 'options' : 'none');
     onTool(key);
