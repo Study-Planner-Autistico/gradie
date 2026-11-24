@@ -823,6 +823,7 @@ export function Canvas({
             {i.id === activeAudio && onDeleteAudio && (
               <Pressable
                 onPress={() => onDeleteAudio(i.id)}
+                cancelable={false}
                 hitSlop={8}
                 accessibilityRole="button"
                 accessibilityLabel={t.whiteboard.audio.remove}
@@ -838,6 +839,8 @@ export function Canvas({
       {tool === 'select' && selectedBox && !rect && !lasso && (
         <Pressable
           onPress={deleteSelection}
+          // La lavagna sotto non deve prendersi il tocco se il dito o la Pencil si muove appena (dec. 179).
+          cancelable={false}
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel={t.whiteboard.deleteSelection}
