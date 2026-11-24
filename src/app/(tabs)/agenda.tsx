@@ -4,20 +4,13 @@ import { CalendarSheet, DayStrip, DayTimeline } from '../../components/agenda';
 import { COVER_SWATCH } from '../../components/coverArt';
 import { tap } from '../../components/haptics';
 import { EmptyState, Screen } from '../../components/ui';
-import { demoAgenda } from '../../data/demo';
+import { AgendaEditor, ImportSheet, UntimedSheet, type EditorTarget } from '../../components/AgendaEditor';
+import { fromYmd, occurrencesOn, useAgenda, ymd, type Occurrence } from '../../state/agenda';
 import { t } from '../../i18n';
 import { subjectLook, useSubjectLooks, useSubjects } from '../../state/subjects';
 import { useTheme } from '../../theme';
 import { registerTabScreen, TabSwipe } from '../../components/TabSwipe';
 import { Icon } from '../../components/icons';
-
-function dayOffset(d: Date) {
-  const a = new Date();
-  a.setHours(0, 0, 0, 0);
-  const b = new Date(d);
-  b.setHours(0, 0, 0, 0);
-  return Math.round((b.getTime() - a.getTime()) / 86400000);
-}
 
 /** Agenda (modulo 02 §5 AG-01): sette giorni con quello scelto al centro e gli eventi in verticale (dec. 151). */
 function AgendaScreen() {
@@ -26,10 +19,26 @@ function AgendaScreen() {
   const looks = useSubjectLooks();
   const [selected, setSelected] = useState(new Date());
   const [calendarOpen, setCalendarOpen] = useState(false);
-  // Solo gli eventi con orario: la parte "Senza orario" è stata tolta (dec. 157).
-  const itemsOf = (d: Date) => demoAgenda.filter((i) => i.start && i.dayOffset === dayOffset(d));
+  const [editor, setEditor] = useState<EditorTarget | null>(null);
+  const [untimedOpen, setUntimedOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const agenda = useAgenda();
+  // Impegni salvati (dec. 186): sulla linea quelli con orario; quelli senza in un riepilogo del giorno.
+  const allOf = (d: Date) => occurrencesOn(agenda, ymd(d));
+  const itemsOf = (d: Date) => allOf(d).filter((i) => i.start);
   const items = itemsOf(selected);
-  const isToday = dayOffset(selected) === 0;
+  const untimed = allOf(selected).filter((i) => !i.start);
+  const isToday = ymd(selected) === ymd(new Date());
+  const day = ymd(selected);
+  const open = (o: Occurrence) => {
+    setUntimedOpen(false);
+    setEditor({ mode: 'edit', occ: o });
+  };
+  const saved = (date: string) => {
+    setEditor(null);
+    // Il risultato si vede subito: l'Agenda va sul giorno dell'impegno.
+    setSelected(fromYmd(date));
+  };
   const bar = ({ pressed }: { pressed: boolean }) => ({
     width: layout.iconButton,
     height: layout.iconButton,
@@ -43,7 +52,7 @@ function AgendaScreen() {
     const i = name ? subjects.findIndex((s) => s.toLocaleLowerCase() === name.toLocaleLowerCase()) : -1;
     return i < 0 ? undefined : COVER_SWATCH[subjectLook(looks, subjects[i], i).color];
   };
-  const dotsFor = (d: Date) => [...new Set(itemsOf(d).map((i) => subjectColor(i.subject)).filter((c): c is string => !!c))];
+  const dotsFor = (d: Date) => [...new Set(allOf(d).map((i) => subjectColor(i.subject)).filter((c): c is string => !!c))];
 
   return (
     <>
@@ -77,8 +86,16 @@ function AgendaScreen() {
               </Pressable>
             )}
           </View>
-          {/* shortcut: aggiungere un impegno non è ancora progettato; il + non fa nulla finché non si decide cosa si aggiunge. */}
-          <Pressable onPress={tap} accessibilityRole="button" accessibilityLabel={t.agenda.add} style={(s) => ({ ...bar(s), marginRight: -10 })}>
+          {/* Nuova lezione, scadenza o blocco di studio nel giorno scelto (dec. 186). */}
+          <Pressable
+            onPress={() => {
+              tap();
+              setEditor({ mode: 'new', date: day });
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={t.agenda.add}
+            style={(s) => ({ ...bar(s), marginRight: -10 })}
+          >
             <Icon name="plus" size={26} color={colors.text} />
           </Pressable>
         </View>
@@ -91,10 +108,26 @@ function AgendaScreen() {
         </Text>
       </View>
       <DayStrip selected={selected} onSelect={setSelected} dotsFor={dotsFor} />
+      {/* Scadenze e impegni senza orario del giorno: un riepilogo a parte, aperto da qui (dec. 186). */}
+      {untimed.length > 0 && (
+        <Pressable
+          onPress={() => {
+            tap();
+            setUntimedOpen(true);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={`${t.agenda.deadlines.title}: ${untimed.map((u) => u.title).join(', ')}`}
+          style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, alignSelf: 'flex-start', minHeight: 40, paddingHorizontal: spacing.md, borderRadius: radius.pill, backgroundColor: colors.tints.activity.bg, opacity: pressed ? 0.7 : 1 })}
+        >
+          <Icon name="flag" size={16} color={colors.tints.activity.fg} />
+          <Text style={[typography.callout, { color: colors.tints.activity.fg, fontWeight: '600' }]}>{t.agenda.deadlines.count(untimed.length)}</Text>
+          <Icon name="chevron" size={16} color={colors.tints.activity.fg} />
+        </Pressable>
+      )}
       {items.length === 0 ? (
         <EmptyState icon="sunny-outline" message={t.agenda.empty} />
       ) : (
-        <DayTimeline items={items} day={selected} />
+        <DayTimeline items={items} day={selected} onOpen={open} />
       )}
       <Text style={[typography.caption, { color: colors.textTertiary }]}>{t.demo}</Text>
     </Screen>
@@ -106,6 +139,20 @@ function AgendaScreen() {
       itemsOf={itemsOf}
       dotsFor={dotsFor}
     />
+    {editor && <AgendaEditor target={editor} onClose={() => setEditor(null)} onSaved={saved} onImport={() => { setEditor(null); setImportOpen(true); }} />}
+    {untimedOpen && !editor && (
+      <UntimedSheet
+        items={untimed}
+        date={day}
+        onClose={() => setUntimedOpen(false)}
+        onOpen={open}
+        onAdd={() => {
+          setUntimedOpen(false);
+          setEditor({ mode: 'new', date: day, type: 'deadline' });
+        }}
+      />
+    )}
+    {importOpen && <ImportSheet onClose={() => setImportOpen(false)} onDone={() => setImportOpen(false)} />}
     </>
   );
 }

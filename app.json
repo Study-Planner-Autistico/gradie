@@ -30,6 +30,12 @@
         }
       ],
       [
+        "expo-calendar",
+        {
+          "calendarPermission": "Il calendario serve per importare in Agenda gli eventi dei calendari che scegli."
+        }
+      ],
+      [
         "expo-local-authentication",
         {
           "faceIDPermission": "Face ID serve per sbloccare l'app se attivi lo sblocco nelle Impostazioni."

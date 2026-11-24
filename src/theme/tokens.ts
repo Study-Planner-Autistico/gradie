@@ -10,6 +10,7 @@ const lightTints = {
   activity: { bg: '#FFF5DB', fg: '#9E4C00' }, // orange
   official: { bg: '#DCFFF1', fg: '#216E4E' }, // green
   holiday: { bg: '#F0F1F2', fg: '#505258' }, // gray
+  study: { bg: '#F3F0FF', fg: '#5E4DB2' }, // purple (dec. 186)
 };
 
 const darkTints: typeof lightTints = {
@@ -18,6 +19,7 @@ const darkTints: typeof lightTints = {
   activity: { bg: '#3A2C1F', fg: '#FBC828' },
   official: { bg: '#1C3329', fg: '#7EE2B8' },
   holiday: { bg: '#303134', fg: '#A9ABAF' },
+  study: { bg: '#2B2541', fg: '#B8ACF6' },
 };
 
 export const lightColors = {

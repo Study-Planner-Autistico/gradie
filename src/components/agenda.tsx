@@ -15,6 +15,7 @@ export const KIND_ICON: Record<TintName, IconName> = {
   activity: 'flag',
   official: 'people',
   holiday: 'sunny',
+  study: 'school-outline',
 };
 
 export function addDays(d: Date, n: number) {
@@ -80,7 +81,7 @@ export function DayStrip({
 }
 
 /** Card piatta di un evento (dec. 157-158), icone piene: icona del tipo nel suo riquadro tinto, titolo, orario con l'orologio e, a capo, l'aula. */
-function EventCard({ item }: { item: DemoAgendaItem }) {
+function EventCard({ item, onPress }: { item: DemoAgendaItem; onPress?: () => void }) {
   const { colors, typography, radius, spacing } = useTheme();
   const tint = colors.tints[item.kind];
   const time = `${item.start} – ${item.end}`;
@@ -92,11 +93,14 @@ function EventCard({ item }: { item: DemoAgendaItem }) {
       </Text>
     </View>
   );
+  // Un tocco apre la modifica (dec. 186).
   return (
-    <View
-      accessible
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
       accessibilityLabel={[t.agenda.kind[item.kind], item.title, time, item.meta, item.locked && t.agenda.teacherTimetable].filter(Boolean).join(', ')}
-      style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, backgroundColor: colors.surface, borderRadius: radius.xl }}
+      style={({ pressed }) => ({ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, backgroundColor: colors.surface, borderRadius: radius.xl, opacity: pressed ? 0.75 : 1 })}
     >
       <View style={{ width: 40, height: 40, borderRadius: radius.lg, backgroundColor: tint.bg, alignItems: 'center', justifyContent: 'center' }}>
         <Icon name={KIND_ICON[item.kind]} size={20} color={tint.fg} />
@@ -109,7 +113,7 @@ function EventCard({ item }: { item: DemoAgendaItem }) {
         {item.meta ? line('location', item.meta) : null}
       </View>
       {item.locked && <Icon name="lock-closed" size={14} color={colors.textTertiary} accessibilityLabel={t.agenda.teacherTimetable} />}
-    </View>
+    </Pressable>
   );
 }
 
@@ -131,7 +135,7 @@ function useNow() {
  * La linea si riempie del brand man mano che passano le ore: piena nei giorni passati, vuota in quelli futuri.
  * Solo gli eventi con orario.
  */
-export function DayTimeline({ items, day }: { items: DemoAgendaItem[]; day: Date }) {
+export function DayTimeline<T extends DemoAgendaItem>({ items, day, onOpen }: { items: T[]; day: Date; onOpen?: (item: T) => void }) {
   const { colors, typography, spacing, radius } = useTheme();
   const now = useNow();
   const [centers, setCenters] = useState<number[]>([]);
@@ -194,7 +198,7 @@ export function DayTimeline({ items, day }: { items: DemoAgendaItem[]; day: Date
                 <Text style={[typography.time, { color: reached ? colors.onAccent : colors.textSecondary }]} numberOfLines={1}>{item.start}</Text>
               </View>
             </View>
-            <EventCard item={item} />
+            <EventCard item={item} onPress={onOpen ? () => onOpen(item) : undefined} />
           </View>
         );
       })}
