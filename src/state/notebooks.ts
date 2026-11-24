@@ -15,11 +15,12 @@ import {
   useNotes,
   usePages,
   useTrash,
+  type ImportSource,
   type NoteMeta,
 } from './whiteboard';
 
 /** Foglio: una nota della lavagna, con la materia del quaderno in cui sta. `at`: ultima modifica (0 = dimostrativo). */
-export type Sheet = DemoNote & { cover?: string | null; at: number };
+export type Sheet = DemoNote & { cover?: string | null; at: number; source?: ImportSource };
 
 /** Quaderno dei fogli senza materia (es. pagine create prima dei quaderni). */
 export const NO_SUBJECT = '__altri';
@@ -57,6 +58,7 @@ function useAllSheets(): Sheet[] {
       tint: demo?.tint ?? 'lesson',
       cover: m.cover,
       at,
+      source: m.source,
     };
   });
   const loose: Sheet[] = pages

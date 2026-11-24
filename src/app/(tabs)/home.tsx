@@ -1,9 +1,7 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { BellIcon, MenuIcon, SendIcon, type AnimatedIconHandle } from '../../components/AnimatedIcons';
 import { tap } from '../../components/haptics';
 import { Mascot } from '../../components/Mascot';
 import { PushDrawer } from '../../components/SideMenu';
@@ -15,6 +13,7 @@ import { setMenuOpen, useMenuOpen } from '../../state/menu';
 import { useNotes } from '../../state/whiteboard';
 import { covers, fonts, useTheme } from '../../theme';
 import { registerTabScreen, TabSwipe } from '../../components/TabSwipe';
+import { Icon } from '../../components/icons';
 
 /** Ordine di importanza per scegliere l'impegno di domani. */
 const RANK: Partial<Record<DemoAgendaItem['kind'], number>> = { activity: 0, holiday: 1, official: 2, appointment: 3 };
@@ -81,11 +80,9 @@ function HomeScreen() {
   );
 }
 
-/** In alto, senza bordi e fissi: menu e campanella a sinistra, messaggi a destra. Icone animate (dec. 122, 124). */
+/** In alto, senza bordi e fissi: menu e campanella a sinistra, messaggi a destra. Icone Hugeicons (dec. 124, 159). */
 function TopBar({ menuOpen, onMenu }: { menuOpen: boolean; onMenu: () => void }) {
-  const { colors, layout } = useTheme();
-  const bell = useRef<AnimatedIconHandle>(null);
-  const send = useRef<AnimatedIconHandle>(null);
+  const { colors, layout, radius } = useTheme();
   const btn = ({ pressed }: { pressed: boolean }) => ({
     width: layout.iconButton,
     height: layout.iconButton,
@@ -106,45 +103,52 @@ function TopBar({ menuOpen, onMenu }: { menuOpen: boolean; onMenu: () => void })
           accessibilityState={{ expanded: menuOpen }}
           style={btn}
         >
-          <MenuIcon open={menuOpen} size={24} color={colors.text} />
+          <Icon name={menuOpen ? 'close' : 'menu'} size={26} color={colors.text} />
         </Pressable>
         <Pressable
           onPress={() => {
             tap();
-            bell.current?.play();
             router.push('/notifiche');
           }}
           accessibilityRole="button"
           accessibilityLabel={t.a11y.notifications}
           style={btn}
         >
-          <BellIcon ref={bell} size={24} color={colors.text} dot dotColor={colors.danger} />
+          <View>
+            <Icon name="bell" size={26} color={colors.text} />
+            <View style={{ position: 'absolute', top: 1, right: 2, width: 8, height: 8, borderRadius: radius.pill, backgroundColor: colors.danger }} />
+          </View>
         </Pressable>
       </View>
       <Pressable
         onPress={() => {
           tap();
-          send.current?.play();
-          // Si apre subito: niente attesa per l'animazione (dec. 127).
           router.push('/messaggi');
         }}
         accessibilityRole="button"
         accessibilityLabel={t.a11y.messages}
-        style={(s) => ({ ...btn(s), overflow: 'hidden', marginRight: -10 })}
+        style={(s) => ({ ...btn(s), marginRight: -10 })}
       >
-        <SendIcon ref={send} size={24} color={colors.text} />
+        <Icon name="paper-plane-outline" size={26} color={colors.text} />
       </Pressable>
     </View>
   );
 }
 
 function DayTitle({ date }: { date: Date }) {
-  const { colors, typography } = useTheme();
+  const { colors, typography, spacing } = useTheme();
   const weekday = capitalize(date.toLocaleDateString(locale, { weekday: 'long' }));
   const full = date.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
   return (
     <>
-      <Text accessibilityRole="header" style={{ fontFamily: fonts.display, fontSize: 52, lineHeight: 60, letterSpacing: -0.5, color: colors.text }}>
+      {/* Su iOS la spaziatura negativa taglia l'ultima lettera ("Martedì"): un po' di margine interno; i nomi
+          lunghi ("Mercoledì") si rimpiccioliscono invece di andare a capo o essere tagliati. */}
+      <Text
+        accessibilityRole="header"
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        style={{ fontFamily: fonts.heading, fontSize: 52, lineHeight: 60, letterSpacing: -0.5, paddingHorizontal: spacing.xs, color: colors.text }}
+      >
         {weekday}
       </Text>
       <Text style={[typography.body, { fontSize: 18, color: colors.textSecondary }]}>{full}</Text>
@@ -168,12 +172,12 @@ function ResumeRow() {
       hitSlop={6}
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, opacity: pressed ? 0.6 : 1 })}
     >
-      <Ionicons name="time-outline" size={18} color={colors.textSecondary} />
+      <Icon name="time-outline" size={18} color={colors.textSecondary} />
       <Text style={[typography.callout, { color: colors.textSecondary }]}>{t.home.resume}</Text>
       <Text style={[typography.callout, { color: colors.text, fontWeight: '700', flex: 1 }]} numberOfLines={1}>
         {last.title}
       </Text>
-      <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
+      <Icon name="chevron-forward" size={16} color={colors.textTertiary} />
     </Pressable>
   );
 }
@@ -211,7 +215,7 @@ function TodayCard({ items, tomorrow }: { items: DemoAgendaItem[]; tomorrow?: De
       </View>
 
       <View style={{ marginRight: 80, gap: spacing.md, flex: 1 }}>
-        <Text style={{ fontSize: 28, lineHeight: 32, fontWeight: '800', letterSpacing: -0.4, color: fg }}>{t.home.today}</Text>
+        <Text style={[typography.title1, { color: fg }]}>{t.home.today}</Text>
         {items.length === 0 ? (
           <Text style={[typography.callout, { color: fg, opacity: 0.9 }]}>{t.home.emptyToday}</Text>
         ) : (
@@ -287,7 +291,7 @@ function Deadlines({ items }: { items: DemoAgendaItem[] }) {
                 style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, opacity: pressed ? 0.6 : 1 })}
               >
                 <View style={{ width: 36, height: 36, borderRadius: radius.md, backgroundColor: tint.bg, alignItems: 'center', justifyContent: 'center' }}>
-                  <Ionicons name={d.meta === 'Verifica' ? 'document-text-outline' : 'checkbox-outline'} size={18} color={tint.fg} />
+                  <Icon name={d.meta === 'Verifica' ? 'document-text-outline' : 'checkbox-outline'} size={18} color={tint.fg} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[typography.headline, { color: colors.text }]} numberOfLines={1}>
@@ -433,7 +437,7 @@ function ClassTile({ klass }: { klass: DemoClass }) {
               {klass.detail} · {t.home.classPeople(klass.students, klass.teachers)}
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+          <Icon name="chevron-forward" size={20} color={colors.textTertiary} />
         </View>
       </Pressable>
     </View>

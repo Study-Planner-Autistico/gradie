@@ -1,9 +1,8 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { Children, Fragment, type ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useTheme } from '../theme';
 import { tap } from './haptics';
-import type { IconName } from './icons';
+import { Icon, type IconName } from './icons';
 
 /** Gruppo di righe in una card raised (DESIGN.md §5.4). */
 export function ListGroup({ children, title }: { children: ReactNode; title?: string }) {
@@ -60,14 +59,14 @@ export function ListRow({
     >
       {leading ?? (
         <View style={{ width: 32, height: 32, borderRadius: radius.lg, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
-          {icon && <Ionicons name={icon} size={18} color={colors.textSecondary} />}
+          {icon && <Icon name={icon} size={18} color={colors.textSecondary} />}
         </View>
       )}
       <View style={{ flex: 1 }}>
         <Text style={[typography.callout, { color: colors.text }]}>{label}</Text>
         {detail && <Text style={[typography.caption, { color: colors.textTertiary }]}>{detail}</Text>}
       </View>
-      {trailing ?? <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />}
+      {trailing ?? <Icon name="chevron-forward" size={18} color={colors.textTertiary} />}
     </Pressable>
   );
 }

@@ -1,11 +1,9 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar } from '../../components/avatar/Avatar';
 import { AvatarPlaceholder } from '../../components/avatar/Placeholder';
 import { tap } from '../../components/haptics';
-import { LineIcon } from '../../components/LineIcons';
 import { Mascot } from '../../components/Mascot';
 import { Flag } from '../../components/Flag';
 import { Button, Chip } from '../../components/ui';
@@ -15,6 +13,7 @@ import { missingSteps, myTag, useProfile, type InterestId, type ProfileState } f
 import { avatarPalette, useTheme } from '../../theme';
 import { registerTabScreen, TabSwipe } from '../../components/TabSwipe';
 import { useTabScroll } from '../../state/tabScroll';
+import { Icon } from '../../components/icons';
 
 const countryName = (code: string) => {
   const c = demoCountries.find((x) => x.code === code);
@@ -80,7 +79,7 @@ function Header({ topInset, avatar, name }: { topInset: number; avatar: ProfileS
           accessibilityLabel={t.profile.settingsTitle}
           style={({ pressed }) => ({ width: layout.iconButton, height: layout.iconButton, alignItems: 'center', justifyContent: 'center', marginRight: -10, opacity: pressed ? 0.6 : 1 })}
         >
-          <LineIcon name="settings" size={26} color={fg} />
+          <Icon name="settings" size={26} color={fg} />
         </Pressable>
       </View>
 
@@ -122,7 +121,7 @@ function MetaAndStats({ country, isPrivate }: { country: string; isPrivate: bool
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, height: 28 }}>
             <Flag code={country} width={39} />
-            <Ionicons name="chevron-down" size={14} color={colors.textTertiary} />
+            <Icon name="chevron-down" size={14} color={colors.textTertiary} />
           </View>
           <Text style={[typography.body, { color: colors.textTertiary }]} numberOfLines={1}>
             {countryName(country)}
@@ -140,15 +139,13 @@ function MetaAndStats({ country, isPrivate }: { country: string; isPrivate: bool
           style={({ pressed }) => ({
             width: layout.button,
             height: layout.button,
-            borderRadius: radius.xl,
-            borderWidth: 2,
-            borderColor: colors.border,
             alignItems: 'center',
             justifyContent: 'center',
-            opacity: pressed ? 0.6 : 1,
+            opacity: pressed ? 0.5 : 1,
           })}
         >
-          <Ionicons name="qr-code-outline" size={24} color={colors.textSecondary} />
+          {/* Solo l'icona, senza riquadro (dec. 174). */}
+          <Icon name="qr-code-outline" size={28} color={colors.text} />
         </Pressable>
       </View>
     </View>
@@ -191,7 +188,7 @@ function Overview({ bio, interests }: { bio: string; interests: InterestId[] }) 
       <Text style={[typography.label, { color: colors.textTertiary }]}>{t.profile.overview}</Text>
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-        <LineIcon name="chart" size={28} color={colors.accent} />
+        <Icon name="chart" size={28} color={colors.accent} />
         <Text style={[typography.title2, { color: colors.text }]}>
           {demoGrades.average} <Text style={[typography.body, { color: colors.textSecondary }]}>{t.profile.average}</Text>
         </Text>
@@ -239,7 +236,7 @@ function Friends() {
         ))}
         <Pressable onPress={tap} accessibilityRole="button" accessibilityLabel={t.profile.addFriendSoon} style={{ alignItems: 'center', gap: spacing.sm, width: 72 }}>
           <View style={{ width: 68, height: 68, borderRadius: 34, borderWidth: 2, borderStyle: 'dashed', borderColor: colors.borderBold, alignItems: 'center', justifyContent: 'center' }}>
-            <Ionicons name="add" size={30} color={colors.textSecondary} />
+            <Icon name="add" size={30} color={colors.textSecondary} />
           </View>
         </Pressable>
       </ScrollView>

@@ -1,10 +1,10 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { View } from 'react-native';
-import { LineIcon } from '../components/LineIcons';
 import { Row, Section, SheetPage } from '../components/settings';
 import { t, type LanguagePref } from '../i18n';
 import { updateSettings, useSettings, type ThemePref } from '../state/settings';
 import { useTheme } from '../theme';
+import { Icon } from '../components/icons';
 
 const themeIcon = { system: 'sunMoon', light: 'sun', dark: 'moon' } as const;
 
@@ -26,7 +26,7 @@ export default function Scegli() {
             key={o.k}
             icon={o.icon}
             label={o.label}
-            trailing={o.on ? <LineIcon name="check" size={22} color={colors.accent} /> : <View style={{ width: 22 }} />}
+            trailing={o.on ? <Icon name="check" size={22} color={colors.accent} /> : <View style={{ width: 22 }} />}
             onPress={() => {
               updateSettings(isLang ? { language: o.k as LanguagePref } : { theme: o.k as ThemePref });
               router.back();

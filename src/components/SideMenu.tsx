@@ -1,4 +1,3 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Animated, Easing, PanResponder, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,18 +8,18 @@ import { drawerWidth, menuProgress, setMenuOpen, useMenuOpen } from '../state/me
 import { useTheme } from '../theme';
 import { tap } from './haptics';
 import { MascotBadge } from './Mascot';
-import { LineIcon, type LineIconName } from './LineIcons';
 import { Chip } from './ui';
+import { Icon, type IconName } from './icons';
 
 /** Pagine del menu: moduli ancora da progettare (dec. 124), si definiranno più avanti. Impostazioni stanno in fondo (dec. 128). */
-const ITEMS: { label: string; icon: LineIconName }[] = [
+const ITEMS: { label: string; icon: IconName }[] = [
   { get label() { return t.menu.materials; }, icon: 'folder' },
   { get label() { return t.menu.grades; }, icon: 'chart' },
   { get label() { return t.menu.groups; }, icon: 'users' },
 ];
 
-/** Apertura rapida (dec. 127): 200 ms, nessun rimbalzo, così non si aspetta. */
-const spring = (toValue: number, _velocity = 0) =>
+/** Apertura rapida (dec. 127): 200 ms, nessun rimbalzo, così non si aspetta. Animazione nativa, fluida. */
+const spring = (toValue: number) =>
   Animated.timing(menuProgress, { toValue, duration: 200, easing: Easing.out(Easing.cubic), useNativeDriver: true });
 
 /** Scorrimento orizzontale chiaro (più in orizzontale che in verticale). */
@@ -48,6 +47,10 @@ export function PushDrawer({ children }: { children: ReactNode }) {
     let start = 0;
     return PanResponder.create({
       onMoveShouldSetPanResponder: (_, g) => horizontal(g.dx, g.dy) && (openRef.current ? g.dx < 0 : g.dx > 0),
+      // Da aperto il menu prende per primo lo scorrimento verso sinistra (prima di liste e del cambio scheda)
+      // e non lo cede finché non si alza il dito: chiuderlo non deve mai aprire l'Agenda.
+      onMoveShouldSetPanResponderCapture: (_, g) => openRef.current && horizontal(g.dx, g.dy) && g.dx < 0,
+      onPanResponderTerminationRequest: () => false,
       onPanResponderGrant: () => {
         menuProgress.stopAnimation((v) => {
           start = v;
@@ -57,9 +60,9 @@ export function PushDrawer({ children }: { children: ReactNode }) {
       onPanResponderRelease: (_, g) => {
         const v = Math.max(0, Math.min(1, start + g.dx / w));
         const target = g.vx > 0.5 ? 1 : g.vx < -0.5 ? 0 : v > 0.5 ? 1 : 0;
-        spring(target, (g.vx * 1000) / w / 1000).start();
         if (target === 1 && !openRef.current) tap();
-        setMenuOpen(target === 1);
+        // Lo stato cambia solo a fine animazione: un nuovo render a metà corsa faceva saltare la Home (dec. 160).
+        spring(target).start(({ finished }) => finished && setMenuOpen(target === 1));
       },
       onPanResponderTerminate: () => spring(openRef.current ? 1 : 0).start(),
     });
@@ -123,7 +126,7 @@ function MenuPanel({ open }: { open: boolean }) {
 }
 
 /** Voce del menu: icona a tratto arrotondato senza sfondo, testo leggero (dec. 128). */
-function MenuItem({ label, icon }: { label: string; icon: LineIconName }) {
+function MenuItem({ label, icon }: { label: string; icon: IconName }) {
   const { colors, typography, spacing, radius } = useTheme();
   return (
     <Pressable
@@ -140,7 +143,7 @@ function MenuItem({ label, icon }: { label: string; icon: LineIconName }) {
         backgroundColor: pressed ? colors.neutralPressed : 'transparent',
       })}
     >
-      <LineIcon name={icon} size={22} color={colors.text} />
+      <Icon name={icon} size={22} color={colors.text} />
       <Text style={[typography.body, { fontSize: 17, color: colors.text, flex: 1 }]}>{label}</Text>
       <Chip variant="muted" label={t.menu.soon} />
     </Pressable>
@@ -212,7 +215,7 @@ function EnvironmentPicker({ open, onToggle, onPicked }: { open: boolean; onTogg
             backgroundColor: pressed ? colors.neutralPressed : 'transparent',
           })}
         >
-          <LineIcon name="school" size={22} color={colors.text} />
+          <Icon name="school" size={22} color={colors.text} />
           <View style={{ flex: 1 }}>
             <Text style={[typography.headline, { color: colors.text }]} numberOfLines={1}>
               {active.name}
@@ -222,7 +225,7 @@ function EnvironmentPicker({ open, onToggle, onPicked }: { open: boolean; onTogg
             </Text>
           </View>
           <Animated.View style={{ transform: [{ rotate }] }}>
-            <Ionicons name="chevron-up" size={20} color={colors.textSecondary} />
+            <Icon name="chevron-up" size={20} color={colors.textSecondary} />
           </Animated.View>
         </Pressable>
       </View>

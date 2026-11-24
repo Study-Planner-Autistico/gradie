@@ -14,7 +14,7 @@
 - Bottoni Atlassian a raggio 8, alti 48 su mobile. **Un solo primary per area.**
 - Lozenge (chip) a raggio 4, testo 12 bold. Colore = tipo, mai solo colore.
 - Liquid Glass solo dove lo dà iOS: tab bar nativa e form sheet. Niente glass disegnato a mano.
-- Light e dark seguono il sistema. Font di sistema (fallback ufficiale del token Atlassian).
+- Light e dark seguono il sistema. Titoli in **Dela Gothic One** (dec. 148), il resto col font di sistema (fallback ufficiale del token Atlassian).
 
 ## 1. Principi
 1. **Chiaro prima di tutto:** una cosa per schermata, titoli brevi, testo `text.subtle` per le spiegazioni.
@@ -64,14 +64,14 @@ Il colore indica il **tipo**, non la materia (colori per materia: decisione aper
 - `gold` solo per stella, nappa e piccoli accenti decorativi: mai come testo o sfondo di testo.
 
 ## 3. Tipografia (font.heading.* / font.body.*)
-Font: di sistema (SF Pro / Roboto). Atlassian Sans non è incluso: il suo stack ufficiale ripiega su `-apple-system`.
+Font: **Dela Gothic One** per `hero`, `display`, `title1`, `title2` (dec. 148; un solo peso, regular, caricato in `src/app/_layout.tsx`); tutto il resto di sistema (SF Pro / Roboto). Atlassian Sans non è incluso: il suo stack ufficiale ripiega su `-apple-system`. Anche il titolo del giorno in Home è in Dela Gothic One (dec. 150).
 
 | Token app | Token Atlassian | Size/Line | Peso |
 |---|---|---|---|
-| `hero` | — (estensione mobile) | 40/44 | bold |
-| `display` | heading.xxlarge | 32/36 | bold |
-| `title1` | heading.xlarge | 28/32 | bold — titolo schermata |
-| `title2` | heading.medium | 20/24 | bold — titolo card |
+| `hero` | — (estensione mobile) | 40/44 | Dela Gothic One |
+| `display` | heading.xxlarge | 32/36 | Dela Gothic One |
+| `title1` | heading.xlarge | 28/32 | Dela Gothic One — titolo schermata |
+| `title2` | heading.medium | 20/24 | Dela Gothic One — titolo card |
 | `headline` | heading.small | 16/20 | bold — righe, bottoni |
 | `body` | body.large | 16/24 | regular — testo su mobile |
 | `callout` | body (medium) | 14/20 | 500 — link, etichette |
@@ -91,8 +91,8 @@ Font: di sistema (SF Pro / Roboto). Atlassian Sans non è incluso: il suo stack 
 Titolo `title1` a sinistra (o avatar + saluto `headline` in Home), a destra fino a 2 `IconButton`.
 ### 5.2 `Card` / `GradientCard`
 Raggio 12, padding 16, `shadowRaised`.
-### 5.3 `EventRow`
-Fondo della tinta, **barra sinistra di 3 px** col colore del tipo, raggio 8. Titolo `headline`, orario `time` colorato, icona del tipo a destra. Lucchetto per le lezioni del docente (dec. 102).
+### 5.3 ~~`EventRow`~~
+Sostituita dalle card di `DayTimeline` (§5.7b, dec. 151).
 ### 5.4 `ListGroup` / `ListRow`
 Card raised; riga alta ≥ 56 con icona in un riquadro 32 (`surfaceMuted`, raggio 8), etichetta `callout`, dettaglio `caption`, **chevron** a destra. Separatore 1 px rientrato a 48.
 ### 5.5 Bottoni (`Button`, `IconButton`, `Fab`)
@@ -109,8 +109,12 @@ Card raised; riga alta ≥ 56 con icona in un riquadro 32 (`surfaceMuted`, raggi
 - `Fab`: cerchio 56 brand con `shadowOverlay`, a 20 dal bordo, sopra la tab bar. Uno per schermata.
 ### 5.6 Lozenge (`Chip`)
 Alta 24, raggio 4, testo `overline`, icona 12 facoltativa. Varianti: tinta per tipo, success, information, warning, danger, discovery, muted.
-### 5.7 `WeekStrip`
-Celle 40 raggio 8; selezionato = brand bold, oggi = numero brand, puntino 4 se ci sono elementi.
+### 5.7 `DayStrip` (Agenda, dec. 151-152)
+Senza card né celle, sul fondo della pagina. Sopra, il titolo "Agenda" in `hero` (riga 60) centrato nella stessa posizione del giorno della Home, senza data (dec. 155). Sette giorni con quello scelto **al centro**: giorno breve `callout` (text.subtle, oggi `accent`), numero `stat` (font di sistema, cifre tabulari); scelto = cerchio 44 pieno `accent` con numero `onAccent`, oggi = numero `accent`. Sotto, fino a 4 pallini 14 **sovrapposti** (bordo 2 del fondo) con i **colori delle materie** del giorno (colore della copertina del quaderno). Toccando un giorno va al centro; Barra in alto come quella della Home (dec. 156): calendario a sinistra, pill "Oggi" (`selected` / `selectedText`) accanto quando non si è su oggi, + a destra.
+### 5.7b `DayTimeline` (Agenda, dec. 151, 157-158)
+Solo eventi con orario. L'ora d'inizio sta **sulla linea del tempo** (colonna 72): pill `time` su una riga con bordo 2 `border` su `bg`; quando l'ora è passata, pill piena `accent` con testo `onAccent`. Linea 2 px `border` dal primo all'ultimo orario, riempita di `accent` fino ad adesso (aggiornata ogni minuto; piena nei giorni passati, vuota nei futuri). Card **piatta** `surface` raggio 12 senza bordo né ombra; icona del tipo 20 in un riquadro 40 tinto, titolo `headline`, orario `time` con l'orologio 14 e, a capo, l'aula con il segnaposto 14; lucchetto per le lezioni del docente.
+### 5.7c `CalendarSheet` (Agenda, dec. 163)
+Dall'icona del calendario in alto a sinistra. Foglio `surfaceOverlay` attaccato al bordo in basso, a tutta larghezza, angoli in alto raggio 32, maniglia 36×5, `shadowOverlay`, velo nero 0.3 dietro; trascinandolo giù si chiude (dec. 164), anche dalla lista della pagina del giorno quando è in cima. Header: mese `title2` con l'anno in `accent` e chevron (tocco = scelta di mese e anno: anno con frecce, 12 mesi in pill, quello attivo pieno `accent`), pill "Oggi" (fondo `selected`) quando non si è su oggi, bottone tondo 44 per chiudere. Griglia da lunedì: numero `stat` 20 in un cerchio 40 (giorno scelto pieno `accent`, oggi in `accent`), sotto i pallini delle materie; scorrendo di lato si cambia mese. Toccando un giorno (senza cambiare quello scelto nell'Agenda) il foglio si allarga fino in alto (fondo `bg`) e mostra la pagina del giorno, dove scorrendo di lato si va al giorno prima o dopo: indietro (freccia `ArrowLeft02`) e chiudi, numero in Dela 52 al centro, giorno della settimana e mese sotto, poi `DayTimeline`.
 ### 5.8 `Avatar`
 Cerchio con iniziali (dec. 16) su `lesson.bg`, bordo 2 `surface`. Nel profilo: 128 con gradiente.
 - **Avatar disegnato** (dec. 136, `src/components/avatar/`): disegni di react-nice-avatar (MIT) in un unico SVG 100×100; colori fissi in `avatarPalette`, sfondi pastello con testo `avatarPalette.ink`. Nel Profilo 200 senza sfondo proprio, sopra il fondo del suo colore.
@@ -184,19 +188,20 @@ Un'unica route con una macchina a passi: header fisso (indietro + progress bar),
 ## 9b. Liquid Glass
 | Elemento | Glass? |
 |---|---|
-| Tab bar | ✅ `NativeTabs`: su iOS 26 è Liquid Glass di sistema e **non si riduce** scorrendo (`minimizeBehavior="never"`, dec. 123) |
+| Tab bar | ✅ `NativeTabs`, **solo icone** (PNG Hugeicons in `assets/tabs`, dec. 161-162): su iOS 26 è Liquid Glass di sistema e **non si riduce** scorrendo (`minimizeBehavior="never"`, dec. 123); col menu della Home aperto si nasconde |
 | Form sheet (ambienti, menu) | ✅ di sistema |
 | Tutto il resto | ❌ superfici Atlassian (`surface`, `shadow`) |
-Il web usa una tab bar flottante con blur come fallback (`FloatingTabBar`).
+Il web usa una tab bar flottante con blur come fallback (`FloatingTabBar`), solo icone, che col menu aperto si sposta e si scurisce con la Home.
 
 ## 10. Divieti
 - Niente gamification: punti, badge, streak, sfide, classifiche (dec. 57).
 - Niente asset copiati dalle ispirazioni (mascotte, illustrazioni, loghi, testi). Niente logo o marchio Atlassian. L'unica mascotte è quella di Gradie.
+- **Icone: solo Hugeicons** (set gratuito Stroke Rounded, tratto 2), sempre tramite `Icon` di `src/components/icons.tsx` (dec. 159); per un'icona nuova si aggiunge una voce alla tabella `ICONS`. Indietro è sempre la freccia `ArrowLeft02` (dec. 164). La tab bar nativa usa le stesse icone in PNG (`assets/tabs`).
 - Niente emoji come icone. Niente MAIUSCOLO nei bottoni. Niente più di un primary per area.
 - Niente widget riordinabili in Home (dec. 21), niente temi utente (dec. 49), niente presenze (dec. 97).
 
 ## 11. Decisioni di design aperte
-1. Colori per materia: sì o no?
+1. ~~Colori per materia~~ → sì nell'Agenda, dal colore del quaderno (dec. 151). Da decidere se usarli anche altrove.
 2. Illustrazioni: tenere `OrbitArt` o commissionare uno stile illustrato proprio?
 3. ~~Logo e nome~~ → deciso: Gradie (dec. 114). Serve il logo in alta risoluzione / vettoriale originale per l'icona finale (ora ricavata dall'immagine inviata, ~770 px).
 4. Layout per iPad (priorità alta per gli appunti, dec. 28).

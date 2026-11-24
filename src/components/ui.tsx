@@ -1,4 +1,3 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRef, useState, type ComponentRef, type ReactNode, type Ref } from 'react';
 import {
@@ -19,9 +18,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { t } from '../i18n';
 import { useTheme, type TintName } from '../theme';
 import { tap } from './haptics';
-import type { IconName } from './icons';
 import { Mascot } from './Mascot';
 import { useTabScroll } from '../state/tabScroll';
+import { Icon, type IconName } from './icons';
 
 export type { IconName } from './icons';
 
@@ -200,7 +199,7 @@ export function Chip({
         },
       ]}
     >
-      {icon && <Ionicons name={icon} size={12} color={fg} />}
+      {icon && <Icon name={icon} size={12} color={fg} />}
       <Text style={[typography.overline, { color: fg }]} numberOfLines={1}>
         {label}
       </Text>
@@ -214,7 +213,7 @@ export function EmptyState({ icon, message }: { icon: IconName; message: string 
   return (
     <View style={[styles.row, { gap: spacing.md }]}>
       <View style={[styles.box40, { backgroundColor: colors.surfaceMuted, borderRadius: radius.lg }]}>
-        <Ionicons name={icon} size={18} color={colors.textSecondary} />
+        <Icon name={icon} size={18} color={colors.textSecondary} />
       </View>
       <Text style={[typography.callout, { color: colors.textSecondary, flex: 1, fontWeight: '400' }]}>{message}</Text>
     </View>
@@ -287,9 +286,9 @@ export function Button({
         <ActivityIndicator color={p.fg} />
       ) : (
         <>
-          {iconBefore && <Ionicons name={iconBefore} size={18} color={disabled ? colors.textDisabled : p.fg} />}
+          {iconBefore && <Icon name={iconBefore} size={18} color={disabled ? colors.textDisabled : p.fg} />}
           <Text style={[typography.headline, { color: disabled ? colors.textDisabled : p.fg }]}>{title}</Text>
-          {iconAfter && <Ionicons name={iconAfter} size={18} color={disabled ? colors.textDisabled : p.fg} />}
+          {iconAfter && <Icon name={iconAfter} size={18} color={disabled ? colors.textDisabled : p.fg} />}
         </>
       )}
     </Pressable>
@@ -301,7 +300,10 @@ export function PrimaryButton({ title, onPress }: { title: string; onPress?: () 
   return <Button title={title} onPress={onPress} appearance="primary" iconAfter="arrow-forward" />;
 }
 
-/** Icon button Atlassian, forma circolare (DESIGN.md §5.5). */
+/**
+ * Pulsante a icona: solo l'icona, senza cerchio (dec. 173-174), del colore del testo; al tocco si attenua.
+ * `plain` (indietro e chiudi) un po' più grande. `primary` resta il cerchio pieno colorato (DESIGN.md §5.5).
+ */
 export function IconButton({
   icon,
   label,
@@ -312,12 +314,11 @@ export function IconButton({
   icon: IconName;
   label: string;
   onPress?: () => void;
-  appearance?: 'default' | 'subtle' | 'primary';
+  appearance?: 'default' | 'subtle' | 'primary' | 'plain';
   size?: number;
 }) {
   const { colors } = useTheme();
-  const bg = appearance === 'primary' ? colors.accent : appearance === 'subtle' ? 'transparent' : colors.surface;
-  const fg = appearance === 'primary' ? colors.onAccent : colors.textSecondary;
+  const primary = appearance === 'primary';
   return (
     <Pressable
       onPress={() => {
@@ -333,11 +334,11 @@ export function IconButton({
         borderRadius: size / 2,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: pressed ? colors.neutralHovered : bg,
-        boxShadow: appearance === 'default' ? colors.shadowRaised : undefined,
+        backgroundColor: primary ? (pressed ? colors.neutralHovered : colors.accent) : 'transparent',
+        opacity: pressed && !primary ? 0.5 : 1,
       })}
     >
-      <Ionicons name={icon} size={20} color={fg} />
+      <Icon name={icon} size={primary ? 20 : appearance === 'plain' ? 28 : 26} color={primary ? colors.onAccent : colors.text} />
     </Pressable>
   );
 }
@@ -367,7 +368,7 @@ export function Fab({ icon, label, onPress, bottom }: { icon: IconName; label: s
         transform: [{ scale: pressed ? 0.95 : 1 }],
       })}
     >
-      <Ionicons name={icon} size={24} color={colors.onAccent} />
+      <Icon name={icon} size={24} color={colors.onAccent} />
     </Pressable>
   );
 }
@@ -442,7 +443,7 @@ export function TextField({
       />
       {(error || helper) && (
         <View style={[styles.row, { gap: spacing.xs }]}>
-          {error && <Ionicons name="alert-circle" size={14} color={colors.dangerIcon} />}
+          {error && <Icon name="alert-circle" size={14} color={colors.dangerIcon} />}
           <Text style={[typography.caption, { color: error ? colors.danger : colors.textTertiary, flex: 1 }]}>{error ?? helper}</Text>
         </View>
       )}
@@ -476,7 +477,7 @@ export function Checkbox({ checked, onChange, label }: { checked: boolean; onCha
           justifyContent: 'center',
         }}
       >
-        {checked && <Ionicons name="checkmark" size={14} color={colors.onAccent} />}
+        {checked && <Icon name="checkmark" size={14} color={colors.onAccent} />}
       </View>
       <Text style={[typography.callout, { color: colors.text, flex: 1, fontWeight: '400' }]}>{label}</Text>
     </Pressable>
@@ -503,7 +504,7 @@ export function SectionMessage({
   }[appearance];
   return (
     <View style={[styles.row, { alignItems: 'flex-start', gap: spacing.md, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: cfg.bg }]}>
-      <Ionicons name={cfg.icon} size={20} color={cfg.fg} />
+      <Icon name={cfg.icon} size={20} color={cfg.fg} />
       <View style={{ flex: 1, gap: spacing.xs }}>
         {title && <Text style={[typography.headline, { color: colors.text }]}>{title}</Text>}
         {typeof children === 'string' ? (

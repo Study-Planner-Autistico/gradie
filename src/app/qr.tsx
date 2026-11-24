@@ -1,4 +1,3 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -6,11 +5,11 @@ import { Pressable, Share, Text, View } from 'react-native';
 import { Avatar } from '../components/avatar/Avatar';
 import { AvatarPlaceholder } from '../components/avatar/Placeholder';
 import { success, tap } from '../components/haptics';
-import type { IconName } from '../components/icons';
 import { ProfileQr } from '../components/ProfileQr';
 import { t } from '../i18n';
 import { myTag, profileLink, useProfile } from '../state/profile';
 import { useTheme } from '../theme';
+import { Icon, type IconName } from '../components/icons';
 
 /** Codice QR del profilo (dec. 136), come la card di Duolingo: nome, codice, QR con l'avatar e due azioni. */
 export default function QrModal() {
@@ -31,7 +30,7 @@ export default function QrModal() {
           accessibilityLabel={t.qr.close}
           style={({ pressed }) => ({ position: 'absolute', left: spacing.md, top: spacing.md, width: layout.iconButton, height: layout.iconButton, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}
         >
-          <Ionicons name="close" size={28} color={colors.text} />
+          <Icon name="close" size={28} color={colors.text} />
         </Pressable>
 
         <View style={{ alignItems: 'center', gap: spacing.xxs, paddingHorizontal: layout.iconButton }}>
@@ -90,7 +89,7 @@ function Action({ icon, label, onPress }: { icon: IconName; label: string; onPre
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={({ pressed }) => ({ alignItems: 'center', gap: spacing.sm, opacity: pressed ? 0.6 : 1 })}>
       <View style={{ width: 72, height: 72, borderRadius: radius.xxl, borderWidth: 2, borderBottomWidth: 4, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
-        <Ionicons name={icon} size={28} color={colors.text} />
+        <Icon name={icon} size={28} color={colors.text} />
       </View>
       <Text style={[typography.callout, { color: colors.textSecondary }]}>{label}</Text>
     </Pressable>

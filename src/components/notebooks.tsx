@@ -1,5 +1,4 @@
-// Pezzi comuni di Appunti e quaderno (dec. 142-145): copertina con ⋯, menu rapido, copertina disegnata, editor del quaderno, ordine (dec. 146: trascinando).
-import Ionicons from '@expo/vector-icons/Ionicons';
+// Pezzi comuni di Appunti e quaderno (dec. 142-145): copertina, menu rapido, copertina disegnata, editor del quaderno, ordine (dec. 146: trascinando).
 import { useState, type ReactNode } from 'react';
 import { Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { t } from '../i18n';
@@ -14,8 +13,9 @@ import { COVER_ART, COVER_COLORS, COVER_RATIO, COVER_SWATCH, COVER_THEMES, COVER
 import { tap } from './haptics';
 import type { DragHandle } from './SortableGrid';
 import { Button, TextField, type IconName } from './ui';
+import { Icon } from './icons';
 
-/** Elemento della griglia (quaderno o foglio): tocco per aprire, ⋯ o pressione lunga per il menu. */
+/** Elemento della griglia (quaderno o foglio): tocco per aprire, pressione lunga per il menu. */
 export function CoverCard({
   width,
   height,
@@ -27,6 +27,7 @@ export function CoverCard({
   pinned,
   status,
   drag,
+  systemMenu,
 }: {
   width: number;
   height: number;
@@ -41,6 +42,8 @@ export function CoverCard({
   status?: StudyStatus;
   /** Trascinamento nella griglia (dec. 146): la pressione lunga solleva l'elemento invece di aprire il menu. */
   drag?: DragHandle;
+  /** La pressione lunga apre il menu contestuale di iOS che avvolge la copertina (dec. 172): qui non fa nulla. */
+  systemMenu?: boolean;
 }) {
   const { colors, typography, radius } = useTheme();
   const lifted = drag?.lifted;
@@ -53,14 +56,18 @@ export function CoverCard({
       <View style={{ borderRadius: radius.md, boxShadow: lifted ? colors.shadowOverlay : colors.shadowRaised }}>
         <Pressable
           onPress={onOpen}
-          onLongPress={drag ? drag.onLongPress : menu}
+          onLongPress={systemMenu ? undefined : drag ? drag.onLongPress : menu}
           onPressOut={drag?.onPressOut}
           delayLongPress={drag ? 300 : 400}
           accessibilityRole="button"
           accessibilityLabel={label}
           accessibilityHint={drag ? t.activitiesHub.dragHint : undefined}
-          accessibilityActions={drag ? [{ name: 'moveBefore', label: t.activitiesHub.moveBefore }, { name: 'moveAfter', label: t.activitiesHub.moveAfter }] : undefined}
-          onAccessibilityAction={(e) => drag?.move(e.nativeEvent.actionName === 'moveBefore' ? -1 : 1)}
+          // Niente più ⋯ sulla copertina (dec. 174): con VoiceOver e TalkBack il menu resta tra le azioni.
+          accessibilityActions={[
+            { name: 'menu', label: t.activitiesHub.more },
+            ...(drag ? [{ name: 'moveBefore', label: t.activitiesHub.moveBefore }, { name: 'moveAfter', label: t.activitiesHub.moveAfter }] : []),
+          ]}
+          onAccessibilityAction={(e) => (e.nativeEvent.actionName === 'menu' ? onMenu() : drag?.move(e.nativeEvent.actionName === 'moveBefore' ? -1 : 1))}
           style={({ pressed }) => ({ opacity: pressed && !lifted ? 0.85 : 1 })}
         >
           <View style={{ width, height, borderRadius: radius.md, overflow: 'hidden', borderWidth: 1, borderColor: colors.border }}>{children}</View>
@@ -70,31 +77,11 @@ export function CoverCard({
             {status ? <StatusBadge status={status} /> : <View />}
             {pinned && (
               <View accessibilityLabel={t.activitiesHub.pinned} style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="pin" size={16} color="#172B4D" />
+                <Icon name="pin" size={16} color="#172B4D" />
               </View>
             )}
           </View>
         )}
-        <Pressable
-          onPress={menu}
-          hitSlop={6}
-          accessibilityRole="button"
-          accessibilityLabel={`${t.activitiesHub.more}: ${label}`}
-          style={({ pressed }) => ({
-            position: 'absolute',
-            right: 8,
-            bottom: 8,
-            width: 36,
-            height: 36,
-            borderRadius: radius.sm,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: '#FFFFFF',
-            opacity: pressed ? 0.7 : 1,
-          })}
-        >
-          <Ionicons name="ellipsis-horizontal" size={20} color="#172B4D" />
-        </Pressable>
       </View>
       <Text style={[typography.headline, { color: colors.text }]} numberOfLines={1}>
         {label}
@@ -114,7 +101,7 @@ export function StatusBadge({ status }: { status: StudyStatus }) {
   const tone = { todo: [colors.warningBg, colors.warning], doing: [colors.discoveryBg, colors.discovery], done: [colors.successBg, colors.success] }[status];
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, height: 26, borderRadius: radius.pill, backgroundColor: tone[0], flexShrink: 1 }}>
-      <Ionicons name={STATUS_ICON[status]} size={14} color={tone[1]} />
+      <Icon name={STATUS_ICON[status]} size={14} color={tone[1]} />
       <Text style={[typography.caption, { color: tone[1], fontWeight: '700' }]} numberOfLines={1}>
         {t.activitiesHub.status[status]}
       </Text>
@@ -169,7 +156,7 @@ export function AddCard({ width, height, label, onPress }: { width: number; heig
       })}
     >
       <View style={{ width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accent }}>
-        <Ionicons name="add" size={28} color={colors.onAccent} />
+        <Icon name="add" size={28} color={colors.onAccent} />
       </View>
       <Text style={[typography.headline, { color: colors.text, textAlign: 'center' }]}>{label}</Text>
     </Pressable>
@@ -206,7 +193,7 @@ export function ItemMenu({ title, items, onClose }: { title: string; items: Menu
                 backgroundColor: pressed ? colors.surfaceMuted : 'transparent',
               })}
             >
-              <Ionicons name={it.icon} size={22} color={it.danger ? colors.danger : colors.text} />
+              <Icon name={it.icon} size={22} color={it.danger ? colors.danger : colors.text} />
               <Text style={[typography.body, { color: it.danger ? colors.danger : colors.text }]}>{it.label}</Text>
             </Pressable>
           ))}
@@ -368,7 +355,7 @@ export function NotebookEditor({
                       style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: on ? colors.accent : 'transparent' }}
                     >
                       <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: COVER_SWATCH[c], alignItems: 'center', justifyContent: 'center' }}>
-                        {on && <Ionicons name="checkmark" size={18} color="#FFFFFF" />}
+                        {on && <Icon name="checkmark" size={18} color="#FFFFFF" />}
                       </View>
                     </Pressable>
                   );

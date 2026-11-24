@@ -1,9 +1,8 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useMemo, useRef, useState, type ComponentRef, type ReactNode } from 'react';
 import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { useTheme, type TintName } from '../theme';
 import { tap } from './haptics';
-import type { IconName } from './icons';
+import { Icon, type IconName } from './icons';
 
 /** "Riduci movimento" del sistema: niente fluttuazioni né coriandoli. */
 function useReducedMotion() {
@@ -135,7 +134,7 @@ export function OrbitArt({
           boxShadow: colors.shadowRaised,
         }}
       >
-        <Ionicons name={icon} size={core * 0.42} color={colors.tints[tint].fg} />
+        <Icon name={icon} size={core * 0.42} color={colors.tints[tint].fg} />
       </View>
       {satellites.slice(0, 4).map((s, i) => {
         const angle = (-60 + i * 95) * (Math.PI / 180);
@@ -154,7 +153,7 @@ export function OrbitArt({
               },
             ]}
           >
-            <Ionicons name={s} size={20} color={colors.tints[st].fg} />
+            <Icon name={s} size={20} color={colors.tints[st].fg} />
           </Animated.View>
         );
       })}
@@ -201,7 +200,7 @@ export function OptionCard({
     >
       {icon && (
         <View style={{ width: 40, height: 40, borderRadius: radius.lg, backgroundColor: selected ? colors.surface : colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
-          <Ionicons name={icon} size={20} color={selected ? colors.accent : colors.textSecondary} />
+          <Icon name={icon} size={20} color={selected ? colors.accent : colors.textSecondary} />
         </View>
       )}
       <View style={{ flex: 1, gap: 2 }}>
@@ -380,7 +379,7 @@ export function SelectPills({
               transform: [{ scale: pressed ? 0.96 : 1 }],
             })}
           >
-            {sel && <Ionicons name="checkmark" size={16} color={colors.accent} />}
+            {sel && <Icon name="checkmark" size={16} color={colors.accent} />}
             <Text style={[typography.callout, { color: sel ? colors.selectedText : colors.text }]}>{o}</Text>
           </Pressable>
         );

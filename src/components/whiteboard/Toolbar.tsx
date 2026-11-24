@@ -1,4 +1,3 @@
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useState, type ComponentProps } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
@@ -6,15 +5,15 @@ import { t } from '../../i18n';
 import type { LineStyle, Stabilization, StrokeTool } from '../../state/whiteboard';
 import { ink, useTheme } from '../../theme';
 import { Glass } from '../Glass';
-import type { Brush, SelectMode, ShapeStyle, Tool } from './Canvas';
+import type { Brush, EraserMode, SelectMode, ShapeStyle, Tool } from './Canvas';
 import { brushOutline, dashArray } from './geometry';
 import { SHAPES, ShapeSvg } from './shapes';
+import { Icon, type IconName } from '../icons';
 
-type McIcon = ComponentProps<typeof MaterialCommunityIcons>['name'];
 type Key = Tool | 'add' | 'audio' | 'more' | 'less' | 'ruler';
 
 /** Strumenti nell'ordine della dec. 110 (il quarto è rinviato); la freccia mostra al loro posto righello e forme (dec. 111, 116). */
-const TOOLS: { key: Key; icon: McIcon }[] = [
+const TOOLS: { key: Key; icon: IconName }[] = [
   { key: 'pen', icon: 'pen' },
   { key: 'pencil', icon: 'pencil-outline' },
   { key: 'highlighter', icon: 'marker' },
@@ -25,7 +24,7 @@ const TOOLS: { key: Key; icon: McIcon }[] = [
   { key: 'audio', icon: 'microphone-outline' },
   { key: 'hand', icon: 'hand-back-right-outline' },
 ];
-const EXTRA: { key: Key; icon: McIcon }[] = [
+const EXTRA: { key: Key; icon: IconName }[] = [
   { key: 'ruler', icon: 'ruler' },
   { key: 'shapes', icon: 'shape-outline' },
 ];
@@ -33,7 +32,7 @@ const EXTRA: { key: Key; icon: McIcon }[] = [
 const STYLES: LineStyle[] = ['solid', 'brush', 'dashed', 'dotted'];
 export const isStrokeTool = (x: string): x is StrokeTool => x === 'pen' || x === 'pencil' || x === 'highlighter';
 /** Strumenti che, toccati di nuovo, aprono le loro opzioni. */
-const hasOptions = (x: string) => isStrokeTool(x) || x === 'select' || x === 'shapes';
+const hasOptions = (x: string) => isStrokeTool(x) || x === 'select' || x === 'shapes' || x === 'eraser';
 
 export type Panel = 'none' | 'options' | 'colors' | 'style';
 
@@ -50,6 +49,8 @@ export function Toolbar({
   onRuler,
   selectMode,
   setSelectMode,
+  eraserMode,
+  setEraserMode,
   shapeStyle,
   setShapeStyle,
   inkDark,
@@ -66,6 +67,8 @@ export function Toolbar({
   onRuler: () => void;
   selectMode: SelectMode;
   setSelectMode: (m: SelectMode) => void;
+  eraserMode: EraserMode;
+  setEraserMode: (m: EraserMode) => void;
   shapeStyle: ShapeStyle;
   setShapeStyle: (s: Partial<ShapeStyle>) => void;
   /** Carta scura: servono inchiostri chiari. Se assente segue il tema. */
@@ -88,14 +91,33 @@ export function Toolbar({
   };
 
   // Righello e forme prendono il posto degli strumenti di scrittura; la freccia iniziale riporta indietro.
-  const keys: { key: Key; icon: McIcon }[] = more ? [{ key: 'less', icon: 'chevron-left' }, ...EXTRA] : [...TOOLS, { key: 'more', icon: 'chevron-right' }];
+  const keys: { key: Key; icon: IconName }[] = more ? [{ key: 'less', icon: 'chevron-left' }, ...EXTRA] : [...TOOLS, { key: 'more', icon: 'chevron-right' }];
 
   return (
     <View style={{ gap: spacing.sm, alignItems: 'center', alignSelf: 'stretch' }} pointerEvents="box-none">
       {brush && isStrokeTool(tool) && panel !== 'none' && (
         <BrushOptions tool={tool} brush={brush} setBrush={setBrush} panel={panel} setPanel={setPanel} isDark={isDark} />
       )}
-      {tool === 'select' && panel !== 'none' && <SelectOptions mode={selectMode} setMode={setSelectMode} />}
+      {tool === 'select' && panel !== 'none' && (
+        <ModeOptions
+          mode={selectMode}
+          setMode={setSelectMode}
+          opts={[
+            { m: 'rect', icon: 'selection-drag', label: t.whiteboard.selectRect },
+            { m: 'lasso', icon: 'lasso', label: t.whiteboard.selectFree },
+          ]}
+        />
+      )}
+      {tool === 'eraser' && panel !== 'none' && (
+        <ModeOptions
+          mode={eraserMode}
+          setMode={setEraserMode}
+          opts={[
+            { m: 'partial', icon: 'eraser', label: t.whiteboard.eraserPartial },
+            { m: 'whole', icon: 'eraser-whole', label: t.whiteboard.eraserWhole },
+          ]}
+        />
+      )}
       {tool === 'shapes' && panel !== 'none' && <ShapeOptions style={shapeStyle} setStyle={setShapeStyle} isDark={isDark} />}
       <Glass style={{ borderRadius: radius.xl, alignSelf: 'stretch' }}>
         <ScrollView
@@ -107,7 +129,7 @@ export function Toolbar({
           {keys.map((tl) => {
             const active = tl.key === tool || (tl.key === 'ruler' && rulerOn);
             const label = t.whiteboard.tools[tl.key];
-            const icon: McIcon = tl.key === 'select' && selectMode === 'lasso' ? 'lasso' : tl.icon;
+            const icon: IconName = tl.key === 'select' && selectMode === 'lasso' ? 'lasso' : tl.key === 'eraser' && eraserMode === 'whole' ? 'eraser-whole' : tl.icon;
             return (
               <Pressable
                 key={tl.key}
@@ -125,7 +147,7 @@ export function Toolbar({
                   opacity: pressed ? 0.6 : 1,
                 })}
               >
-                <MaterialCommunityIcons name={icon} size={22} color={active ? colors.onAccent : tl.key === 'more' || tl.key === 'less' ? colors.danger : colors.text} />
+                <Icon name={icon} size={22} color={active ? colors.onAccent : tl.key === 'more' || tl.key === 'less' ? colors.danger : colors.text} />
                 {active && isStrokeTool(tl.key) && brush && (
                   <View style={{ position: 'absolute', bottom: 4, width: 6, height: 6, borderRadius: 3, backgroundColor: brush.color, borderWidth: 1, borderColor: colors.onAccent }} />
                 )}
@@ -138,13 +160,9 @@ export function Toolbar({
   );
 }
 
-/** Selezione: a rettangolo o libera. */
-function SelectOptions({ mode, setMode }: { mode: SelectMode; setMode: (m: SelectMode) => void }) {
+/** Modalità di uno strumento (selezione: rettangolo o libera; gomma: parziale o tratto intero). */
+function ModeOptions<M extends string>({ mode, setMode, opts }: { mode: M; setMode: (m: M) => void; opts: { m: M; icon: IconName; label: string }[] }) {
   const { colors, radius, spacing, typography } = useTheme();
-  const opts: { m: SelectMode; icon: McIcon; label: string }[] = [
-    { m: 'rect', icon: 'selection-drag', label: t.whiteboard.selectRect },
-    { m: 'lasso', icon: 'lasso', label: t.whiteboard.selectFree },
-  ];
   return (
     <Glass style={{ borderRadius: radius.lg, padding: spacing.sm, flexDirection: 'row', gap: spacing.sm }}>
       {opts.map((o) => (
@@ -164,7 +182,7 @@ function SelectOptions({ mode, setMode }: { mode: SelectMode; setMode: (m: Selec
             backgroundColor: mode === o.m ? colors.accent : colors.surfaceMuted,
           }}
         >
-          <MaterialCommunityIcons name={o.icon} size={18} color={mode === o.m ? colors.onAccent : colors.text} />
+          <Icon name={o.icon} size={18} color={mode === o.m ? colors.onAccent : colors.text} />
           <Text style={[typography.callout, { color: mode === o.m ? colors.onAccent : colors.text }]}>{o.label}</Text>
         </Pressable>
       ))}
@@ -214,7 +232,7 @@ function ShapeOptions({ style, setStyle, isDark }: { style: ShapeStyle; setStyle
           accessibilityState={{ selected: style.fill === null }}
           style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: style.fill === null ? colors.accent : 'transparent' }}
         >
-          <MaterialCommunityIcons name="cancel" size={22} color={colors.textSecondary} />
+          <Icon name="cancel" size={22} color={colors.textSecondary} />
         </Pressable>
         {palette.map((c) => (
           <SmallDot key={c} color={c} active={style.fill === c} onPress={() => setStyle({ fill: c })} />
@@ -358,7 +376,7 @@ function BrushOptions({
           accessibilityLabel={t.whiteboard.moreColors}
           style={{ width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceMuted }}
         >
-          <MaterialCommunityIcons name="plus" size={20} color={colors.text} />
+          <Icon name="plus" size={20} color={colors.text} />
         </Pressable>
         {divider}
         {widths.map((w, i) => (

@@ -1,6 +1,5 @@
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { memo, useEffect, useRef, useState } from 'react';
-import { Animated, Image, Pressable, Text, TextInput, View, type GestureResponderEvent } from 'react-native';
+import { Animated, Image, Platform, Pressable, Text, TextInput, View, type GestureResponderEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, G, Line, Path, Rect as SvgRect, Text as SvgText } from 'react-native-svg';
 import { locale, t } from '../../i18n';
@@ -20,10 +19,8 @@ import { ink, paperLines, useTheme } from '../../theme';
 import { pageCount, pageSize, PaperPattern } from './Paper';
 import {
   bounds,
-  brushOutline,
   CM,
   contains,
-  dashArray,
   eraseStroke,
   hitsStroke,
   inLasso,
@@ -40,11 +37,16 @@ import {
   type Rect,
   type Ruler,
 } from './geometry';
+import { InkCanvas, usePen } from './ink';
 import { ShapeSvg } from './shapes';
+import { StrokeShape } from './StrokeSvg';
+import { Icon } from '../icons';
 
 export type Tool = StrokeTool | 'eraser' | 'text' | 'select' | 'hand' | 'shapes';
 export type Brush = { color: string; width: number; style: LineStyle; stabilization: Stabilization };
 export type SelectMode = 'rect' | 'lasso';
+/** Gomma (dec. 169): toglie solo la parte toccata, o tutto il tratto toccato. */
+export type EraserMode = 'partial' | 'whole';
 export type ShapeStyle = { shape: ShapeKind; fill: string | null; stroke: string; strokeWidth: number };
 
 const ERASER_RADIUS = 10;
@@ -53,12 +55,19 @@ const TAP_DELAY = 500;
 const TAP_MAX = 1000;
 const TAP_SLOP = 30;
 const isOpenShape = (s: ShapeKind) => s === 'line' || s === 'arrow';
+/** Su iPad si scrive e si cancella solo con la Pencil; il dito scorre (dec. 168). */
+const isPad = Platform.OS === 'ios' && Platform.isPad;
+/** Ingrandimento con due dita (dec. 167): da metà a quattro volte la misura di partenza. */
+const ZOOM_MIN = 0.5;
+const ZOOM_MAX = 4;
+/** Frenata dello scorrimento dopo aver alzato le dita, per millisecondo (come quella normale di iOS). */
+const GLIDE_DECAY = 0.998;
 
 type Drag =
   | { mode: 'draw'; points: Pt[] }
   | { mode: 'drawRuler'; anchor: Pt; start: Pt }
-  | { mode: 'erase' }
-  | { mode: 'pan'; startPage: Pt; startOffset: Pt }
+  | { mode: 'erase'; last: Pt }
+  | { mode: 'pan'; startPage: Pt; t0: Pt }
   | { mode: 'rect'; start: Pt }
   | { mode: 'lasso'; points: Pt[] }
   | { mode: 'move'; last: Pt }
@@ -66,7 +75,7 @@ type Drag =
   | { mode: 'rulerMove'; last: Pt }
   | { mode: 'rulerRotate'; grab: number; startAngle: number }
   | { mode: 'tap'; start: Pt; moved: boolean; wasEditing: boolean }
-  | { mode: 'multi'; c0: Pt; d0: number; startOffset: Pt; active: boolean };
+  | { mode: 'multi'; c0: Pt; d0: number; z0: number; t0: Pt; active: boolean };
 
 /** Due dita: punto medio e distanza. */
 const pinch = (touches: GestureResponderEvent['nativeEvent']['touches']) => {
@@ -81,6 +90,7 @@ export function Canvas({
   brush,
   textColor,
   selectMode,
+  eraserMode = 'partial',
   shapeStyle,
   ruler,
   setRuler,
@@ -112,6 +122,7 @@ export function Canvas({
   brush: Brush;
   textColor: string;
   selectMode: SelectMode;
+  eraserMode?: EraserMode;
   shapeStyle: ShapeStyle;
   ruler: Ruler | null;
   setRuler: (r: Ruler) => void;
@@ -139,33 +150,73 @@ export function Canvas({
   const [box, setBox] = useState({ w: 0, h: 0 });
   const itemsRef = useRef(items);
   itemsRef.current = items;
-  // Rimpicciolimento con due dita sulla carta: solo un effetto, poi il foglio torna com'era (dec. 117).
+  // Ingrandimento che resta (dec. 167; prima solo un effetto che tornava indietro, dec. 117).
   const [zoom, setZoom] = useState(1);
-  const [anchorY, setAnchorY] = useState(0);
-  const zoomRef = useRef(1);
-  zoomRef.current = zoom;
+  // Carta ingrandita più larga dello schermo: spostamento orizzontale del foglio.
+  const [panX, setPanX] = useState(0);
   const frame = useRef<number | null>(null);
-  useEffect(() => () => {
+  const stopGlide = () => {
     if (frame.current !== null) cancelAnimationFrame(frame.current);
-  }, []);
-  const bounceBack = () => {
-    const from = zoomRef.current;
-    if (from === 1) return;
-    const t0 = Date.now();
-    const step = () => {
-      const k = Math.min(1, (Date.now() - t0) / 260);
-      setZoom(from + (1 - from) * (1 - Math.pow(1 - k, 3)));
-      frame.current = k < 1 ? requestAnimationFrame(step) : null;
-    };
-    frame.current = requestAnimationFrame(step);
+    frame.current = null;
   };
+  useEffect(() => stopGlide, []);
 
   const page = paper ? pageSize(paper) : null;
   const S = scale * zoom;
-  // Con la carta il foglio resta centrato orizzontalmente (occupa tutta la larghezza quando non è rimpicciolito).
-  const tx = page ? (box.w - page.w * S) / 2 : offset.x;
-  const ty = anchorY - (anchorY - offset.y) * zoom;
+  // Carta: centrata se sta nello schermo, altrimenti si sposta di lato senza uscire dai bordi.
+  // In verticale `offset.y` è nella misura di partenza: così il punto del foglio in cima resta lo stesso cambiando ingrandimento.
+  const clampX = (x: number, s: number) => (page ? (page.w * s <= box.w ? (box.w - page.w * s) / 2 : Math.min(0, Math.max(box.w - page.w * s, x))) : x);
+  const tx = page ? clampX(panX, S) : offset.x;
+  const ty = page ? offset.y * zoom : offset.y;
   const eraserR = ERASER_RADIUS / S;
+  const viewRef = useRef({ tx, ty, zoom });
+  viewRef.current = { tx, ty, zoom };
+
+  /** Porta la lavagna a uno spostamento (tx, ty) sullo schermo con ingrandimento z. */
+  const setView = (x: number, y: number, z: number) => {
+    if (page) {
+      setPanX(clampX(x, scale * z));
+      setOffset({ x: 0, y: y / z });
+    } else setOffset({ x, y });
+    if (z !== zoom) setZoom(z);
+  };
+
+  // Scorrimento con inerzia: si registrano le ultime posizioni per sapere a che velocità si stava andando.
+  const track = useRef<{ t: number; x: number; y: number }[]>([]);
+  const record = (x: number, y: number) => {
+    const now = Date.now();
+    track.current.push({ t: now, x, y });
+    while (track.current.length > 2 && now - track.current[0].t > 100) track.current.shift();
+  };
+  const glide = () => {
+    const pts = track.current;
+    track.current = [];
+    if (pts.length < 2) return;
+    const a = pts[0];
+    const b = pts[pts.length - 1];
+    const dt = b.t - a.t;
+    // Dita ferme prima di alzarle: niente inerzia.
+    if (dt <= 0 || Date.now() - b.t > 60) return;
+    let vx = (b.x - a.x) / dt;
+    let vy = (b.y - a.y) / dt;
+    if (Math.hypot(vx, vy) < 0.15) return;
+    let { tx: x, ty: y } = viewRef.current;
+    const z = viewRef.current.zoom;
+    let last = Date.now();
+    const step = () => {
+      const now = Date.now();
+      const ms = Math.min(32, now - last);
+      last = now;
+      const k = Math.pow(GLIDE_DECAY, ms);
+      vx *= k;
+      vy *= k;
+      x += vx * ms;
+      y += vy * ms;
+      setView(x, y, z);
+      frame.current = Math.hypot(vx, vy) > 0.02 ? requestAnimationFrame(step) : null;
+    };
+    frame.current = requestAnimationFrame(step);
+  };
 
   // Numero del foglio al centro dello schermo: compare mentre si scorre e sparisce 1 secondo dopo (dec. 118).
   const insets = useSafeAreaInsets();
@@ -185,12 +236,68 @@ export function Canvas({
   const selectedBox = union(items.filter((i) => selected.includes(i.id)).map(bounds));
   const strokeTool = tool === 'pen' || tool === 'pencil' || tool === 'highlighter';
 
+  // Apple Pencil (dec. 166): scrive solo la penna; dopo averla usata il dito scorre il foglio invece di scrivere.
+  const pencilSeen = useRef(false);
+  const penActive = useRef(false);
+  const penCommitted = useRef(false);
+  const pen = usePen({
+    enabled: strokeTool || tool === 'eraser',
+    // Gomma e righello: i punti della Pencil passano al gestore della lavagna (aggancio al bordo, gomma), senza pressione.
+    relay: tool === 'eraser' || ruler !== null,
+    onRelay: (phase, x, y) => {
+      if (phase === 'start') {
+        gesture.current = newId('g');
+        beginAt({ x, y }, false);
+      } else if (phase === 'move') moveAt({ x, y });
+      else {
+        onRelease(phase === 'end');
+        penActive.current = false;
+      }
+    },
+    view: { tx, ty, S },
+    onBegin: () => {
+      pencilSeen.current = true;
+      penActive.current = true;
+      // Il gestore normale può aver già preso lo stesso tocco (tratto o scorrimento): si annulla.
+      // Senza nuovi render se non serve: arriva mentre il gesto della Pencil sta partendo.
+      const d = drag.current;
+      if (!d) return;
+      if (d.mode === 'pan') setView(d.t0.x, d.t0.y, zoom);
+      cancelDrag();
+    },
+    onUp: () => {
+      penActive.current = false;
+    },
+    onStroke: (points) => {
+      penActive.current = false;
+      penCommitted.current = true;
+      addStroke(stabilize(points, brush.stabilization));
+    },
+  });
+  useEffect(() => {
+    if (!penCommitted.current) return;
+    penCommitted.current = false;
+    pen.clear();
+  }, [items]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const screen = (e: GestureResponderEvent): Pt => ({ x: e.nativeEvent.pageX - origin.current.x, y: e.nativeEvent.pageY - origin.current.y });
   const toCanvas = (s: Pt): Pt => ({ x: (s.x - tx) / S, y: (s.y - ty) / S });
 
-  const eraseAt = (p: Pt) => {
-    if (!itemsRef.current.some((i) => i.kind === 'stroke' && hitsStroke(i, p, eraserR))) return;
-    update((prev) => prev.flatMap<BoardItem>((i) => (i.kind === 'stroke' ? eraseStroke(i, p, eraserR, () => newId('s')) : [i])), gesture.current);
+  /** Gomma da `a` a `b`: si cancella lungo tutto il tratto percorso, non solo nei punti ricevuti, così movimenti veloci non lasciano pezzi. */
+  const eraseAlong = (a: Pt, b: Pt) => {
+    const n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / (eraserR * 0.5)));
+    const pts = Array.from({ length: n }, (_, k) => ({ x: a.x + ((b.x - a.x) * (k + 1)) / n, y: a.y + ((b.y - a.y) * (k + 1)) / n }));
+    const hit = (i: BoardItem) => i.kind === 'stroke' && pts.some((q) => hitsStroke(i, q, eraserR));
+    if (!itemsRef.current.some(hit)) return;
+    if (eraserMode === 'whole') update((prev) => prev.filter((i) => !hit(i)), gesture.current);
+    else
+      update(
+        (prev) =>
+          prev.flatMap<BoardItem>((i) =>
+            i.kind === 'stroke' && hit(i) ? pts.reduce<Stroke[]>((acc, q) => acc.flatMap((s) => eraseStroke(s, q, eraserR, () => newId('s'))), [i]) : [i],
+          ),
+        gesture.current,
+      );
   };
 
   /** Interrompe il gesto in corso senza aggiungere nulla. */
@@ -225,7 +332,8 @@ export function Canvas({
   const startMulti = (e: GestureResponderEvent) => {
     if (drag.current?.mode !== 'multi') cancelDrag();
     const { c, d } = pinch(e.nativeEvent.touches);
-    drag.current = { mode: 'multi', c0: c, d0: d, startOffset: offset, active: false };
+    drag.current = { mode: 'multi', c0: c, d0: d, z0: zoom, t0: { x: tx, y: ty }, active: false };
+    track.current = [];
   };
 
   const moveMulti = (e: GestureResponderEvent, d: Extract<Drag, { mode: 'multi' }>) => {
@@ -236,16 +344,23 @@ export function Canvas({
       multi.current.invalid = true;
     }
     if (!d.active) return;
-    setOffset({ x: page ? d.startOffset.x : d.startOffset.x + c.x - d.c0.x, y: d.startOffset.y + c.y - d.c0.y });
-    if (page && d.d0 > 0) {
-      const r = dist / d.d0;
-      // Resistenza: il foglio si rimpicciolisce meno delle dita e mai sotto metà.
-      setZoom(r < 1 ? Math.max(0.5, 1 - (1 - r) * 0.5) : 1);
-      setAnchorY(c.y - origin.current.y);
-    }
+    // Il punto del foglio che era tra le dita resta tra le dita, mentre si ingrandisce e si sposta.
+    const z = d.d0 > 0 ? Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, (d.z0 * dist) / d.d0)) : d.z0;
+    const k = z / d.z0;
+    const ox = origin.current.x;
+    const oy = origin.current.y;
+    const x = c.x - ox - (d.c0.x - ox - d.t0.x) * k;
+    const y = c.y - oy - (d.c0.y - oy - d.t0.y) * k;
+    setView(x, y, z);
+    record(x, y);
   };
 
   const onGrant = (e: GestureResponderEvent) => {
+    // Mentre scrive la Pencil (o appena appoggiata), il palmo e la penna stessa non passano di qui.
+    if (penActive.current || pen.down.value) return;
+    // Un tocco ferma lo scorrimento con inerzia.
+    stopGlide();
+    track.current = [];
     // I livelli sopra il canvas non ricevono tocchi: location è relativa al canvas.
     origin.current = { x: e.nativeEvent.pageX - e.nativeEvent.locationX, y: e.nativeEvent.pageY - e.nativeEvent.locationY };
     gesture.current = newId('g');
@@ -255,6 +370,16 @@ export function Canvas({
     if (wasEditing) setEditingId(null);
     if (fingers >= 2) return startMulti(e);
     const sp = screen(e);
+    // Su iPad, o dopo aver usato la Pencil, il dito non scrive e non cancella: scorre il foglio (il righello si sposta ancora col dito).
+    if ((isPad || pencilSeen.current) && (strokeTool || tool === 'eraser') && !(ruler && onRuler(sp, ruler))) {
+      drag.current = { mode: 'pan', startPage: { x: e.nativeEvent.pageX, y: e.nativeEvent.pageY }, t0: { x: tx, y: ty } };
+      return;
+    }
+    beginAt(sp, wasEditing);
+  };
+
+  /** Inizio di un gesto a un dito (o della Pencil passata al gestore) nel punto `sp` dello schermo. */
+  const beginAt = (sp: Pt, wasEditing: boolean) => {
     const p = toCanvas(sp);
 
     // Il righello si sposta (al centro) o si ruota (verso gli estremi) con qualsiasi strumento.
@@ -283,12 +408,12 @@ export function Canvas({
         break;
       }
       case 'eraser':
-        drag.current = { mode: 'erase' };
+        drag.current = { mode: 'erase', last: p };
         setEraser(p);
-        eraseAt(p);
+        eraseAlong(p, p);
         break;
       case 'hand':
-        drag.current = { mode: 'pan', startPage: { x: e.nativeEvent.pageX, y: e.nativeEvent.pageY }, startOffset: offset };
+        drag.current = { mode: 'pan', startPage: { x: sp.x + origin.current.x, y: sp.y + origin.current.y }, t0: { x: tx, y: ty } };
         break;
       case 'select':
         if (selectedBox && contains(selectedBox, p)) drag.current = { mode: 'move', last: p };
@@ -310,11 +435,17 @@ export function Canvas({
   };
 
   const onMove = (e: GestureResponderEvent) => {
+    if (penActive.current || pen.down.value) return;
     trackTouches(e);
     const d = drag.current;
     if (d?.mode === 'multi') return moveMulti(e, d);
     if (!d || e.nativeEvent.touches.length > 1) return;
-    const sp = screen(e);
+    moveAt(screen(e));
+  };
+
+  const moveAt = (sp: Pt) => {
+    const d = drag.current;
+    if (!d) return;
     const p = toCanvas(sp);
     switch (d.mode) {
       case 'draw': {
@@ -334,11 +465,16 @@ export function Canvas({
       }
       case 'erase':
         setEraser(p);
-        eraseAt(p);
+        eraseAlong(d.last, p);
+        d.last = p;
         break;
-      case 'pan':
-        setOffset({ x: d.startOffset.x + e.nativeEvent.pageX - d.startPage.x, y: d.startOffset.y + e.nativeEvent.pageY - d.startPage.y });
+      case 'pan': {
+        const x = d.t0.x + sp.x + origin.current.x - d.startPage.x;
+        const y = d.t0.y + sp.y + origin.current.y - d.startPage.y;
+        setView(x, y, zoom);
+        record(x, y);
         break;
+      }
       case 'rect':
         setRect(rectFrom(d.start, p));
         break;
@@ -390,8 +526,9 @@ export function Canvas({
   const onRelease = (fingersUp: boolean) => {
     const m = multi.current;
     if (m.max >= 2) {
+      const wasMoving = drag.current?.mode === 'multi' && drag.current.active;
       cancelDrag();
-      bounceBack();
+      if (wasMoving && fingersUp) glide();
       if (fingersUp && !m.invalid && Date.now() - m.t0 <= TAP_MAX) (m.max >= 3 ? onRedo : onUndo)();
       return;
     }
@@ -399,8 +536,12 @@ export function Canvas({
     drag.current = null;
     if (!d) return;
     switch (d.mode) {
+      case 'pan':
+        if (fingersUp) glide();
+        break;
       case 'draw':
-        addStroke(stabilize(d.points, brush.stabilization));
+        // Tratto interrotto (es. preso dalla Pencil): non si salva.
+        if (fingersUp) addStroke(stabilize(d.points, brush.stabilization));
         setLive(null);
         break;
       case 'drawRuler':
@@ -483,7 +624,7 @@ export function Canvas({
   const scaled = { transform: [{ scale: S }], transformOrigin: 'top left' };
   const background = paper ? (isDark ? paperLines.desk.dark : paperLines.desk.light) : isDark ? ink.paper.dark : ink.paper.light;
 
-  return (
+  return pen.wrap(
     <View
       style={{ flex: 1, backgroundColor: background, overflow: 'hidden' }}
       onLayout={(e) => {
@@ -497,8 +638,8 @@ export function Canvas({
       onResponderGrant={onGrant}
       onResponderStart={trackTouches}
       onResponderMove={onMove}
-      onResponderRelease={() => onRelease(true)}
-      onResponderTerminate={() => onRelease(false)}
+      onResponderRelease={() => !penActive.current && onRelease(true)}
+      onResponderTerminate={() => !penActive.current && onRelease(false)}
     >
       <Svg pointerEvents="none" width={box.w} height={box.h} style={fill}>
         <G transform={translate}>
@@ -508,7 +649,7 @@ export function Canvas({
               {/* La carta si ripete foglio dopo foglio; una linea leggera segna dove inizia il successivo. */}
               {visiblePages.map((k) => (
                 <G key={k}>
-                  <PaperPattern template={paper.template} dark={paper.dark} x={0} y={k * page.h} w={page.w} h={page.h} />
+                  <PaperPattern template={paper.template} gap={paper.gap} dark={paper.dark} x={0} y={k * page.h} w={page.w} h={page.h} />
                   {k > 0 && <Line x1={0} y1={k * page.h} x2={page.w} y2={k * page.h} stroke={paper.dark ? paperLines.dark : paperLines.light} strokeWidth={2} strokeDasharray="8 6" />}
                 </G>
               ))}
@@ -586,10 +727,15 @@ export function Canvas({
         );
       })}
 
+      <InkCanvas
+        strokes={inks}
+        live={liveStroke && liveStroke.tool !== 'highlighter' ? liveStroke : null}
+        view={{ tx, ty, S }}
+        pen={pen.pts ? { pts: pen.pts, tool: tool as StrokeTool, color: brush.color, width: brush.width, style: brush.style } : null}
+      />
+
       <Svg pointerEvents="none" width={box.w} height={box.h} style={fill}>
         <G transform={translate}>
-          <StrokeLayer strokes={inks} />
-          {liveStroke && liveStroke.tool !== 'highlighter' && <StrokeShape s={liveStroke} />}
           {rect && <SvgRect x={rect.x} y={rect.y} width={rect.w} height={rect.h} fill="rgba(31,111,235,0.08)" stroke={ink.selection} strokeWidth={1.5} strokeDasharray="6 4" />}
           {lasso && <Path d={`${pathD(lasso)} Z`} fill="rgba(31,111,235,0.08)" stroke={ink.selection} strokeWidth={1.5} strokeDasharray="6 4" />}
           {selectedBox && !rect && !lasso && (
@@ -625,7 +771,7 @@ export function Canvas({
             accessibilityLabel={t.whiteboard.audio.play}
             style={{ position: 'absolute', left: i.x * S + tx, top: i.y * S + ty, width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: ink.selection }}
           >
-            <MaterialCommunityIcons name={i.comment ? 'message-processing-outline' : 'volume-high'} size={22} color="#FFFFFF" />
+            <Icon name={i.comment ? 'message-processing-outline' : 'volume-high'} size={22} color="#FFFFFF" />
           </Pressable>
         ) : null,
       )}
@@ -648,7 +794,7 @@ export function Canvas({
             backgroundColor: ink.selection,
           }}
         >
-          <MaterialCommunityIcons name="close" size={18} color="#FFFFFF" />
+          <Icon name="close" size={18} color="#FFFFFF" />
         </Pressable>
       )}
 
@@ -675,7 +821,7 @@ export function Canvas({
           <Text style={{ color: '#FFFFFF', fontSize: 17, fontWeight: '700' }}>{pageNumber}</Text>
         </Animated.View>
       )}
-    </View>
+    </View>,
   );
 }
 
@@ -725,20 +871,3 @@ const StrokeLayer = memo(function StrokeLayer({ strokes }: { strokes: Stroke[] }
     </>
   );
 });
-
-export function StrokeShape({ s }: { s: Stroke }) {
-  const opacity = s.tool === 'highlighter' ? ink.highlighterOpacity : s.tool === 'pencil' ? ink.pencilOpacity : 1;
-  if (s.style === 'brush') return <Path d={brushOutline(s.points, s.width * 1.6)} fill={s.color} opacity={opacity} />;
-  return (
-    <Path
-      d={pathD(s.points)}
-      stroke={s.color}
-      strokeWidth={s.width}
-      strokeLinecap={s.tool === 'highlighter' && s.style === 'solid' ? 'butt' : 'round'}
-      strokeLinejoin="round"
-      strokeDasharray={dashArray(s.style, s.width)}
-      fill="none"
-      opacity={opacity}
-    />
-  );
-}

@@ -23,8 +23,11 @@ export type SettingsState = {
   plainCovers: boolean;
 };
 
-const initial: SettingsState = { language: 'system', theme: 'system', biometricLock: false, push: true, twoFactor: false, devices: demoDevices, plainCovers: false };
+// shortcut: per ora l'app parte in italiano e in tema chiaro; tornare a 'system' quando si decide (dec. 149).
+const initial: SettingsState = { language: 'it', theme: 'light', biometricLock: false, push: true, twoFactor: false, devices: demoDevices, plainCovers: false };
 let state: SettingsState = initial;
+// Il tema iniziale passa da Appearance come nei cambi successivi, così lo seguono anche tab bar, sheet e barra di stato.
+if (Platform.OS !== 'web') Appearance.setColorScheme(initial.theme === 'system' ? 'unspecified' : initial.theme);
 const listeners = new Set<() => void>();
 
 export function updateSettings(patch: Partial<SettingsState>) {

@@ -1,7 +1,9 @@
-import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { View } from 'react-native';
+import { Link, router, useLocalSearchParams } from 'expo-router';
+import { useState, type ReactElement } from 'react';
+import * as Sharing from 'expo-sharing';
+import { Linking, Platform, View } from 'react-native';
 import { notify } from '../../components/dialogs';
+import { Icon, IMPORT_ICON } from '../../components/icons';
 import { AddCard, CoverCard, downloadNotebook, ItemMenu, NotebookEditor, SortBar, STATUS_ICON } from '../../components/notebooks';
 import { SortableGrid } from '../../components/SortableGrid';
 import { showUndo } from '../../components/UndoToast';
@@ -23,11 +25,24 @@ import {
   trashNote,
   useBoards,
   useNoteExtras,
+  type ImportSource,
   type StudyStatus,
 } from '../../state/whiteboard';
 import { useTheme } from '../../theme';
 
+/** YouTube nel browser o nell'app; i file nel foglio di condivisione di sistema, che li mostra e li apre con Pagine, Word… */
+async function openSource(src: ImportSource) {
+  try {
+    if (src.kind === 'youtube') await Linking.openURL(src.uri);
+    else await Sharing.shareAsync(src.uri, { dialogTitle: src.name });
+  } catch {
+    notify(t.importer.openFailed);
+  }
+}
+
 const STATUSES: StudyStatus[] = ['todo', 'doing', 'done'];
+const IOS = Platform.OS === 'ios';
+const STATUS_SF = { todo: 'circle', doing: 'clock', done: 'checkmark.circle' } as const;
 
 /** Quaderno di una materia: i fogli salvati e Nuovo foglio (dec. 143, 145-146). */
 export default function Quaderno() {
@@ -58,7 +73,8 @@ export default function Quaderno() {
   const h = Math.round(w * 1.32);
 
   const newSheet = () => router.push(others ? '/nuova-nota' : { pathname: '/nuova-nota', params: { subject: name } });
-  const open = (s: Sheet) => router.push(`/lavagna/${s.id}`);
+  // Un file o un video importato si apre da sé, non sulla lavagna (dec. 176).
+  const open = (s: Sheet) => (s.source ? openSource(s.source) : router.push(`/lavagna/${s.id}`));
   const duplicate = (s: Sheet) => {
     const m = metaOf(s);
     duplicateNote(s.id, { ...m, title: `${m.title} ${t.manage.copySuffix}` });
@@ -75,6 +91,8 @@ export default function Quaderno() {
     trashNote(s.id);
     showUndo(t.trash.sheetTrashed(s.title), () => restoreSheet(s));
   };
+  const edit = (s: Sheet) => router.push({ pathname: '/nuova-nota', params: { id: s.id } });
+  const actions = { pinned, statuses, edit, duplicate, download, remove };
   const menuSheet = list.find((s) => s.id === menuFor);
   const statusSheet = list.find((s) => s.id === statusFor);
 
@@ -84,7 +102,7 @@ export default function Quaderno() {
         <ScreenHeader
           title={label}
           subtitle={list.length ? t.activitiesHub.sheetCount(list.length) : t.activitiesHub.emptyBook}
-          left={<IconButton icon="chevron-back" label={t.whiteboard.back} onPress={() => router.back()} />}
+          left={<IconButton icon="chevron-back" label={t.whiteboard.back} onPress={() => router.back()} appearance="plain" />}
           right={
             <View style={{ flexDirection: 'row', gap: spacing.xs }}>
               <IconButton icon="document-outline" label={t.activitiesHub.downloadBook} onPress={() => downloadNotebook(label, list)} />
@@ -110,23 +128,28 @@ export default function Quaderno() {
               colGap={gap}
               rowGap={spacing.lg}
               leading={[<AddCard key="add" width={w} height={h} label={t.activitiesHub.newSheet} onPress={newSheet} />]}
-              renderItem={(s, drag) => (
-                <CoverCard
-                  width={w}
-                  height={h}
-                  label={s.title}
-                  caption={statuses[s.id] ? `${t.activitiesHub.status[statuses[s.id]]} · ${s.edited}` : s.edited}
-                  onOpen={() => open(s)}
-                  onMenu={() => setMenuFor(s.id)}
-                  pinned={pinned.includes(s.id)}
-                  status={statuses[s.id]}
-                  drag={drag}
-                >
-                  <SheetThumb sheet={s} items={itemsOf(s.id)} width={w} height={h} />
-                </CoverCard>
-              )}
+              renderItem={(s, drag) => {
+                const card = (
+                  <CoverCard
+                    width={w}
+                    height={h}
+                    label={s.title}
+                    caption={statuses[s.id] ? `${t.activitiesHub.status[statuses[s.id]]} · ${s.edited}` : s.edited}
+                    onOpen={() => open(s)}
+                    onMenu={() => setMenuFor(s.id)}
+                    pinned={pinned.includes(s.id)}
+                    status={statuses[s.id]}
+                    drag={IOS ? undefined : drag}
+                    systemMenu={IOS}
+                  >
+                    <SheetThumb sheet={s} items={itemsOf(s.id)} width={w} height={h} />
+                  </CoverCard>
+                );
+                return IOS ? <SheetMenu sheet={s} {...actions}>{card}</SheetMenu> : card;
+              }}
               onReorder={(ids) => setSheetOrder(name, ids)}
-              onLongPressRelease={(s) => setMenuFor(s.id)}
+              // Su iOS tenendo premuto fermo si apre il menu di sistema (dec. 172); altrove il menu si apre al rilascio.
+              onLongPressRelease={(s) => !IOS && setMenuFor(s.id)}
               onDragging={setDragging}
             />
           )}
@@ -139,6 +162,8 @@ export default function Quaderno() {
           onClose={() => setMenuFor(null)}
           items={[
             { icon: 'open-outline', label: t.activitiesHub.open, onPress: () => open(menuSheet) },
+            { icon: 'color-palette-outline', label: t.activitiesHub.editSheet, onPress: () => edit(menuSheet) },
+            { icon: 'copy-outline', label: t.manage.duplicate, onPress: () => duplicate(menuSheet) },
             {
               icon: pinned.includes(menuSheet.id) ? 'pin' : 'pin-outline',
               label: pinned.includes(menuSheet.id) ? t.activitiesHub.unpin : t.activitiesHub.pin,
@@ -149,8 +174,6 @@ export default function Quaderno() {
               label: statuses[menuSheet.id] ? `${t.activitiesHub.statusLabel}: ${t.activitiesHub.status[statuses[menuSheet.id]]}` : t.activitiesHub.setStatus,
               onPress: () => setStatusFor(menuSheet.id),
             },
-            { icon: 'color-palette-outline', label: t.activitiesHub.editSheet, onPress: () => router.push({ pathname: '/nuova-nota', params: { id: menuSheet.id } }) },
-            { icon: 'copy-outline', label: t.manage.duplicate, onPress: () => duplicate(menuSheet) },
             { icon: 'download-outline', label: t.manage.download, onPress: () => download(menuSheet) },
             { icon: 'trash-outline', label: t.trash.moveToTrash, danger: true, onPress: () => remove(menuSheet) },
           ]}
@@ -189,8 +212,78 @@ export default function Quaderno() {
 
 /** Anteprima del foglio: copertina, visuale dell'ultima volta o la carta scelta. */
 function SheetThumb({ sheet, items, width, height }: { sheet: Sheet; items: Parameters<typeof BoardPreview>[0]['items']; width: number; height: number }) {
+  const { colors } = useTheme();
+  if (sheet.source)
+    return (
+      <View style={{ width, height, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceMuted }}>
+        <Icon name={IMPORT_ICON[sheet.source.kind]} size={width * 0.3} color={sheet.source.kind === 'word' || sheet.source.kind === 'ppt' ? colors.textSecondary : colors.dangerIcon} />
+      </View>
+    );
   const paper = getNoteMeta(sheet.id)?.paper ?? { template: 'blank' as const, color: '#FFFFFF', dark: false };
   if (sheet.cover) return <CoverThumb color={sheet.cover} title={sheet.title} width={width} height={height} />;
   if (items.length > 0) return <BoardPreview items={items} height={height} viewport={getViewport(sheet.id)} />;
-  return <PaperThumb template={paper.template} color={paper.color} dark={paper.dark} width={width} height={height} />;
+  return <PaperThumb template={paper.template} gap={'gap' in paper ? paper.gap : undefined} color={paper.color} dark={paper.dark} width={width} height={height} />;
+}
+
+/**
+ * Menu contestuale di sistema di iOS (dec. 172): tenendo premuto fermo il foglio si solleva con lo sfondo sfocato
+ * e compaiono le voci; un tocco lo apre. Se il dito si muove prima, resta il trascinamento per riordinare (dec. 146).
+ */
+function SheetMenu({
+  sheet,
+  children,
+  pinned,
+  statuses,
+  edit,
+  duplicate,
+  download,
+  remove,
+}: {
+  sheet: Sheet;
+  children: ReactElement;
+  pinned: string[];
+  statuses: Partial<Record<string, StudyStatus>>;
+  edit: (s: Sheet) => void;
+  duplicate: (s: Sheet) => void;
+  download: (s: Sheet) => void;
+  remove: (s: Sheet) => void;
+}) {
+  const isPinned = pinned.includes(sheet.id);
+  const status = statuses[sheet.id];
+  return (
+    <Link href={`/lavagna/${sheet.id}`} asChild>
+      <Link.Trigger>{children}</Link.Trigger>
+      <Link.Menu>
+        <Link.MenuAction icon="square.and.pencil" onPress={() => edit(sheet)}>
+          {t.activitiesHub.editSheet}
+        </Link.MenuAction>
+        <Link.MenuAction icon="plus.square.on.square" onPress={() => duplicate(sheet)}>
+          {t.manage.duplicate}
+        </Link.MenuAction>
+        <Link.MenuAction icon={isPinned ? 'pin.slash' : 'pin'} onPress={() => toggleFavorite(sheet.id)}>
+          {isPinned ? t.activitiesHub.unpin : t.activitiesHub.pin}
+        </Link.MenuAction>
+        <Link.Menu inline>
+          <Link.Menu title={t.activitiesHub.statusLabel} subtitle={status ? t.activitiesHub.status[status] : undefined} icon="checklist">
+            {STATUSES.map((st) => (
+              <Link.MenuAction key={st} icon={STATUS_SF[st]} isOn={status === st} onPress={() => setStudyStatus(sheet.id, st)}>
+                {t.activitiesHub.status[st]}
+              </Link.MenuAction>
+            ))}
+            <Link.MenuAction icon="xmark.circle" onPress={() => clearStudyStatus(sheet.id)}>
+              {t.activitiesHub.noStatus}
+            </Link.MenuAction>
+          </Link.Menu>
+          <Link.MenuAction icon="arrow.down.doc" onPress={() => download(sheet)}>
+            {t.manage.download}
+          </Link.MenuAction>
+        </Link.Menu>
+        <Link.Menu inline>
+          <Link.MenuAction icon="trash" destructive onPress={() => remove(sheet)}>
+            {t.trash.moveToTrash}
+          </Link.MenuAction>
+        </Link.Menu>
+      </Link.Menu>
+    </Link>
+  );
 }

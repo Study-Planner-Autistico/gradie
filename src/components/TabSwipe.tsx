@@ -1,6 +1,7 @@
 import { router, useFocusEffect, type Href } from 'expo-router';
 import { useCallback, useMemo, useRef, useState, type ComponentType, type ReactNode } from 'react';
 import { Animated, Easing, PanResponder, useWindowDimensions, View } from 'react-native';
+import { isMenuOpen } from '../state/menu';
 import { TabScrollContext } from '../state/tabScroll';
 import { useTheme } from '../theme';
 import { tap } from './haptics';
@@ -13,6 +14,9 @@ const horizontal = (dx: number, dy: number) => Math.abs(dx) > 12 && Math.abs(dx)
 
 // Ogni scheda registra il suo contenuto, così durante il trascinamento si può disegnare quella accanto.
 const screens: Partial<Record<TabName, ComponentType>> = {};
+
+/** Finché un foglio è aperto sopra la scheda (il calendario dell'Agenda) lo scorrimento non cambia scheda. */
+export const tabSwipeLock = { current: false };
 export function registerTabScreen(name: TabName, screen: ComponentType) {
   screens[name] = screen;
 }
@@ -34,7 +38,7 @@ export function TabSwipe({ name, children, noPrev }: { name: TabName; children: 
   const next = TABS[i + 1]?.name;
 
   // La pagina torna al centro solo quando non si vede più: se lo facesse subito dopo navigate, per un attimo
-  // (prima che la barra nativa cambi scheda) ricomparirebbe la pagina vecchia, come un caricamento.
+  // (prima che la barra cambi scheda) ricomparirebbe la pagina vecchia, come un caricamento.
   useFocusEffect(
     useCallback(() => {
       x.setValue(0);
@@ -59,7 +63,8 @@ export function TabSwipe({ name, children, noPrev }: { name: TabName; children: 
     const settle = (to: number, done: () => void) =>
       Animated.timing(x, { toValue: to, duration: 220, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start(({ finished }) => finished && done());
     return PanResponder.create({
-      onMoveShouldSetPanResponder: (_, g) => horizontal(g.dx, g.dy) && (g.dx < 0 || !noPrev),
+      // Con il menu della Home aperto lo scorrimento serve a chiuderlo, non a cambiare scheda.
+      onMoveShouldSetPanResponder: (_, g) => !isMenuOpen() && !tabSwipeLock.current && horizontal(g.dx, g.dy) && (g.dx < 0 || !noPrev),
       onPanResponderGrant: (_, g) => show(g.dx),
       onPanResponderMove: (_, g) => {
         // Con una scheda accanto la pagina segue il dito 1:1; ai bordi solo un po' (resistenza).

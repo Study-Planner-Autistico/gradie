@@ -19,12 +19,14 @@ export function stabilize(points: Pt[], level: Stabilization): Pt[] {
       sy += points[j].y;
       n++;
     }
-    return { x: sx / n, y: sy / n };
+    // La pressione resta quella del punto: la media la appiattirebbe.
+    return p.p === undefined ? { x: sx / n, y: sy / n } : { x: sx / n, y: sy / n, p: p.p };
   });
 }
 
 /** Percorso SVG morbido: curve quadratiche tra i punti medi. */
 export function pathD(points: Pt[]): string {
+  'worklet';
   if (points.length === 0) return '';
   if (points.length === 1) return `M${points[0].x} ${points[0].y} l0.01 0`;
   let d = `M${points[0].x} ${points[0].y}`;
@@ -39,6 +41,7 @@ export function pathD(points: Pt[]): string {
 
 /** Stile "pennello": contorno chiuso con spessore che si assottiglia agli estremi. */
 export function brushOutline(points: Pt[], width: number): string {
+  'worklet';
   if (points.length < 3) return pathD(points);
   const left: Pt[] = [];
   const right: Pt[] = [];
@@ -58,6 +61,64 @@ export function brushOutline(points: Pt[], width: number): string {
   }
   const poly = [...left, ...right.reverse()];
   return `M${poly.map((p) => `${p.x} ${p.y}`).join(' L')} Z`;
+}
+
+/**
+ * Tratto a pressione (dec. 166): contorno pieno che si allarga dove si preme di più, con estremi arrotondati.
+ * A pressione media (0.5) lo spessore è quello scelto. Gira anche sul thread dell'interfaccia (tratto dal vivo).
+ */
+export function pressureOutline(points: Pt[], width: number): string {
+  'worklet';
+  const n = points.length;
+  const half = (i: number) => {
+    // Pressione ammorbidita sui vicini: la Pencil la manda a scatti.
+    let s = 0;
+    let c = 0;
+    for (let j = Math.max(0, i - 2); j <= Math.min(n - 1, i + 2); j++) {
+      s += points[j].p ?? 0.5;
+      c++;
+    }
+    return Math.max(0.4, (width * (0.4 + 1.2 * (s / c))) / 2);
+  };
+  if (n === 0) return '';
+  if (n === 1 || Math.hypot(points[n - 1].x - points[0].x, points[n - 1].y - points[0].y) < 0.5) {
+    const r = half(0);
+    const { x, y } = points[0];
+    return `M${x - r} ${y} a${r} ${r} 0 1 0 ${2 * r} 0 a${r} ${r} 0 1 0 ${-2 * r} 0 Z`;
+  }
+  const left: Pt[] = [];
+  const right: Pt[] = [];
+  const radii: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const a = points[Math.max(0, i - 1)];
+    const b = points[Math.min(n - 1, i + 1)];
+    const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+    const r = half(i);
+    radii.push(r);
+    const nx = (-(b.y - a.y) / len) * r;
+    const ny = ((b.x - a.x) / len) * r;
+    left.push({ x: points[i].x + nx, y: points[i].y + ny });
+    right.push({ x: points[i].x - nx, y: points[i].y - ny });
+  }
+  // Lati morbidi: curve tra i punti medi, come pathD.
+  const side = (pts: Pt[]) => {
+    let d = '';
+    for (let i = 1; i < pts.length - 1; i++) d += ` Q${pts[i].x} ${pts[i].y} ${(pts[i].x + pts[i + 1].x) / 2} ${(pts[i].y + pts[i + 1].y) / 2}`;
+    const last = pts[pts.length - 1];
+    return `${d} L${last.x} ${last.y}`;
+  };
+  right.reverse();
+  const re = radii[n - 1];
+  const rs = radii[0];
+  return `M${left[0].x} ${left[0].y}${side(left)} A${re} ${re} 0 0 0 ${right[0].x} ${right[0].y}${side(right)} A${rs} ${rs} 0 0 0 ${left[0].x} ${left[0].y} Z`;
+}
+
+/** Forma di un tratto: contorno pieno (pennello, pressione) o linea da tracciare. Stessa resa su schermo, anteprime e PDF. */
+export function strokeGeometry(points: Pt[], tool: Stroke['tool'], style: Stroke['style'], width: number): { d: string; filled: boolean } {
+  'worklet';
+  if (style === 'brush') return { d: brushOutline(points, width * 1.6), filled: true };
+  if (style === 'solid' && tool !== 'highlighter' && points.length > 0 && points[0].p !== undefined) return { d: pressureOutline(points, width), filled: true };
+  return { d: pathD(points), filled: false };
 }
 
 export function dashArray(style: Stroke['style'], width: number): string | undefined {
@@ -145,7 +206,7 @@ export function hitsStroke(s: Stroke, p: Pt, radius: number) {
 }
 
 export function moveItem(item: BoardItem, dx: number, dy: number): BoardItem {
-  if (item.kind === 'stroke') return { ...item, points: item.points.map((p) => ({ x: p.x + dx, y: p.y + dy })) };
+  if (item.kind === 'stroke') return { ...item, points: item.points.map((p) => ({ ...p, x: p.x + dx, y: p.y + dy })) };
   return { ...item, x: item.x + dx, y: item.y + dy };
 }
 
@@ -157,7 +218,11 @@ function densify(points: Pt[], step: number): Pt[] {
     const a = points[i - 1];
     const b = points[i];
     const n = Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / step);
-    for (let k = 1; k <= n; k++) out.push({ x: a.x + ((b.x - a.x) * k) / n, y: a.y + ((b.y - a.y) * k) / n });
+    for (let k = 1; k <= n; k++) {
+      const q: Pt = { x: a.x + ((b.x - a.x) * k) / n, y: a.y + ((b.y - a.y) * k) / n };
+      if (a.p !== undefined && b.p !== undefined) q.p = a.p + ((b.p - a.p) * k) / n;
+      out.push(q);
+    }
   }
   return out;
 }

@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import Svg, { Circle, G, Image as SvgImage, Rect, Text as SvgText } from 'react-native-svg';
 import type { BoardItem, Viewport } from '../../state/whiteboard';
 import { ink, useTheme } from '../../theme';
-import { StrokeShape } from './Canvas';
+import { StrokeShape } from './StrokeSvg';
 import { bounds, textMetrics, union } from './geometry';
 import { ShapeSvg } from './shapes';
 

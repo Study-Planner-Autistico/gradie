@@ -1,47 +1,58 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import Slider from '@react-native-community/slider';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState, type ReactNode } from 'react';
-import { Platform, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import { Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../components/ui';
-import { CoverThumb, PaperThumb } from '../components/whiteboard/Paper';
+import { LINE_GAP, PaperThumb } from '../components/whiteboard/Paper';
 import { t } from '../i18n';
 import { demoNotes } from '../data/demo';
 import { createNote, getNoteMeta, saveNoteMeta, type PageSize, type PaperTemplate } from '../state/whiteboard';
-import { covers, paperColors, useTheme } from '../theme';
+import { paperColors, useTheme } from '../theme';
+import { Icon } from '../components/icons';
 
-const TEMPLATES: PaperTemplate[] = ['blank', 'lined', 'narrow', 'wide', 'margin', 'cornell', 'grid', 'smallGrid', 'dots', 'music'];
+/** Carte con la grandezza regolabile (dec. 171), poi tutte le altre. */
+const SIZED: PaperTemplate[] = ['lined', 'grid'];
+const OTHERS: PaperTemplate[] = ['blank', 'margin', 'cornell', 'dots', 'music'];
 const SIZES: PageSize[] = ['a4', 'letter'];
+/** Distanza delle righe / lato dei quadri, in punti del foglio (28 = righe normali, 16 = quadretti piccoli). */
+const GAP = { lined: { min: 16, max: 44 }, grid: { min: 12, max: 40 } } as const;
+// Le vecchie carte a misura fissa diventano righe o quadri con la loro misura.
+const LEGACY: Partial<Record<PaperTemplate, [PaperTemplate, number]>> = { narrow: ['lined', 20], wide: ['lined', 38], smallGrid: ['grid', 16] };
 
-/** Nuovo foglio di un quaderno (dec. 112, 143, con `?subject=`) o modifica di un foglio (dec. 113, con `?id=`): nome, copertina e carta. */
+/** Nuovo foglio di un quaderno (dec. 112, 143, con `?subject=`) o modifica di un foglio (dec. 113, con `?id=`): nome e carta. */
 export default function NuovaNota() {
   const { colors, typography, spacing, radius } = useTheme();
   const { id, subject: subjectParam } = useLocalSearchParams<{ id?: string; subject?: string }>();
   const editing = !!id;
   const meta = id ? getNoteMeta(id) : undefined;
   const demo = id ? demoNotes.find((n) => n.id === id) : undefined;
-  const fallbackTitle = demo?.title ?? '';
   // Il foglio resta nel suo quaderno: la materia non si cambia da qui.
   const subject = meta?.subject ?? demo?.subject ?? subjectParam ?? '';
-  const [title, setTitle] = useState(meta?.title ?? fallbackTitle);
-  // Un foglio nuovo parte senza copertina: si vede la carta, di cui si sceglie tipo e colore.
-  const startCover = meta ? meta.cover : (demo?.cover ?? null);
-  const [hasCover, setHasCover] = useState(editing ? !!startCover : false);
-  const [tab, setTab] = useState<'cover' | 'paper'>(editing && startCover ? 'cover' : 'paper');
-  const [cover, setCover] = useState<string>(covers.find((c) => c.color === startCover)?.id ?? covers[0].id);
-  const [template, setTemplate] = useState<PaperTemplate>(meta?.paper.template ?? (editing ? 'blank' : 'lined'));
+  const [title, setTitle] = useState(meta?.title ?? demo?.title ?? '');
+  const startTemplate = meta?.paper.template ?? (editing ? 'blank' : 'lined');
+  const legacy = LEGACY[startTemplate];
+  const [template, setTemplate] = useState<PaperTemplate>(legacy?.[0] ?? startTemplate);
+  const [gap, setGap] = useState(legacy?.[1] ?? meta?.paper.gap ?? LINE_GAP);
   const [paperId, setPaperId] = useState<string>(paperColors.find((p) => p.color === meta?.paper.color)?.id ?? paperColors[0].id);
   const [size, setSize] = useState<PageSize>(meta?.paper.size ?? 'a4');
   const [landscape, setLandscape] = useState(meta?.paper.landscape ?? false);
 
   const paper = paperColors.find((p) => p.id === paperId) ?? paperColors[0];
-  const coverColor = covers.find((c) => c.id === cover)?.color ?? covers[0].color;
+  const range = template === 'lined' || template === 'grid' ? GAP[template] : null;
+
+  const pick = (tp: PaperTemplate) => {
+    setTemplate(tp);
+    const r = tp === 'lined' || tp === 'grid' ? GAP[tp] : null;
+    if (r) setGap((g) => Math.min(r.max, Math.max(r.min, g)));
+  };
 
   const create = () => {
     const data = {
       title: title.trim() || t.newNote.defaultTitle,
-      cover: hasCover ? coverColor : null,
-      paper: { template, color: paper.color, dark: paper.dark, size, landscape },
+      // La copertina non si sceglie più da qui (dec. 171): un foglio che l'aveva la tiene.
+      cover: meta ? meta.cover : (demo?.cover ?? null),
+      paper: { template, color: paper.color, dark: paper.dark, size, landscape, ...(range ? { gap } : {}) },
       subject,
     };
     if (id) {
@@ -53,107 +64,72 @@ export default function NuovaNota() {
   };
 
   const ring = (on: boolean) => ({ borderWidth: 2, borderColor: on ? colors.accent : 'transparent', borderRadius: radius.sm, padding: 3 });
+  const thumb = (tp: PaperTemplate) => (
+    <Pressable key={tp} onPress={() => pick(tp)} accessibilityRole="button" accessibilityLabel={t.newNote.templates[tp]} accessibilityState={{ selected: template === tp }} style={{ alignItems: 'center', gap: 4 }}>
+      <View style={ring(template === tp)}>
+        <PaperThumb template={tp} gap={tp === template ? gap : undefined} color={paper.color} dark={paper.dark} width={70} height={96} />
+      </View>
+      <Text style={[typography.caption, { color: colors.textSecondary }]}>{t.newNote.templates[tp]}</Text>
+    </Pressable>
+  );
 
   return (
     <View style={{ flex: 1, backgroundColor: Platform.OS === 'ios' ? 'transparent' : colors.bg }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', padding: spacing.lg, paddingTop: spacing.xl, gap: spacing.md }}>
-        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel={t.a11y.close}>
-          <Ionicons name="close" size={26} color={colors.text} />
-        </Pressable>
-        <Text style={[typography.headline, { color: colors.text, flex: 1, textAlign: 'center' }]}>{editing ? t.newNote.editTitle : t.newNote.title}</Text>
-        {/* Stessa larghezza della x, per tenere il titolo al centro. */}
-        <View style={{ width: 26 }} />
-      </View>
+      {/* Come Modifica profilo: niente barra in alto, il nome del foglio fa da titolo, staccato dal bordo. */}
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, paddingTop: spacing.xxl, gap: spacing.xl }}>
+        <TextInput
+          value={title}
+          onChangeText={setTitle}
+          placeholder={t.newNote.defaultTitle}
+          placeholderTextColor={colors.textTertiary}
+          accessibilityLabel={t.newNote.name}
+          maxLength={40}
+          style={[typography.title1, { color: colors.text, paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border }]}
+        />
 
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingTop: 0, gap: spacing.lg }}>
-        <View style={{ gap: spacing.xs }}>
-          <Label>{t.newNote.name}</Label>
-          <TextInput
-            value={title}
-            onChangeText={setTitle}
-            placeholder={t.newNote.defaultTitle}
-            placeholderTextColor={colors.textTertiary}
-            accessibilityLabel={t.newNote.name}
-            maxLength={40}
-            style={[
-              typography.input,
-              { color: colors.text, backgroundColor: colors.surface, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: 0, height: 44, textAlignVertical: 'center', includeFontPadding: false },
-            ]}
-          />
-        </View>
-
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Text style={[typography.body, { color: colors.text, flex: 1 }]}>{t.newNote.cover}</Text>
-          <Switch value={hasCover} onValueChange={setHasCover} trackColor={{ true: colors.success }} />
-        </View>
-
-        {/* Anteprime: copertina e carta, si tocca per scegliere cosa modificare. */}
-        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: spacing.xl }}>
-          {hasCover && (
-            <Pressable onPress={() => setTab('cover')} accessibilityRole="tab" accessibilityState={{ selected: tab === 'cover' }} style={{ alignItems: 'center', gap: spacing.xs }}>
-              <View style={ring(tab === 'cover')}>
-                <CoverThumb color={coverColor} title={title} width={70} height={96} />
-              </View>
-              <Text style={[typography.caption, { color: colors.textSecondary }]}>{t.newNote.cover}</Text>
-            </Pressable>
+        <View style={{ gap: spacing.sm }}>
+          <Label>{t.newNote.paper}</Label>
+          <View style={{ flexDirection: 'row', gap: spacing.md }}>{SIZED.map(thumb)}</View>
+          {range && (
+            <View style={{ gap: spacing.xs }}>
+              <Text style={[typography.body, { color: colors.textSecondary }]}>{template === 'grid' ? t.newNote.gridGap : t.newNote.lineGap}</Text>
+              <Slider
+                value={gap}
+                onValueChange={setGap}
+                minimumValue={range.min}
+                maximumValue={range.max}
+                step={2}
+                minimumTrackTintColor={colors.accent}
+                accessibilityLabel={template === 'grid' ? t.newNote.gridGap : t.newNote.lineGap}
+              />
+            </View>
           )}
-          <Pressable onPress={() => setTab('paper')} accessibilityRole="tab" accessibilityState={{ selected: tab === 'paper' || !hasCover }} style={{ alignItems: 'center', gap: spacing.xs }}>
-            <View style={ring(tab === 'paper' || !hasCover)}>
-              <PaperThumb template={template} color={paper.color} dark={paper.dark} width={landscape ? 96 : 70} height={landscape ? 70 : 96} />
-            </View>
-            <Text style={[typography.caption, { color: colors.textSecondary }]}>{t.newNote.paper}</Text>
-          </Pressable>
         </View>
 
-        {hasCover && tab === 'cover' ? (
-          <View style={{ gap: spacing.sm }}>
-            <Label>{t.newNote.cover}</Label>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md }}>
-              {covers.map((c, i) => (
-                <Pressable key={c.id} onPress={() => setCover(c.id)} accessibilityRole="button" accessibilityLabel={`${t.newNote.classic} ${i + 1}`} accessibilityState={{ selected: cover === c.id }} style={{ alignItems: 'center', gap: 4 }}>
-                  <View style={ring(cover === c.id)}>
-                    <CoverThumb color={c.color} width={64} height={88} />
-                    {cover === c.id && (
-                      <View style={{ position: 'absolute', bottom: 8, right: 8, width: 22, height: 22, borderRadius: 11, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center' }}>
-                        <Ionicons name="checkmark" size={15} color={colors.onAccent} />
-                      </View>
-                    )}
-                  </View>
-                  <Text style={[typography.caption, { color: colors.textSecondary }]}>{`${t.newNote.classic} ${i + 1}`}</Text>
-                </Pressable>
-              ))}
-            </View>
+        <View style={{ gap: spacing.sm }}>
+          <Label>{t.newNote.others}</Label>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.md }}>
+            {OTHERS.map(thumb)}
+          </ScrollView>
+        </View>
+
+        <View style={{ gap: spacing.sm }}>
+          <Label>{t.newNote.background}</Label>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+            {paperColors.map((p) => (
+              <Pressable
+                key={p.id}
+                onPress={() => setPaperId(p.id)}
+                accessibilityRole="button"
+                accessibilityLabel={t.newNote.colors[p.id]}
+                accessibilityState={{ selected: paperId === p.id }}
+                style={{ width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: paperId === p.id ? colors.accent : 'transparent' }}
+              >
+                <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: p.color, borderWidth: 1, borderColor: colors.border }} />
+              </Pressable>
+            ))}
           </View>
-        ) : (
-          <View style={{ gap: spacing.sm }}>
-            <Label>{t.newNote.paper}</Label>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.md }}>
-              {TEMPLATES.map((tp) => (
-                <Pressable key={tp} onPress={() => setTemplate(tp)} accessibilityRole="button" accessibilityLabel={t.newNote.templates[tp]} accessibilityState={{ selected: template === tp }} style={{ alignItems: 'center', gap: 4 }}>
-                  <View style={ring(template === tp)}>
-                    <PaperThumb template={tp} color={paper.color} dark={paper.dark} width={70} height={96} />
-                  </View>
-                  <Text style={[typography.caption, { color: colors.textSecondary }]}>{t.newNote.templates[tp]}</Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-            <Label>{t.newNote.background}</Label>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-              {paperColors.map((p) => (
-                <Pressable
-                  key={p.id}
-                  onPress={() => setPaperId(p.id)}
-                  accessibilityRole="button"
-                  accessibilityLabel={t.newNote.colors[p.id]}
-                  accessibilityState={{ selected: paperId === p.id }}
-                  style={{ width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: paperId === p.id ? colors.accent : 'transparent' }}
-                >
-                  <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: p.color, borderWidth: 1, borderColor: colors.border }} />
-                </Pressable>
-              ))}
-            </View>
-          </View>
-        )}
+        </View>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
           <Text style={[typography.body, { color: colors.text, flex: 1 }]}>{t.newNote.size}</Text>
@@ -204,7 +180,7 @@ function Segmented({
           style={{ minWidth: 44, height: 32, paddingHorizontal: 8, alignItems: 'center', justifyContent: 'center', borderRadius: radius.sm - 2, backgroundColor: value === o.key ? colors.accent : 'transparent' }}
         >
           {o.icon ? (
-            <Ionicons name={o.icon} size={18} color={value === o.key ? colors.onAccent : colors.text} />
+            <Icon name={o.icon} size={18} color={value === o.key ? colors.onAccent : colors.text} />
           ) : (
             <Text style={[typography.callout, { color: value === o.key ? colors.onAccent : colors.text }]}>{o.label}</Text>
           )}

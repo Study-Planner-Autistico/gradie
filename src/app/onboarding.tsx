@@ -1,4 +1,3 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Clipboard from 'expo-clipboard';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -33,6 +32,7 @@ import {
 import { t } from '../i18n';
 import { setSubjects } from '../state/subjects';
 import { useTheme } from '../theme';
+import { Icon } from '../components/icons';
 
 /**
  * Onboarding (modulo 01 §3 J1-J3, schermate ON-01…ON-20).
@@ -276,7 +276,7 @@ function Header({ onBack, progress, right }: { onBack?: () => void; progress: nu
   const { spacing } = useTheme();
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.sm, paddingRight: spacing.lg, height: 52 }}>
-      <View style={{ width: 44 }}>{onBack && <IconButton icon="chevron-back" label={t.onb.back} onPress={onBack} appearance="subtle" />}</View>
+      <View style={{ width: 44 }}>{onBack && <IconButton icon="chevron-back" label={t.onb.back} onPress={onBack} appearance="plain" />}</View>
       {progress !== null ? <ProgressBar value={progress} /> : <View style={{ flex: 1 }} />}
       <View style={{ minWidth: 44, alignItems: 'flex-end' }}>{right}</View>
     </View>
@@ -548,7 +548,7 @@ function Creds({ ctx }: { ctx: Ctx }) {
         onChangeText={(v) => set({ password: v })}
       />
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: -spacing.sm }}>
-        <Ionicons name={pwdOk ? 'checkmark-circle' : 'ellipse-outline'} size={16} color={pwdOk ? colors.successIcon : colors.textTertiary} />
+        <Icon name={pwdOk ? 'checkmark-circle' : 'ellipse-outline'} size={16} color={pwdOk ? colors.successIcon : colors.textTertiary} />
         <Text style={[typography.caption, { color: pwdOk ? colors.success : colors.textTertiary }]}>{t.onb.creds.pwdRule}</Text>
       </View>
       <Checkbox checked={a.consent} onChange={(v) => set({ consent: v })} label={t.onb.creds.consent} />
@@ -781,13 +781,13 @@ function Institution({ ctx }: { ctx: Ctx }) {
               })}
             >
               <View style={{ width: 36, height: 36, borderRadius: radius.lg, backgroundColor: colors.tints.official.bg, alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name={i.kind === 'universita' ? 'library-outline' : 'business-outline'} size={18} color={colors.tints.official.fg} />
+                <Icon name={i.kind === 'universita' ? 'library-outline' : 'business-outline'} size={18} color={colors.tints.official.fg} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[typography.headline, { color: colors.text }]}>{i.name}</Text>
                 <Text style={[typography.caption, { color: colors.textTertiary }]}>{i.city}</Text>
               </View>
-              {sel && <Ionicons name="checkmark-circle" size={22} color={colors.accent} />}
+              {sel && <Icon name="checkmark-circle" size={22} color={colors.accent} />}
             </Pressable>
           );
         })}
@@ -975,7 +975,7 @@ function Secure({ ctx }: { ctx: Ctx }) {
         <OrbitArt icon="shield-checkmark-outline" size={150} satellites={['mail-outline', 'phone-portrait-outline', 'key-outline', 'lock-closed-outline']} />
         <Card style={{ alignSelf: 'stretch', gap: spacing.xs }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-            <Ionicons name="mail" size={16} color={colors.accent} />
+            <Icon name="mail" size={16} color={colors.accent} />
             <Text style={[typography.headline, { color: colors.text }]}>{t.onb.secure.cardTitle}</Text>
           </View>
           <Text style={[typography.callout, { color: colors.textSecondary, fontWeight: '400' }]}>{t.onb.secure.cardBody}</Text>

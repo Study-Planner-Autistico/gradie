@@ -51,6 +51,7 @@ const steps = (from: number, len: number, step: number, at: number) => {
  */
 export const PaperPattern = memo(function PaperPattern({
   template,
+  gap,
   dark,
   x,
   y,
@@ -59,6 +60,7 @@ export const PaperPattern = memo(function PaperPattern({
   scale = 1,
 }: {
   template: PaperTemplate;
+  gap?: number;
   dark: boolean;
   x: number;
   y: number;
@@ -68,8 +70,9 @@ export const PaperPattern = memo(function PaperPattern({
 }) {
   const ink = dark ? paperLines.dark : paperLines.light;
   if (template === 'blank') return null;
-  const sw = STEP[template].w * scale;
-  const sh = STEP[template].h * scale;
+  const step = gap && (template === 'lined' || template === 'grid') ? { w: gap, h: gap } : STEP[template];
+  const sw = step.w * scale;
+  const sh = step.h * scale;
   const rows = () => steps(y, h, sh, sh - 0.5).map((ly) => <Line key={`h${ly}`} x1={x} y1={ly} x2={x + w} y2={ly} stroke={ink} strokeWidth={1} />);
   let body;
   switch (template) {
@@ -114,11 +117,11 @@ export const PaperPattern = memo(function PaperPattern({
 });
 
 /** Anteprima di una carta (modulo Nuova nota). */
-export function PaperThumb({ template, color, dark, width, height }: { template: PaperTemplate; color: string; dark: boolean; width: number; height: number }) {
+export function PaperThumb({ template, gap, color, dark, width, height }: { template: PaperTemplate; gap?: number; color: string; dark: boolean; width: number; height: number }) {
   return (
     <Svg width={width} height={height}>
       <Rect x={0} y={0} width={width} height={height} rx={6} fill={color} />
-      <PaperPattern template={template} dark={dark} x={0} y={0} w={width} h={height} scale={width / 220} />
+      <PaperPattern template={template} gap={gap} dark={dark} x={0} y={0} w={width} h={height} scale={width / 220} />
     </Svg>
   );
 }

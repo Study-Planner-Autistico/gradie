@@ -1,26 +1,28 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
-import { Animated, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Animated, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { drawerWidth, menuProgress, useMenuOpen } from '../state/menu';
 import { useTheme } from '../theme';
 import { Glass } from './Glass';
 import { TABS } from './tabs';
+import { Icon } from './icons';
 
 /**
- * Tab bar flottante in glass, usata solo sul web (DESIGN.md §1).
- * Su iOS e Android si usa NativeTabs (Liquid Glass di sistema su iOS 26).
+ * Tab bar flottante in glass, usata solo sul web (DESIGN.md §1), solo icone (dec. 161).
+ * Su iOS e Android si usa NativeTabs (Liquid Glass di sistema su iOS 26), che col menu aperto si nasconde.
+ * Qui, col menu della Home aperto, la barra si sposta e si scurisce insieme alla Home.
  */
 export function FloatingTabBar({ state, emitter, navigateToTab }: BottomTabBarProps) {
-  const { colors, typography, radius } = useTheme();
+  const { colors, radius } = useTheme();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const menuOpen = useMenuOpen();
   // Segue la Home quando si apre il menu laterale (dec. 126).
   const shift = menuProgress.interpolate({ inputRange: [0, 1], outputRange: [0, drawerWidth(width)] });
-  const dim = menuProgress.interpolate({ inputRange: [0, 1], outputRange: [1, 0.45] });
+  // Stesso velo nero della Home (SideMenu: 0 → 0.55).
+  const dim = menuProgress.interpolate({ inputRange: [0, 1], outputRange: [0, 0.55] });
   return (
-    <Animated.View pointerEvents={menuOpen ? 'none' : 'box-none'} style={[styles.wrap, { bottom: Math.max(insets.bottom, 12), opacity: dim, transform: [{ translateX: shift }] }]}>
+    <Animated.View pointerEvents={menuOpen ? 'none' : 'box-none'} style={[styles.wrap, { bottom: Math.max(insets.bottom, 12), transform: [{ translateX: shift }] }]}>
       <Glass style={[styles.bar, { borderRadius: radius.pill, boxShadow: colors.shadowOverlay }]}>
         {state.routes.map((route, i) => {
           const cfg = TABS.find((x) => x.name === route.name);
@@ -40,13 +42,11 @@ export function FloatingTabBar({ state, emitter, navigateToTab }: BottomTabBarPr
               accessibilityLabel={cfg.label}
               style={[styles.item, { borderRadius: radius.pill, backgroundColor: focused ? colors.surface : 'transparent' }]}
             >
-              <Ionicons name={focused ? cfg.iconActive : cfg.icon} size={22} color={fg} />
-              <Text style={[typography.caption, { color: fg, fontSize: 10 }]} numberOfLines={1}>
-                {cfg.label}
-              </Text>
+              <Icon name={focused ? cfg.iconActive : cfg.icon} size={24} color={fg} strokeWidth={focused ? 2.5 : 2} />
             </Pressable>
           );
         })}
+        <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: '#000', opacity: dim }]} />
       </Glass>
     </Animated.View>
   );
@@ -62,5 +62,5 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 6 },
   },
-  item: { width: 66, height: 54, alignItems: 'center', justifyContent: 'center', gap: 2 },
+  item: { width: 60, height: 48, alignItems: 'center', justifyContent: 'center' },
 });

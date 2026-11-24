@@ -1,4 +1,3 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { Platform, ScrollView, Text, View } from 'react-native';
 import { ListGroup, ListRow } from '../components/list';
@@ -6,6 +5,7 @@ import { demoEnvironments } from '../data/demo';
 import { t } from '../i18n';
 import { useEnvironment } from '../state/environment';
 import { useTheme } from '../theme';
+import { Icon } from '../components/icons';
 
 /**
  * Selettore ambienti (modulo 01, J5). Form sheet: su iOS 26 lo sfondo è Liquid Glass di sistema,
@@ -36,7 +36,7 @@ export default function Ambienti() {
             }}
             trailing={
               env.id === active.id ? (
-                <Ionicons name="checkmark-circle" size={24} color={colors.accent} accessibilityLabel="Attivo" />
+                <Icon name="checkmark-circle" size={24} color={colors.accent} accessibilityLabel="Attivo" />
               ) : (
                 <View style={{ width: 24 }} />
               )

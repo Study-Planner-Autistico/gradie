@@ -1,4 +1,3 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { Platform, ScrollView, Text, View } from 'react-native';
 import { ListGroup, ListRow } from '../components/list';
@@ -7,6 +6,7 @@ import { demoCountries } from '../data/demo';
 import { locale, t } from '../i18n';
 import { updateProfile, useProfile } from '../state/profile';
 import { useTheme } from '../theme';
+import { Icon } from '../components/icons';
 
 /** Scelta della bandiera del profilo (dec. 133). */
 export default function Bandiera() {
@@ -33,7 +33,7 @@ export default function Bandiera() {
               updateProfile({ country: c.code });
               router.back();
             }}
-            trailing={c.code === country ? <Ionicons name="checkmark-circle" size={24} color={colors.accent} /> : <View style={{ width: 24 }} />}
+            trailing={c.code === country ? <Icon name="checkmark-circle" size={24} color={colors.accent} /> : <View style={{ width: 24 }} />}
           />
         ))}
       </ListGroup>

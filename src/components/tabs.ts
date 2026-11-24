@@ -1,12 +1,14 @@
 import { t } from '../i18n';
 import type { IconName } from './icons';
 
-// Voci fisse della barra inferiore (dec. 19). Le icone SF/Material sono per NativeTabs.
+// Voci fisse della barra inferiore (dec. 19), solo icona (dec. 161): l'etichetta resta per l'accessibilità.
+// `img`/`imgActive`: le stesse icone Hugeicons in PNG per NativeTabs, generate da @hugeicons/core-free-icons
+// (tratto 2, scheda attiva 2.5) in assets/tabs (dec. 162).
 // `label` è un getter: legge la lingua attuale a ogni render (cambio lingua dalle Impostazioni, dec. 137).
 export const TABS = [
-  { name: 'home', get label() { return t.tabs.home; }, icon: 'home-outline', iconActive: 'home', sf: 'house', sfActive: 'house.fill', md: 'home' },
-  { name: 'agenda', get label() { return t.tabs.agenda; }, icon: 'calendar-outline', iconActive: 'calendar', sf: 'calendar', sfActive: 'calendar', md: 'calendar_month' },
-  { name: 'attivita', get label() { return t.tabs.activities; }, icon: 'checkbox-outline', iconActive: 'checkbox', sf: 'checklist', sfActive: 'checklist', md: 'checklist' },
-  { name: 'community', get label() { return t.tabs.community; }, icon: 'people-outline', iconActive: 'people', sf: 'person.2', sfActive: 'person.2.fill', md: 'group' },
-  { name: 'profilo', get label() { return t.tabs.profile; }, icon: 'person-circle-outline', iconActive: 'person-circle', sf: 'person.crop.circle', sfActive: 'person.crop.circle.fill', md: 'account_circle' },
-] as const satisfies readonly { name: string; label: string; icon: IconName; iconActive: IconName; sf: string; sfActive: string; md: string }[];
+  { name: 'home', get label() { return t.tabs.home; }, icon: 'home', iconActive: 'home', img: require('../../assets/tabs/home.png'), imgActive: require('../../assets/tabs/home-active.png') },
+  { name: 'agenda', get label() { return t.tabs.agenda; }, icon: 'calendar-outline', iconActive: 'calendar', img: require('../../assets/tabs/agenda.png'), imgActive: require('../../assets/tabs/agenda-active.png') },
+  { name: 'attivita', get label() { return t.tabs.activities; }, icon: 'note', iconActive: 'note', img: require('../../assets/tabs/attivita.png'), imgActive: require('../../assets/tabs/attivita-active.png') },
+  { name: 'community', get label() { return t.tabs.community; }, icon: 'people-outline', iconActive: 'people', img: require('../../assets/tabs/community.png'), imgActive: require('../../assets/tabs/community-active.png') },
+  { name: 'profilo', get label() { return t.tabs.profile; }, icon: 'person-circle-outline', iconActive: 'person-circle', img: require('../../assets/tabs/profilo.png'), imgActive: require('../../assets/tabs/profilo-active.png') },
+] as const satisfies readonly { name: string; label: string; icon: IconName; iconActive: IconName; img: number; imgActive: number }[];

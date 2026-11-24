@@ -1,4 +1,4 @@
-// Menu laterale della Home (dec. 124–126): stato condiviso con la tab bar, che si sposta o si nasconde insieme alla Home.
+// Menu laterale della Home (dec. 124–126): stato condiviso con la tab bar: quella nativa si nasconde, quella del web si sposta e si scurisce con la Home.
 import { useSyncExternalStore } from 'react';
 import { Animated } from 'react-native';
 
@@ -16,6 +16,9 @@ export function setMenuOpen(v: boolean) {
   open = v;
   listeners.forEach((l) => l());
 }
+
+/** Lettura senza iscriversi, per i gesti (TabSwipe non deve cambiare scheda mentre il menu è aperto). */
+export const isMenuOpen = () => open;
 
 export function useMenuOpen() {
   return useSyncExternalStore(

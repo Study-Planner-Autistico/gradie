@@ -5,7 +5,7 @@ import { resetProfile } from '../state/profile';
 import { resetAccountSettings } from '../state/settings';
 import { useTheme } from '../theme';
 import { tap } from './haptics';
-import { LineIcon, type LineIconName } from './LineIcons';
+import { Icon, type IconName } from './icons';
 
 /** Pagina delle Impostazioni in un form sheet: titolo grande e sezioni (dec. 137). */
 export function SheetPage({ title, children }: { title: string; children: ReactNode }) {
@@ -53,7 +53,7 @@ export function Row({
   trailing,
   danger,
 }: {
-  icon: LineIconName;
+  icon: IconName;
   label: string;
   detail?: string;
   value?: string;
@@ -68,7 +68,7 @@ export function Row({
   const fg = danger ? colors.danger : colors.text;
   const content = (
     <>
-      <LineIcon name={icon} size={22} color={fg} />
+      <Icon name={icon} size={22} color={fg} />
       <View style={{ flex: 1 }}>
         <Text style={[typography.body, { fontSize: 17, color: fg }]}>{label}</Text>
         {detail && <Text style={[typography.caption, { color: colors.textTertiary }]}>{detail}</Text>}
@@ -90,7 +90,7 @@ export function Row({
         (!danger && !!onPress && (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
             {value && <Text style={[typography.body, { color: colors.textTertiary }]}>{value}</Text>}
-            <LineIcon name="chevron" size={20} color={colors.textTertiary} />
+            <Icon name="chevron" size={20} color={colors.textTertiary} />
           </View>
         ))
       )}

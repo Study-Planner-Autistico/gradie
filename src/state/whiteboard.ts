@@ -1,7 +1,8 @@
 // Lavagna (dec. 110). Stato solo in memoria: nessun backend né salvataggio locale è stato scelto (dec. 53).
 import { useCallback, useSyncExternalStore } from 'react';
 
-export type Pt = { x: number; y: number };
+/** Punto del tratto. `p`: pressione 0–1, solo per i tratti scritti con la Pencil (dec. 166). */
+export type Pt = { x: number; y: number; p?: number };
 export type StrokeTool = 'pen' | 'pencil' | 'highlighter';
 export type LineStyle = 'solid' | 'brush' | 'dashed' | 'dotted';
 /** Stabilizzazione del tratto: 0 bassa, 1 media, 2 alta. */
@@ -25,9 +26,13 @@ export type Viewport = { x: number; y: number; w: number; h: number };
 /** Nota creata dal + (dec. 112): nome, copertina e carta. */
 export type PaperTemplate = 'blank' | 'lined' | 'narrow' | 'wide' | 'margin' | 'cornell' | 'grid' | 'smallGrid' | 'dots' | 'music';
 export type PageSize = 'a4' | 'letter';
-export type Paper = { template: PaperTemplate; color: string; dark: boolean; size: PageSize; landscape: boolean };
+// `gap`: distanza delle righe o lato dei quadri (punti del foglio), scelta con lo slider per 'lined' e 'grid'. narrow, wide e smallGrid restano per i fogli già creati.
+export type Paper = { template: PaperTemplate; color: string; dark: boolean; size: PageSize; landscape: boolean; gap?: number };
 /** `subject`: materia in cui sta la nota negli Appunti (dec. 141); vuota = Senza materia. */
-export type NoteMeta = { id: string; title: string; cover: string | null; paper: Paper; created: number; subject?: string };
+export type NoteMeta = { id: string; title: string; cover: string | null; paper: Paper; created: number; subject?: string; source?: ImportSource };
+/** File o video importato (dec. 176): il foglio lo apre invece della lavagna. */
+export type ImportKind = 'pdf' | 'word' | 'ppt' | 'youtube';
+export type ImportSource = { kind: ImportKind; uri: string; name: string };
 
 /** Pagina modificata: id della lavagna e ora dell'ultima modifica. */
 export type PageInfo = { id: string; edited: number };
@@ -183,7 +188,9 @@ let hiddenSnap: string[] = [];
 
 /** Modifica nome, copertina e carta (dec. 113). Se la nota non ha ancora dati propri, li crea. */
 export function saveNoteMeta(id: string, meta: Omit<NoteMeta, 'id' | 'created'>) {
-  metas.set(id, { ...meta, id, created: metas.get(id)?.created ?? Date.now() });
+  // Il file importato resta legato al foglio anche quando se ne cambiano nome o carta.
+  const old = metas.get(id);
+  metas.set(id, { source: old?.source, ...meta, id, created: old?.created ?? Date.now() });
   emit();
 }
 

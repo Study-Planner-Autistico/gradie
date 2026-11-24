@@ -1,4 +1,3 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';
@@ -12,6 +11,7 @@ import { t } from '../i18n';
 import { useProfile } from '../state/profile';
 import { authenticate, biometricKind, updateSettings, useSettings } from '../state/settings';
 import { useTheme } from '../theme';
+import { Icon } from '../components/icons';
 
 /**
  * Impostazioni (dall'ingranaggio del Profilo, dec. 133, 137, 138), sul modello dello screen di riferimento:
@@ -60,7 +60,7 @@ export default function Impostazioni() {
             </View>
           )}
           <View style={{ position: 'absolute', right: -2, bottom: 4, width: 36, height: 36, borderRadius: 18, backgroundColor: colors.accent, borderWidth: 3, borderColor: colors.bg, alignItems: 'center', justifyContent: 'center' }}>
-            <Ionicons name="pencil" size={16} color={colors.onAccent} />
+            <Icon name="pencil" size={16} color={colors.onAccent} />
           </View>
         </Pressable>
         <View style={{ alignItems: 'center', gap: spacing.xxs }}>

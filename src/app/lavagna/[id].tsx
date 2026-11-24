@@ -1,11 +1,10 @@
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Glass } from '../../components/Glass';
 import { IconButton } from '../../components/ui';
-import { Canvas, type Brush, type SelectMode, type ShapeStyle, type Tool } from '../../components/whiteboard/Canvas';
+import { Canvas, type Brush, type EraserMode, type SelectMode, type ShapeStyle, type Tool } from '../../components/whiteboard/Canvas';
 import { CM, type Ruler } from '../../components/whiteboard/geometry';
 import { AddPanel, AudioPanel, RecordPanel, type Picked } from '../../components/whiteboard/Sheets';
 import { isStrokeTool, Toolbar, type Panel } from '../../components/whiteboard/Toolbar';
@@ -28,6 +27,7 @@ import {
 } from '../../state/whiteboard';
 import { pageSize } from '../../components/whiteboard/Paper';
 import { ink, useTheme } from '../../theme';
+import { Icon } from '../../components/icons';
 
 type Sheet = { kind: 'none' } | { kind: 'add' } | { kind: 'record' } | { kind: 'audio'; id: string };
 
@@ -83,6 +83,7 @@ export default function Lavagna() {
   const setOffset = (p: Pt) => (page ? setTop(Math.max(minTop, -p.y / scale)) : setFreeOffset(p));
   const [ruler, setRuler] = useState<Ruler | null>(null);
   const [selectMode, setSelectMode] = useState<SelectMode>('rect');
+  const [eraserMode, setEraserMode] = useState<EraserMode>('partial');
   const [shapeStyle, setShapeStyle] = useState<ShapeStyle>(() => ({
     shape: 'square',
     fill: null,
@@ -144,6 +145,7 @@ export default function Lavagna() {
         textColor={ink0}
         paper={meta?.paper}
         selectMode={selectMode}
+        eraserMode={eraserMode}
         shapeStyle={shapeStyle}
         ruler={ruler}
         setRuler={setRuler}
@@ -174,7 +176,7 @@ export default function Lavagna() {
 
       <SafeAreaView edges={['top', 'left', 'right']} pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, top: 0 }}>
         <View pointerEvents="box-none" style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg, paddingTop: spacing.sm }}>
-          <IconButton icon="chevron-back" label={t.whiteboard.back} onPress={() => (router.canGoBack() ? router.back() : router.replace('/attivita'))} />
+          <IconButton icon="chevron-back" label={t.whiteboard.back} onPress={() => (router.canGoBack() ? router.back() : router.replace('/attivita'))} appearance="plain" />
           <Text style={[typography.headline, { color: colors.text, flex: 1 }]} numberOfLines={1}>
             {title}
           </Text>
@@ -233,6 +235,11 @@ export default function Lavagna() {
               setSelectMode(m);
               setPanel('none');
             }}
+            eraserMode={eraserMode}
+            setEraserMode={(m) => {
+              setEraserMode(m);
+              setPanel('none');
+            }}
             shapeStyle={shapeStyle}
             setShapeStyle={(st) => setShapeStyle((prev) => ({ ...prev, ...st }))}
             inkDark={isDark}
@@ -255,7 +262,7 @@ function HistoryButton({ icon, label, disabled, onPress }: { icon: 'undo' | 'red
       accessibilityState={{ disabled }}
       style={({ pressed }) => ({ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}
     >
-      <MaterialCommunityIcons name={icon} size={22} color={disabled ? colors.textTertiary : colors.text} />
+      <Icon name={icon} size={22} color={disabled ? colors.textTertiary : colors.text} />
     </Pressable>
   );
 }

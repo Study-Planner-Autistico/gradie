@@ -4,7 +4,7 @@ import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
 import type { BoardItem, NoteMeta, Paper, ShapeItem } from '../../state/whiteboard';
 import { ink, paperLines } from '../../theme';
-import { bounds, brushOutline, dashArray, pathD, rectFrom, shapePoints, textMetrics, union, type Rect } from './geometry';
+import { bounds, dashArray, rectFrom, shapePoints, strokeGeometry, textMetrics, union, type Rect } from './geometry';
 import { LINE_GAP, MARGIN_X, pageCount, pageSize } from './Paper';
 
 export type ExportNote = { title: string; items: BoardItem[]; meta?: NoteMeta };
@@ -22,6 +22,8 @@ function paperSvg(p: Paper, r: Rect): string {
   };
   switch (p.template) {
     case 'lined':
+      hLines(p.gap ?? LINE_GAP);
+      break;
     case 'margin':
     case 'cornell':
       hLines(LINE_GAP);
@@ -33,8 +35,8 @@ function paperSvg(p: Paper, r: Rect): string {
       hLines(38);
       break;
     case 'grid':
-      hLines(LINE_GAP);
-      vLines(LINE_GAP);
+      hLines(p.gap ?? LINE_GAP);
+      vLines(p.gap ?? LINE_GAP);
       break;
     case 'smallGrid':
       hLines(16);
@@ -83,10 +85,11 @@ function itemSvg(i: BoardItem): string {
   switch (i.kind) {
     case 'stroke': {
       const op = i.tool === 'highlighter' ? ink.highlighterOpacity : i.tool === 'pencil' ? ink.pencilOpacity : 1;
-      if (i.style === 'brush') return `<path d="${brushOutline(i.points, i.width * 1.6)}" fill="${i.color}" opacity="${op}"/>`;
+      const { d, filled } = strokeGeometry(i.points, i.tool, i.style, i.width);
+      if (filled) return `<path d="${d}" fill="${i.color}" opacity="${op}"/>`;
       const dash = dashArray(i.style, i.width);
       const cap = i.tool === 'highlighter' && i.style === 'solid' ? 'butt' : 'round';
-      return `<path d="${pathD(i.points)}" fill="none" stroke="${i.color}" stroke-width="${i.width}" stroke-linecap="${cap}" stroke-linejoin="round" opacity="${op}"${dash ? ` stroke-dasharray="${dash}"` : ''}/>`;
+      return `<path d="${d}" fill="none" stroke="${i.color}" stroke-width="${i.width}" stroke-linecap="${cap}" stroke-linejoin="round" opacity="${op}"${dash ? ` stroke-dasharray="${dash}"` : ''}/>`;
     }
     case 'text':
       return i.text

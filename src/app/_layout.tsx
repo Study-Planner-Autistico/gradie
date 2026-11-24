@@ -1,6 +1,7 @@
-import { DMSerifDisplay_400Regular, useFonts } from '@expo-google-fonts/dm-serif-display';
+import { DelaGothicOne_400Regular, useFonts } from '@expo-google-fonts/dela-gothic-one';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AppLock } from '../components/AppLock';
 import { UndoToast } from '../components/UndoToast';
 import { EnvironmentProvider } from '../state/environment';
@@ -8,9 +9,13 @@ import { useTheme } from '../theme';
 
 export default function RootLayout() {
   const { colors } = useTheme();
-  // Finché il font non è pronto il giorno usa il font di sistema: niente attesa all'avvio.
-  useFonts({ DMSerifDisplay_400Regular });
+  // Si aspetta Dela Gothic One (è nel pacchetto, si carica subito): senza attesa la Home veniva disegnata
+  // col font di sistema e il giorno restava così, perché la Home non si ridisegna quando il font arriva.
+  const [fontsReady] = useFonts({ DelaGothicOne_400Regular });
+  if (!fontsReady) return null;
   return (
+    // Serve a Gesture Handler (Pencil sulla lavagna, dec. 166).
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <EnvironmentProvider>
       <StatusBar style="auto" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
@@ -25,6 +30,7 @@ export default function RootLayout() {
         <Stack.Screen name="cestino" options={{ presentation: 'formSheet', sheetAllowedDetents: [0.7, 1], sheetGrabberVisible: true }} />
         <Stack.Screen name="lavagna/[id]" options={{ gestureEnabled: false, animation: 'fade' }} />
         <Stack.Screen name="nuova-nota" options={{ presentation: 'formSheet', sheetAllowedDetents: [0.92], sheetGrabberVisible: true }} />
+        <Stack.Screen name="importa" options={{ presentation: 'formSheet', sheetAllowedDetents: 'fitToContents', sheetGrabberVisible: true }} />
         <Stack.Screen name="impostazioni" options={{ presentation: 'formSheet', sheetAllowedDetents: [0.7, 1], sheetGrabberVisible: true }} />
         <Stack.Screen name="modifica-profilo" options={{ presentation: 'formSheet', sheetAllowedDetents: [0.92], sheetGrabberVisible: true }} />
         <Stack.Screen name="avatar" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
@@ -45,5 +51,6 @@ export default function RootLayout() {
       <UndoToast />
       <AppLock />
     </EnvironmentProvider>
+    </GestureHandlerRootView>
   );
 }

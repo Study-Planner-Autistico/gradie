@@ -43,20 +43,22 @@ export type DemoAgendaItem = {
   meta?: string;
   /** Lezione dell'orario del docente: non modificabile (dec. 102). */
   locked?: boolean;
+  /** Materia a cui si riferisce: dà il colore nella striscia dei giorni e sul binario (dec. 151). */
+  subject?: string;
   /** Giorni dalla data odierna (0 = oggi). */
   dayOffset: number;
 };
 
 export const demoAgenda: DemoAgendaItem[] = [
-  { id: 'a1', kind: 'lesson', title: 'Matematica', start: '08:00', end: '09:00', meta: 'Aula 12', locked: true, dayOffset: 0 },
-  { id: 'a2', kind: 'lesson', title: 'Fisica', start: '09:00', end: '10:00', meta: 'Lab. 2', dayOffset: 0 },
+  { id: 'a1', kind: 'lesson', title: 'Matematica', subject: 'Matematica', start: '08:00', end: '09:00', meta: 'Aula 12', locked: true, dayOffset: 0 },
+  { id: 'a2', kind: 'lesson', title: 'Fisica', subject: 'Fisica', start: '09:00', end: '10:00', meta: 'Lab. 2', dayOffset: 0 },
   { id: 'a3', kind: 'official', title: 'Assemblea di classe', start: '11:15', end: '12:00', dayOffset: 0 },
-  { id: 'a9', kind: 'activity', title: 'Esercizi di Fisica pag. 48', meta: 'Compito', dayOffset: 0 },
+  { id: 'a9', kind: 'activity', title: 'Esercizi di Fisica pag. 48', subject: 'Fisica', meta: 'Compito', dayOffset: 0 },
   { id: 'a4', kind: 'appointment', title: 'Allenamento pallavolo', start: '17:30', end: '19:00', dayOffset: 0 },
-  { id: 'a5', kind: 'activity', title: 'Verifica di Storia', meta: 'Verifica', dayOffset: 1 },
-  { id: 'a6', kind: 'lesson', title: 'Inglese', start: '08:00', end: '10:00', meta: 'Aula 12', locked: true, dayOffset: 1 },
-  { id: 'a7', kind: 'activity', title: 'Esercizi pag. 112', meta: 'Compito', dayOffset: 2 },
-  { id: 'a10', kind: 'activity', title: 'Ricerca su Leopardi', meta: 'Compito', dayOffset: 5 },
+  { id: 'a5', kind: 'activity', title: 'Verifica di Storia', subject: 'Storia', meta: 'Verifica', dayOffset: 1 },
+  { id: 'a6', kind: 'lesson', title: 'Inglese', subject: 'Inglese', start: '08:00', end: '10:00', meta: 'Aula 12', locked: true, dayOffset: 1 },
+  { id: 'a7', kind: 'activity', title: 'Esercizi pag. 112', subject: 'Matematica', meta: 'Compito', dayOffset: 2 },
+  { id: 'a10', kind: 'activity', title: 'Ricerca su Leopardi', subject: 'Italiano', meta: 'Compito', dayOffset: 5 },
   { id: 'a8', kind: 'holiday', title: 'Ponte dell’Immacolata', meta: 'Chiusura istituto', dayOffset: 4 },
 ];
 

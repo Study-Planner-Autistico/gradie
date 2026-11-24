@@ -1,4 +1,3 @@
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import {
   RecordingPresets,
   requestRecordingPermissionsAsync,
@@ -13,8 +12,8 @@ import { Pressable, Text, TextInput, View } from 'react-native';
 import { t } from '../../i18n';
 import { useTheme } from '../../theme';
 import { Glass } from '../Glass';
+import { Icon, type IconName } from '../icons';
 
-type McIcon = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
 /** Adesivi locali: nessun catalogo esterno è stato scelto. */
 const STICKERS = ['⭐', '✅', '❗', '❓', '💡', '📌', '📚', '✏️', '🧠', '🎯', '🔥', '❤️', '👍', '😀', '🤔', '🎉'];
@@ -28,7 +27,7 @@ function Panel({ title, onClose, children }: { title: string; onClose: () => voi
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <Text style={[typography.headline, { color: colors.text, flex: 1 }]}>{title}</Text>
         <Pressable onPress={onClose} hitSlop={12} accessibilityRole="button" accessibilityLabel={t.a11y.close}>
-          <MaterialCommunityIcons name="close" size={22} color={colors.textSecondary} />
+          <Icon name="close" size={26} color={colors.text} />
         </Pressable>
       </View>
       {children}
@@ -36,7 +35,7 @@ function Panel({ title, onClose, children }: { title: string; onClose: () => voi
   );
 }
 
-function Option({ icon, label, onPress }: { icon: McIcon; label: string; onPress: () => void }) {
+function Option({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
   const { colors, radius, spacing, typography } = useTheme();
   return (
     <Pressable
@@ -53,7 +52,7 @@ function Option({ icon, label, onPress }: { icon: McIcon; label: string; onPress
         opacity: pressed ? 0.6 : 1,
       })}
     >
-      <MaterialCommunityIcons name={icon} size={26} color={colors.text} />
+      <Icon name={icon} size={26} color={colors.text} />
       <Text style={[typography.caption, { color: colors.text }]}>{label}</Text>
     </Pressable>
   );
@@ -171,7 +170,7 @@ export function RecordPanel({ onClose, onDone }: { onClose: () => void; onDone: 
           accessibilityLabel={recording ? t.whiteboard.audio.stop : t.whiteboard.audio.record}
           style={{ width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.danger }}
         >
-          <MaterialCommunityIcons name={recording ? 'stop' : 'microphone'} size={30} color="#FFFFFF" />
+          <Icon name={recording ? 'stop' : 'microphone'} size={30} color="#FFFFFF" />
         </Pressable>
         <Text style={[typography.caption, { color: colors.textSecondary }]}>
           {recording ? t.whiteboard.audio.recording : t.whiteboard.audio.hint}
@@ -220,7 +219,7 @@ export function AudioPanel({
           accessibilityLabel={status.playing ? t.whiteboard.audio.pause : t.whiteboard.audio.play}
           style={{ width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accent }}
         >
-          <MaterialCommunityIcons name={status.playing ? 'pause' : 'play'} size={26} color={colors.onAccent} />
+          <Icon name={status.playing ? 'pause' : 'play'} size={26} color={colors.onAccent} />
         </Pressable>
         <Text style={[typography.time, { color: colors.textSecondary }]}>
           {fmt(status.currentTime)} / {fmt(status.duration || seconds)}

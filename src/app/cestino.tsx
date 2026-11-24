@@ -1,4 +1,3 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { confirm } from '../components/dialogs';
@@ -7,6 +6,7 @@ import { Button } from '../components/ui';
 import { t } from '../i18n';
 import { daysLeft, purgeNotebook, purgeSheet, purgeTrash, restoreSheet, restoreTrashedBook, TRASH_DAYS, useTrashItems, type TrashItem } from '../state/notebooks';
 import { useTheme } from '../theme';
+import { Icon } from '../components/icons';
 
 /** Cestino degli Appunti (dec. 145): quaderni e fogli eliminati restano 30 giorni, poi spariscono da soli. */
 export default function Cestino() {
@@ -22,7 +22,7 @@ export default function Cestino() {
         <Text style={[typography.body, { color: colors.textSecondary }]}>{t.trash.intro(TRASH_DAYS)}</Text>
         {items.length === 0 && (
           <View style={{ alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xxxl }}>
-            <Ionicons name="trash-outline" size={40} color={colors.textTertiary} />
+            <Icon name="trash-outline" size={40} color={colors.textTertiary} />
             <Text style={[typography.headline, { color: colors.textSecondary }]}>{t.trash.empty}</Text>
           </View>
         )}
@@ -51,7 +51,7 @@ function TrashRow({ item }: { item: TrashItem }) {
   return (
     <View style={{ padding: spacing.md, gap: spacing.md, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
       <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
-        <Ionicons name={book ? 'book-outline' : 'document-text-outline'} size={26} color={colors.textSecondary} />
+        <Icon name={book ? 'book-outline' : 'document-text-outline'} size={26} color={colors.textSecondary} />
         <View style={{ flex: 1 }}>
           <Text style={[typography.headline, { color: colors.text }]} numberOfLines={1}>
             {name}
@@ -89,7 +89,7 @@ function SmallButton({ icon, label, onPress, danger }: { icon: 'arrow-undo-outli
         backgroundColor: pressed ? colors.surfaceMuted : colors.bg,
       })}
     >
-      <Ionicons name={icon} size={18} color={fg} />
+      <Icon name={icon} size={18} color={fg} />
       <Text style={[typography.callout, { color: fg, fontWeight: '600' }]}>{label}</Text>
     </Pressable>
   );

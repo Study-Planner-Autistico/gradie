@@ -77,6 +77,8 @@ export const lightColors = {
   shadowOverlay: '0px 8px 12px #1E1F2126, 0px 0px 1px #1E1F214F',
   /** Fallback del Liquid Glass di sistema (solo tab bar web) */
   glassFallback: 'rgba(255,255,255,0.78)',
+  /** Azzurro di sistema per il pulsante Nuovo in vetro (dec. 174), come i pulsanti principali di iOS. */
+  glassBlue: '#0A84FF',
   glassBorder: '#0B120E24',
   /** Gradiente del logo in versione tenue, per la card in evidenza (DESIGN.md §2.4). */
   heroGradient: ['#ECE8FF', '#E4E9FF', '#FFFFFF'] as readonly [string, string, ...string[]],
@@ -134,6 +136,7 @@ export const darkColors: ColorTokens = {
   shadowRaised: '0px 0px 0px 1px #00000000, 0px 1px 1px #01040480, 0px 0px 1px #01040480',
   shadowOverlay: '0px 0px 0px 1px #BDBDBD1F, 0px 8px 12px #0104045C, 0px 0px 1px 1px #01040480',
   glassFallback: 'rgba(36,37,40,0.78)',
+  glassBlue: '#0A84FF',
   glassBorder: '#E3E4F21F',
   heroGradient: ['#29254F', '#1F2A4F', '#242528'] as readonly [string, string, ...string[]],
   heroGradientOverlay: ['rgba(36,37,40,0)', 'rgba(120,110,255,0.25)'] as readonly [string, string, ...string[]],
@@ -186,18 +189,18 @@ export const spacing = { xxs: 2, xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, 
 export const radius = { xs: 2, sm: 4, md: 6, lg: 8, xl: 12, xxl: 16, pill: 999 } as const;
 
 /** font.heading.* / font.body.* / font.metric.* — peso bold Atlassian = 653 → '700' su iOS. */
-/** Font del titolo del giorno in Home (dec. 121): serif da display, caricato in src/app/_layout.tsx. */
-export const fonts = { display: 'DMSerifDisplay_400Regular' } as const;
+/** Font caricato in src/app/_layout.tsx: Dela Gothic One per i titoli e il giorno in Home (dec. 148, 150), un solo peso (400). */
+export const fonts = { heading: 'DelaGothicOne_400Regular' } as const;
 
 export const typography = {
   /** Estensione mobile: numero grande in evidenza (giorno, media). */
-  hero: { fontSize: 40, lineHeight: 44, fontWeight: '700', letterSpacing: -0.5 },
+  hero: { fontSize: 40, lineHeight: 44, fontFamily: fonts.heading, fontWeight: '400', letterSpacing: -0.5 },
   /** font.heading.xxlarge */
-  display: { fontSize: 32, lineHeight: 36, fontWeight: '700' },
+  display: { fontSize: 32, lineHeight: 36, fontFamily: fonts.heading, fontWeight: '400' },
   /** font.heading.xlarge — titolo della schermata */
-  title1: { fontSize: 28, lineHeight: 32, fontWeight: '700' },
+  title1: { fontSize: 28, lineHeight: 32, fontFamily: fonts.heading, fontWeight: '400' },
   /** font.heading.medium — titolo della card */
-  title2: { fontSize: 20, lineHeight: 24, fontWeight: '700' },
+  title2: { fontSize: 20, lineHeight: 24, fontFamily: fonts.heading, fontWeight: '400' },
   /** font.heading.large — numeri dei profili (seguiti, follower) */
   stat: { fontSize: 24, lineHeight: 28, fontWeight: '700', fontVariant: ['tabular-nums'] },
   /** font.heading.xsmall in maiuscolo spaziato — etichette di sezione del Profilo */

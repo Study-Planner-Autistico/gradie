@@ -1,5 +1,3 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { router } from 'expo-router';
 import { useRef, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
@@ -9,6 +7,7 @@ import { success, tap } from '../components/haptics';
 import { t } from '../i18n';
 import { updateProfile, useProfile } from '../state/profile';
 import { avatarPalette, useTheme } from '../theme';
+import { Icon } from '../components/icons';
 
 type Section =
   | { kind: 'color'; part: AvatarColorPart; colors: readonly string[] }
@@ -17,7 +16,7 @@ type Section =
 type Tab = { id: keyof typeof t.avatar.tabs; icon: (color: string) => ReactNode; sections: Section[] };
 
 const ion = (name: 'body-outline' | 'happy-outline' | 'cut-outline' | 'glasses-outline' | 'color-palette-outline') => (color: string) => (
-  <Ionicons name={name} size={28} color={color} />
+  <Icon name={name} size={28} color={color} />
 );
 
 /** Categorie dell'editor, come le schede di Duolingo: in ognuna prima i colori, poi le forme. */
@@ -53,7 +52,7 @@ const TABS: Tab[] = [
   { id: 'glasses', icon: ion('glasses-outline'), sections: [{ kind: 'style', part: 'glasses', frame: 'face' }] },
   {
     id: 'hat',
-    icon: (color) => <MaterialCommunityIcons name="hat-fedora" size={28} color={color} />,
+    icon: (color) => <Icon name="hat-fedora" size={28} color={color} />,
     sections: [
       { kind: 'color', part: 'hatColor', colors: avatarPalette.hat },
       { kind: 'style', part: 'hat', frame: 'head' },
@@ -92,7 +91,7 @@ export default function AvatarEditor() {
           accessibilityLabel={t.avatar.close}
           style={({ pressed }) => ({ width: layout.iconButton, height: layout.iconButton, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}
         >
-          <Ionicons name="close" size={30} color={colors.textTertiary} />
+          <Icon name="close" size={30} color={colors.textTertiary} />
         </Pressable>
         <Text accessibilityRole="header" style={[typography.title2, { color: colors.text, flex: 1, textAlign: 'center' }]}>
           {saved ? t.avatar.edit : t.avatar.create}
