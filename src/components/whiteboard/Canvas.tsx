@@ -70,7 +70,7 @@ type Drag =
   | { mode: 'pan'; startPage: Pt; t0: Pt }
   | { mode: 'rect'; start: Pt }
   | { mode: 'lasso'; points: Pt[] }
-  | { mode: 'move'; last: Pt }
+  | { mode: 'move'; last: Pt; total: Pt }
   | { mode: 'shape'; start: Pt }
   | { mode: 'rulerMove'; last: Pt }
   | { mode: 'rulerRotate'; grab: number; startAngle: number }
@@ -159,6 +159,8 @@ export function Canvas({
   const [rect, setRect] = useState<Rect | null>(null);
   const [lasso, setLasso] = useState<Pt[] | null>(null);
   const [liveShape, setLiveShape] = useState<ShapeItem | null>(null);
+  // Spostamento della selezione in corso (unità del foglio): si vede subito, si salva alzando il dito (dec. 182).
+  const [moveDelta, setMoveDelta] = useState<Pt | null>(null);
   const [eraser, setEraser] = useState<Pt | null>(null);
   const [measure, setMeasure] = useState<{ at: Pt; cm: number } | null>(null);
   const [box, setBox] = useState({ w: 0, h: 0 });
@@ -331,7 +333,8 @@ export function Canvas({
     setLiveShape(null);
     setEraser(null);
     setMeasure(null);
-    if (d && (d.mode === 'erase' || d.mode === 'move')) onRevert(gesture.current);
+    setMoveDelta(null);
+    if (d && d.mode === 'erase') onRevert(gesture.current);
   };
 
   /** Conta le dita: se se ne appoggiano altre entro TAP_DELAY, il gesto diventa un tocco a più dita. */
@@ -437,7 +440,7 @@ export function Canvas({
         drag.current = { mode: 'pan', startPage: { x: sp.x + origin.current.x, y: sp.y + origin.current.y }, t0: { x: tx, y: ty } };
         break;
       case 'select':
-        if (selectedBox && contains(selectedBox, p)) drag.current = { mode: 'move', last: p };
+        if (selectedBox && contains(selectedBox, p)) drag.current = { mode: 'move', last: p, total: { x: 0, y: 0 } };
         else if (selectMode === 'lasso') {
           drag.current = { mode: 'lasso', points: [p] };
           setLasso([p]);
@@ -507,7 +510,8 @@ export function Canvas({
         const dx = p.x - d.last.x;
         const dy = p.y - d.last.y;
         d.last = p;
-        update((prev) => prev.map((i) => (selected.includes(i.id) ? moveItem(i, dx, dy) : i)), gesture.current);
+        d.total = { x: d.total.x + dx, y: d.total.y + dy };
+        setMoveDelta(d.total);
         break;
       }
       case 'shape':
@@ -573,6 +577,12 @@ export function Canvas({
       case 'erase':
         setEraser(null);
         break;
+      case 'move': {
+        const { x: mx, y: my } = d.total;
+        setMoveDelta(null);
+        if (mx || my) update((prev) => prev.map((i) => (selected.includes(i.id) ? moveItem(i, mx, my) : i)), gesture.current);
+        break;
+      }
       case 'rect': {
         // Basta toccare una parte dell'elemento per prenderlo tutto.
         const r = rect;
@@ -629,9 +639,17 @@ export function Canvas({
     setSelected([]);
   };
 
-  const highlights = items.filter((i): i is Stroke => i.kind === 'stroke' && i.tool === 'highlighter');
-  const inks = items.filter((i): i is Stroke => i.kind === 'stroke' && i.tool !== 'highlighter');
-  const shapes = items.filter((i): i is ShapeItem => i.kind === 'shape');
+  // Selezione che si sposta: testi, forme, immagini e note si mostrano al posto nuovo (spostarli costa poco);
+  // i tratti restano com'erano e il loro livello viene solo traslato, così il contenuto segue il dito in tempo reale.
+  const moving = moveDelta && (moveDelta.x || moveDelta.y) ? moveDelta : null;
+  const isMoving = (i: BoardItem) => !!moving && selected.includes(i.id);
+  const shown = moving ? items.map((i) => (i.kind !== 'stroke' && isMoving(i) ? moveItem(i, moving.x, moving.y) : i)) : items;
+  const highlights = items.filter((i): i is Stroke => i.kind === 'stroke' && i.tool === 'highlighter' && !isMoving(i));
+  const movingHighlights = items.filter((i): i is Stroke => i.kind === 'stroke' && i.tool === 'highlighter' && isMoving(i));
+  const inks = items.filter((i): i is Stroke => i.kind === 'stroke' && i.tool !== 'highlighter' && !isMoving(i));
+  const movingInks = items.filter((i): i is Stroke => i.kind === 'stroke' && i.tool !== 'highlighter' && isMoving(i));
+  const shapes = shown.filter((i): i is ShapeItem => i.kind === 'shape');
+  const shownBox = selectedBox && moving ? { ...selectedBox, x: selectedBox.x + moving.x, y: selectedBox.y + moving.y } : selectedBox;
   const liveStroke: Stroke | null =
     live && strokeTool ? { kind: 'stroke', id: 'live', tool: tool as StrokeTool, color: brush.color, width: brush.width, style: brush.style, points: live } : null;
   const translate = `translate(${tx} ${ty}) scale(${S})`;
@@ -677,6 +695,11 @@ export function Canvas({
             </>
           )}
           <StrokeLayer strokes={highlights} />
+          {moving && movingHighlights.length > 0 && (
+            <G transform={`translate(${moving.x} ${moving.y})`}>
+              <StrokeLayer strokes={movingHighlights} />
+            </G>
+          )}
           {liveStroke?.tool === 'highlighter' && <StrokeShape s={liveStroke} />}
           {shapes.map((s) => (
             <ShapeSvg key={s.id} s={s} />
@@ -685,7 +708,7 @@ export function Canvas({
         </G>
       </Svg>
 
-      {items.map((i) => {
+      {shown.map((i) => {
         if (i.kind === 'stroke' || i.kind === 'audio') return null;
         const editing = editingId === i.id;
         if (i.kind === 'shape') {
@@ -753,6 +776,7 @@ export function Canvas({
         strokes={inks}
         live={liveStroke && liveStroke.tool !== 'highlighter' ? liveStroke : null}
         view={{ tx, ty, S }}
+        moving={moving && movingInks.length ? { strokes: movingInks, dx: moving.x, dy: moving.y } : null}
         pen={pen.pts ? { pts: pen.pts, tool: tool as StrokeTool, color: brush.color, width: brush.width, style: brush.style } : null}
       />
 
@@ -760,12 +784,12 @@ export function Canvas({
         <G transform={translate}>
           {rect && <SvgRect x={rect.x} y={rect.y} width={rect.w} height={rect.h} fill="rgba(31,111,235,0.08)" stroke={ink.selection} strokeWidth={1.5} strokeDasharray="6 4" />}
           {lasso && <Path d={`${pathD(lasso)} Z`} fill="rgba(31,111,235,0.08)" stroke={ink.selection} strokeWidth={1.5} strokeDasharray="6 4" />}
-          {selectedBox && !rect && !lasso && (
+          {shownBox && !rect && !lasso && (
             <SvgRect
-              x={selectedBox.x - 6}
-              y={selectedBox.y - 6}
-              width={selectedBox.w + 12}
-              height={selectedBox.h + 12}
+              x={shownBox.x - 6}
+              y={shownBox.y - 6}
+              width={shownBox.w + 12}
+              height={shownBox.h + 12}
               rx={6}
               fill="rgba(31,111,235,0.05)"
               stroke={ink.selection}
@@ -783,7 +807,7 @@ export function Canvas({
         {ruler && <RulerSvg r={ruler} dark={isDark} />}
       </Svg>
 
-      {items.map((i) =>
+      {shown.map((i) =>
         i.kind === 'audio' ? (
           <View key={i.id} pointerEvents={tool === 'select' ? 'none' : 'box-none'} style={{ position: 'absolute', left: i.x * S + tx, top: i.y * S + ty }}>
             {/* Si sposta subito trascinandola, senza selezionarla; un tocco la apre (dec. 178). */}
@@ -836,7 +860,7 @@ export function Canvas({
         ) : null,
       )}
 
-      {tool === 'select' && selectedBox && !rect && !lasso && (
+      {tool === 'select' && shownBox && !rect && !lasso && (
         <Pressable
           onPress={deleteSelection}
           // La lavagna sotto non deve prendersi il tocco se il dito o la Pencil si muove appena (dec. 179).
@@ -846,8 +870,8 @@ export function Canvas({
           accessibilityLabel={t.whiteboard.deleteSelection}
           style={{
             position: 'absolute',
-            left: (selectedBox.x + selectedBox.w + 6) * S + tx - 14,
-            top: (selectedBox.y - 6) * S + ty - 14,
+            left: (shownBox.x + shownBox.w + 6) * S + tx - 14,
+            top: (shownBox.y - 6) * S + ty - 14,
             width: 28,
             height: 28,
             borderRadius: 14,

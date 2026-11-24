@@ -161,7 +161,20 @@ export function usePen({
 }
 
 /** Inchiostro della lavagna con Skia (dec. 166): tratti salvati, tratto col dito e tratto della Pencil dal vivo. */
-export function InkCanvas({ strokes, live, view, pen }: { strokes: Stroke[]; live: Stroke | null; view: InkView; pen: LivePen | null }) {
+export function InkCanvas({
+  strokes,
+  live,
+  view,
+  pen,
+  moving = null,
+}: {
+  strokes: Stroke[];
+  live: Stroke | null;
+  view: InkView;
+  pen: LivePen | null;
+  /** Tratti selezionati mentre si spostano: solo traslati, senza ricalcolarne la forma (dec. 182). */
+  moving?: { strokes: Stroke[]; dx: number; dy: number } | null;
+}) {
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       <SkiaCanvas style={StyleSheet.absoluteFill}>
@@ -169,6 +182,13 @@ export function InkCanvas({ strokes, live, view, pen }: { strokes: Stroke[]; liv
           {strokes.map((s) => (
             <InkStroke key={s.id} s={s} />
           ))}
+          {moving && (
+            <Group transform={[{ translateX: moving.dx }, { translateY: moving.dy }]}>
+              {moving.strokes.map((s) => (
+                <InkStroke key={s.id} s={s} />
+              ))}
+            </Group>
+          )}
           {live && <InkStroke s={live} />}
           {pen && <PenLive {...pen} />}
         </Group>
