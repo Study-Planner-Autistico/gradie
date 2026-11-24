@@ -53,11 +53,74 @@ export function renameSubject(from: string, to: string) {
 
 /** Toglie una materia, insieme al suo quaderno (dec. 142). */
 export function removeSubject(name: string) {
+  freezeLooks();
   subjects = subjects.filter((s) => !same(s, name));
   const { [key(name)]: _, ...rest } = looks;
   looks = rest;
   emit();
 }
+
+/** Copertina a rotazione per la posizione `i`, per i quaderni non ancora personalizzati. */
+const defaultLook = (i: number): NotebookLook => ({ theme: COVER_THEMES[i % COVER_THEMES.length], color: COVER_COLORS[(i * 3) % COVER_COLORS.length] });
+
+/** Prima di spostare o togliere quaderni fissa le copertine a rotazione, così nessuna cambia da sola (dec. 145). */
+function freezeLooks() {
+  subjects.forEach((s, i) => {
+    if (!looks[key(s)]) looks = { ...looks, [key(s)]: defaultLook(i) };
+  });
+}
+
+/** Sposta il quaderno di un posto prima (-1) o dopo (+1) nell'ordine scelto a mano (dec. 145). */
+export function moveSubject(name: string, delta: -1 | 1) {
+  const i = subjects.findIndex((s) => same(s, name));
+  const j = i + delta;
+  if (i < 0 || j < 0 || j >= subjects.length) return;
+  freezeLooks();
+  const next = [...subjects];
+  [next[i], next[j]] = [next[j], next[i]];
+  subjects = next;
+  emit();
+}
+
+/** Quaderno nel cestino (dec. 145): nome, copertina e posto che aveva, per rimetterlo dov'era. */
+export type TrashedBook = { name: string; look?: NotebookLook; index: number; at: number };
+let trashedBooks: TrashedBook[] = [];
+
+/** Toglie il quaderno dalla libreria tenendolo nel cestino. */
+export function trashSubject(name: string) {
+  const index = subjects.findIndex((s) => same(s, name));
+  if (index < 0) return;
+  freezeLooks();
+  trashedBooks = [{ name: subjects[index], look: looks[key(name)], index, at: Date.now() }, ...trashedBooks.filter((b) => !same(b.name, name))];
+  removeSubject(name);
+}
+
+/** Rimette il quaderno al suo posto; se nel frattempo ne è nato uno con lo stesso nome, i fogli finiscono lì. */
+export function restoreSubject(name: string) {
+  const b = trashedBooks.find((x) => same(x.name, name));
+  if (!b) return;
+  trashedBooks = trashedBooks.filter((x) => x !== b);
+  if (!subjects.some((s) => same(s, b.name))) {
+    freezeLooks();
+    const next = [...subjects];
+    next.splice(Math.min(b.index, next.length), 0, b.name);
+    subjects = next;
+    if (b.look) looks = { ...looks, [key(b.name)]: b.look };
+  }
+  emit();
+}
+
+/** Toglie il quaderno dal cestino (eliminazione definitiva). */
+export function forgetSubject(name: string) {
+  trashedBooks = trashedBooks.filter((x) => !same(x.name, name));
+  emit();
+}
+
+export function useTrashedBooks() {
+  return useSyncExternalStore(subscribe, () => trashedBooks, () => trashedBooks);
+}
+
+export const getTrashedBooks = () => trashedBooks;
 
 /** Cambia tema e colore della copertina del quaderno (dec. 143-144). */
 export function setSubjectLook(name: string, look: NotebookLook) {
@@ -68,7 +131,7 @@ export function setSubjectLook(name: string, look: NotebookLook) {
 /** Copertina del quaderno: quella scelta o, se non c'è, una diversa per posizione (temi e colori a rotazione). */
 export function subjectLook(all: Record<string, NotebookLook>, name: string, index: number): NotebookLook {
   const i = Math.max(0, index);
-  return all[key(name)] ?? { theme: COVER_THEMES[i % COVER_THEMES.length], color: COVER_COLORS[(i * 3) % COVER_COLORS.length] };
+  return all[key(name)] ?? defaultLook(i);
 }
 
 export function useSubjects() {

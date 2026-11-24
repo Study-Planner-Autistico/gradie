@@ -2,6 +2,7 @@ import { DMSerifDisplay_400Regular, useFonts } from '@expo-google-fonts/dm-serif
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { AppLock } from '../components/AppLock';
+import { UndoToast } from '../components/UndoToast';
 import { EnvironmentProvider } from '../state/environment';
 import { useTheme } from '../theme';
 
@@ -21,6 +22,7 @@ export default function RootLayout() {
           options={{ presentation: 'formSheet', sheetAllowedDetents: [0.5, 1], sheetGrabberVisible: true, contentStyle: { backgroundColor: 'transparent' } }}
         />
         <Stack.Screen name="quaderno/[name]" />
+        <Stack.Screen name="cestino" options={{ presentation: 'formSheet', sheetAllowedDetents: [0.7, 1], sheetGrabberVisible: true }} />
         <Stack.Screen name="lavagna/[id]" options={{ gestureEnabled: false, animation: 'fade' }} />
         <Stack.Screen name="nuova-nota" options={{ presentation: 'formSheet', sheetAllowedDetents: [0.92], sheetGrabberVisible: true }} />
         <Stack.Screen name="impostazioni" options={{ presentation: 'formSheet', sheetAllowedDetents: [0.7, 1], sheetGrabberVisible: true }} />
@@ -40,6 +42,7 @@ export default function RootLayout() {
         <Stack.Screen name="messaggi" options={{ presentation: 'formSheet', sheetAllowedDetents: [0.7, 1], sheetGrabberVisible: true }} />
         <Stack.Screen name="menu"options={{ presentation: 'formSheet', sheetAllowedDetents: [0.7, 1], sheetGrabberVisible: true }} />
       </Stack>
+      <UndoToast />
       <AppLock />
     </EnvironmentProvider>
   );

@@ -129,17 +129,27 @@ function noteSvgs(n: ExportNote): string[] {
   return [svg(area, `<rect x="0" y="0" width="${area.w}" height="${area.h}" fill="#FFFFFF"/>`)];
 }
 
-function html(notes: ExportNote[]) {
-  const sheets = notes.flatMap((n) =>
+/** Prima pagina del quaderno esportato (dec. 145): nome e indice dei fogli. */
+function titlePage(title: string, notes: ExportNote[]) {
+  const list = notes.map((n) => `<li style="margin:4px 0">${esc(n.title)}</li>`).join('');
+  return `<h1 style="font:700 28px -apple-system,Helvetica,sans-serif;margin:0 0 16px">${esc(title)}</h1><ol style="font:400 15px -apple-system,Helvetica,sans-serif;padding-left:20px">${list}</ol>`;
+}
+
+function html(notes: ExportNote[], title?: string) {
+  const cover = title ? [titlePage(title, notes)] : [];
+  const sheets = [...cover, ...notes.flatMap((n) =>
     noteSvgs(n).map((svg, k) => `${k === 0 ? `<h2 style="font:600 16px -apple-system,Helvetica,sans-serif;margin:0 0 8px">${esc(n.title)}</h2>` : ''}${svg}`),
-  );
+  )];
   const pages = sheets.map((s, k) => `<section style="${k < sheets.length - 1 ? 'page-break-after:always;' : ''}">${s}</section>`).join('');
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head><body style="margin:24px">${pages}</body></html>`;
 }
 
-/** Crea il PDF e lo apre nel foglio di condivisione (sul web: finestra di stampa, da cui si salva in PDF). */
-export async function downloadNotes(notes: ExportNote[]) {
-  const doc = html(notes);
+/**
+ * Crea il PDF e lo apre nel foglio di condivisione (sul web: finestra di stampa, da cui si salva in PDF).
+ * Con `title` (un quaderno intero, dec. 145) la prima pagina ha il nome e l'indice dei fogli.
+ */
+export async function downloadNotes(notes: ExportNote[], title?: string) {
+  const doc = html(notes, title);
   if (Platform.OS === 'web') return Print.printAsync({ html: doc });
   const { uri } = await Print.printToFileAsync({ html: doc });
   if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf' });

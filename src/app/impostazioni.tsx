@@ -89,6 +89,7 @@ export default function Impostazioni() {
         )}
         <Row icon="languages" label={t.settings.language} value={t.settings.languages[settings.language]} onPress={() => router.push('/scegli?cosa=lingua')} />
         <Row icon="moon" label={t.settings.appearance} value={t.settings.themes[settings.theme]} onPress={() => router.push('/scegli?cosa=aspetto')} />
+        <Row icon="book" label={t.settings.plainCovers} detail={t.settings.plainCoversDetail} toggle={{ value: settings.plainCovers, onChange: (v) => updateSettings({ plainCovers: v }) }} />
       </Section>
 
       {/* "Esci" staccato dal resto solo dallo spazio, senza titolo e in rosso, come nello screen di riferimento (dec. 139). */}

@@ -8,7 +8,7 @@ export type LineIconName =
   | 'folder' | 'chart' | 'users' | 'settings' | 'school'
   // Impostazioni (dec. 139)
   | 'user' | 'shield' | 'lock' | 'bell' | 'faceId' | 'fingerprint' | 'languages' | 'moon' | 'sun' | 'sunMoon'
-  | 'key' | 'twoFactor' | 'smartphone' | 'tablet' | 'monitor' | 'logout' | 'download' | 'trash' | 'chevron' | 'check';
+  | 'key' | 'twoFactor' | 'smartphone' | 'tablet' | 'monitor' | 'logout' | 'download' | 'trash' | 'chevron' | 'check' | 'book';
 
 const ICONS: Record<LineIconName, { paths: string[]; circles?: { cx: number; cy: number; r: number }[] }> = {
   folder: { paths: ['M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z'] },
@@ -94,6 +94,7 @@ const ICONS: Record<LineIconName, { paths: string[]; circles?: { cx: number; cy:
   trash: { paths: ['M10 11v6', 'M14 11v6', 'M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6', 'M3 6h18', 'M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2'] },
   chevron: { paths: ['m9 18 6-6-6-6'] },
   check: { paths: ['m16 9-5.5 5.5L8 12'], circles: [{ cx: 12, cy: 12, r: 10 }] },
+  book: { paths: ['M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20'] },
 };
 
 export function LineIcon({ name, size = 22, color, strokeWidth = 2.6 }: { name: LineIconName; size?: number; color: string; strokeWidth?: number }) {

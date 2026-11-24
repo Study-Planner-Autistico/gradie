@@ -19,9 +19,11 @@ export type SettingsState = {
   twoFactor: boolean;
   /** Dispositivi ancora collegati; "Esci" li toglie (dati dimostrativi). */
   devices: readonly DemoDevice[];
+  /** Copertine dei quaderni a tinta unita, senza fantasie (dec. 145). */
+  plainCovers: boolean;
 };
 
-const initial: SettingsState = { language: 'system', theme: 'system', biometricLock: false, push: true, twoFactor: false, devices: demoDevices };
+const initial: SettingsState = { language: 'system', theme: 'system', biometricLock: false, push: true, twoFactor: false, devices: demoDevices, plainCovers: false };
 let state: SettingsState = initial;
 const listeners = new Set<() => void>();
 

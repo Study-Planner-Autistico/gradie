@@ -200,8 +200,10 @@ export function duplicateNote(id: string, meta: Omit<NoteMeta, 'id' | 'created'>
   return copy;
 }
 
-/** Elimina una nota con tutto il suo contenuto. */
+/** Elimina per sempre una nota con tutto il suo contenuto (dal cestino, dec. 145). */
 export function deleteNote(id: string) {
+  trash.delete(id);
+  refreshTrash();
   favorites.delete(id);
   statuses.delete(id);
   if (lastOpened === id) lastOpened = null;
@@ -218,6 +220,35 @@ export function deleteNote(id: string) {
 export function useHidden() {
   return useSyncExternalStore(subscribe, () => hiddenSnap, () => hiddenSnap);
 }
+
+// Cestino (dec. 145): i fogli eliminati restano qui 30 giorni e si possono ripristinare.
+/** `book`: quaderno eliminato insieme al foglio (si ripristinano insieme). */
+export type TrashEntry = { at: number; book?: string };
+const trash = new Map<string, TrashEntry>();
+let trashSnap: Record<string, TrashEntry> = {};
+function refreshTrash() {
+  trashSnap = Object.fromEntries(trash);
+}
+
+/** Sposta la nota nel cestino: sparisce dagli Appunti ma non perde nulla. */
+export function trashNote(id: string, book?: string) {
+  trash.set(id, { at: Date.now(), book });
+  refreshTrash();
+  emit();
+}
+
+/** Riporta la nota dal cestino al suo quaderno. */
+export function restoreNote(id: string) {
+  if (!trash.delete(id)) return;
+  refreshTrash();
+  emit();
+}
+
+export function useTrash() {
+  return useSyncExternalStore(subscribe, () => trashSnap, () => trashSnap);
+}
+
+export const getTrash = () => trashSnap;
 
 export const getBoardItems = (id: string) => boards.get(id) ?? EMPTY;
 
@@ -243,6 +274,13 @@ export function toggleFavorite(id: string) {
 /** Stato di studio: da studiare, in corso, ripassata. */
 export function setStudyStatus(id: string, status: StudyStatus) {
   statuses.set(id, status);
+  refreshExtras();
+  emit();
+}
+
+/** Toglie lo stato di studio (dec. 145). */
+export function clearStudyStatus(id: string) {
+  if (!statuses.delete(id)) return;
   refreshExtras();
   emit();
 }

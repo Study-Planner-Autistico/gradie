@@ -1,19 +1,34 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
-import { confirm, notify } from '../../components/dialogs';
-import { AddCard, CoverCard, ItemMenu, NotebookEditor } from '../../components/notebooks';
+import { notify } from '../../components/dialogs';
+import { AddCard, CoverCard, downloadNotebook, ItemMenu, NotebookEditor, SortBar, STATUS_ICON } from '../../components/notebooks';
+import { showUndo } from '../../components/UndoToast';
 import { IconButton, Screen, ScreenHeader } from '../../components/ui';
 import { BoardPreview } from '../../components/whiteboard/BoardPreview';
 import { downloadNotes } from '../../components/whiteboard/exportPdf';
 import { CoverThumb, PaperThumb } from '../../components/whiteboard/Paper';
 import { t } from '../../i18n';
-import { metaOf, NO_SUBJECT, renameNotebook, sheetsOf, useSheets, type Sheet } from '../../state/notebooks';
+import { metaOf, moveSheet, NO_SUBJECT, renameNotebook, restoreSheet, setSheetSort, sheetsOf, sortSheets, useOrder, useSheets, type Sheet } from '../../state/notebooks';
 import { setSubjectLook, subjectLook, useSubjectLooks, useSubjects } from '../../state/subjects';
-import { deleteNote, duplicateNote, getBoardItems, getNoteMeta, getViewport, useBoards } from '../../state/whiteboard';
+import {
+  clearStudyStatus,
+  duplicateNote,
+  getBoardItems,
+  getNoteMeta,
+  getViewport,
+  setStudyStatus,
+  toggleFavorite,
+  trashNote,
+  useBoards,
+  useNoteExtras,
+  type StudyStatus,
+} from '../../state/whiteboard';
 import { useTheme } from '../../theme';
 
-/** Quaderno di una materia: i fogli salvati e Nuovo foglio (dec. 143). */
+const STATUSES: StudyStatus[] = ['todo', 'doing', 'done'];
+
+/** Quaderno di una materia: i fogli salvati e Nuovo foglio (dec. 143, 145). */
 export default function Quaderno() {
   const { spacing } = useTheme();
   const { name = '' } = useLocalSearchParams<{ name: string }>();
@@ -21,13 +36,18 @@ export default function Quaderno() {
   const subjects = useSubjects();
   const looks = useSubjectLooks();
   const itemsOf = useBoards();
+  const order = useOrder();
+  const { favorites: pinned, statuses } = useNoteExtras();
   const [menuFor, setMenuFor] = useState<string | null>(null);
+  const [statusFor, setStatusFor] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
+  const [reordering, setReordering] = useState(false);
   const [listW, setListW] = useState(0);
 
   const others = name === NO_SUBJECT;
   const label = others ? t.activitiesHub.otherSheets : name;
-  const list = sheetsOf(sheets, name);
+  // Fissati in cima per primi, poi l'ordine scelto (dec. 145).
+  const list = sortSheets(sheetsOf(sheets, name), name, pinned, order);
   const look = subjectLook(looks, name, subjects.findIndex((s) => s.toLocaleLowerCase() === name.toLocaleLowerCase()));
 
   // Due fogli per riga, come i quaderni; su iPad e in orizzontale quattro.
@@ -49,7 +69,18 @@ export default function Quaderno() {
       notify(t.manage.downloadFailed);
     }
   };
+  // Nel cestino, con l'avviso per annullare (dec. 145).
+  const remove = (s: Sheet) => {
+    trashNote(s.id);
+    showUndo(t.trash.sheetTrashed(s.title), () => restoreSheet(s));
+  };
+  const toggleReorder = () => {
+    if (!reordering) setSheetSort('custom');
+    setReordering(!reordering);
+  };
+  const sameGroup = (a?: Sheet, b?: Sheet) => !!a && !!b && pinned.includes(a.id) === pinned.includes(b.id);
   const menuSheet = list.find((s) => s.id === menuFor);
+  const statusSheet = list.find((s) => s.id === statusFor);
 
   return (
     <View style={{ flex: 1 }}>
@@ -58,15 +89,50 @@ export default function Quaderno() {
           title={label}
           subtitle={list.length ? t.activitiesHub.sheetCount(list.length) : t.activitiesHub.emptyBook}
           left={<IconButton icon="chevron-back" label={t.whiteboard.back} onPress={() => router.back()} />}
-          right={!others && <IconButton icon="color-palette-outline" label={t.activitiesHub.editBook} onPress={() => setEditing(true)} />}
+          right={
+            <View style={{ flexDirection: 'row', gap: spacing.xs }}>
+              <IconButton icon="document-outline" label={t.activitiesHub.downloadBook} onPress={() => downloadNotebook(label, list)} />
+              {!others && <IconButton icon="color-palette-outline" label={t.activitiesHub.editBook} onPress={() => setEditing(true)} />}
+            </View>
+          }
         />
+
+        {list.length > 1 && (
+          <SortBar
+            value={order.sheets}
+            onChange={(m) => {
+              setSheetSort(m);
+              if (m !== 'custom') setReordering(false);
+            }}
+            reordering={reordering}
+            onReorder={toggleReorder}
+          />
+        )}
 
         <View onLayout={(e) => setListW(e.nativeEvent.layout.width)} style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: gap, rowGap: spacing.lg }}>
           {w > 0 && (
             <>
-              <AddCard width={w} height={h} label={t.activitiesHub.newSheet} onPress={newSheet} />
-              {list.map((s) => (
-                <CoverCard key={s.id} width={w} height={h} label={s.title} caption={s.edited} onOpen={() => open(s)} onMenu={() => setMenuFor(s.id)}>
+              {!reordering && <AddCard width={w} height={h} label={t.activitiesHub.newSheet} onPress={newSheet} />}
+              {list.map((s, i) => (
+                <CoverCard
+                  key={s.id}
+                  width={w}
+                  height={h}
+                  label={s.title}
+                  caption={statuses[s.id] ? `${t.activitiesHub.status[statuses[s.id]]} · ${s.edited}` : s.edited}
+                  onOpen={() => open(s)}
+                  onMenu={() => setMenuFor(s.id)}
+                  pinned={pinned.includes(s.id)}
+                  status={statuses[s.id]}
+                  move={
+                    reordering
+                      ? {
+                          prev: sameGroup(s, list[i - 1]) ? () => moveSheet(name, list, s.id, -1, pinned) : undefined,
+                          next: sameGroup(s, list[i + 1]) ? () => moveSheet(name, list, s.id, 1, pinned) : undefined,
+                        }
+                      : undefined
+                  }
+                >
                   <SheetThumb sheet={s} items={itemsOf(s.id)} width={w} height={h} />
                 </CoverCard>
               ))}
@@ -81,10 +147,34 @@ export default function Quaderno() {
           onClose={() => setMenuFor(null)}
           items={[
             { icon: 'open-outline', label: t.activitiesHub.open, onPress: () => open(menuSheet) },
+            {
+              icon: pinned.includes(menuSheet.id) ? 'pin' : 'pin-outline',
+              label: pinned.includes(menuSheet.id) ? t.activitiesHub.unpin : t.activitiesHub.pin,
+              onPress: () => toggleFavorite(menuSheet.id),
+            },
+            {
+              icon: statuses[menuSheet.id] ? STATUS_ICON[statuses[menuSheet.id]] : 'ellipse-outline',
+              label: statuses[menuSheet.id] ? `${t.activitiesHub.statusLabel}: ${t.activitiesHub.status[statuses[menuSheet.id]]}` : t.activitiesHub.setStatus,
+              onPress: () => setStatusFor(menuSheet.id),
+            },
             { icon: 'color-palette-outline', label: t.activitiesHub.editSheet, onPress: () => router.push({ pathname: '/nuova-nota', params: { id: menuSheet.id } }) },
             { icon: 'copy-outline', label: t.manage.duplicate, onPress: () => duplicate(menuSheet) },
             { icon: 'download-outline', label: t.manage.download, onPress: () => download(menuSheet) },
-            { icon: 'trash-outline', label: t.manage.delete, danger: true, onPress: () => confirm(t.manage.confirmDelete(1), t.manage.delete, () => deleteNote(menuSheet.id)) },
+            { icon: 'trash-outline', label: t.trash.moveToTrash, danger: true, onPress: () => remove(menuSheet) },
+          ]}
+        />
+      )}
+      {statusSheet && (
+        <ItemMenu
+          title={`${t.activitiesHub.statusLabel}: ${statusSheet.title}`}
+          onClose={() => setStatusFor(null)}
+          items={[
+            ...STATUSES.map((st) => ({
+              icon: STATUS_ICON[st],
+              label: statuses[statusSheet.id] === st ? `${t.activitiesHub.status[st]} ✓` : t.activitiesHub.status[st],
+              onPress: () => setStudyStatus(statusSheet.id, st),
+            })),
+            { icon: 'close-circle-outline', label: t.activitiesHub.noStatus, onPress: () => clearStudyStatus(statusSheet.id) },
           ]}
         />
       )}
