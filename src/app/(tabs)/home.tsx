@@ -6,11 +6,15 @@ import { tap } from '../../components/haptics';
 import { Mascot } from '../../components/Mascot';
 import { PushDrawer } from '../../components/SideMenu';
 import { Screen } from '../../components/ui';
-import { demoAgenda, demoClasses, demoNotes, type DemoAgendaItem, type DemoClass, type DemoNote } from '../../data/demo';
+import { CoverCard, NotebookCover } from '../../components/notebooks';
+import { COVER_RATIO } from '../../components/coverArt';
+import { demoAgenda, demoClasses, demoNotes, type DemoAgendaItem, type DemoClass } from '../../data/demo';
 import { locale, t } from '../../i18n';
 import { useEnvironment } from '../../state/environment';
 import { setMenuOpen, useMenuOpen } from '../../state/menu';
 import { useNotes } from '../../state/whiteboard';
+import { sheetsOf, sortBooks, useSheets } from '../../state/notebooks';
+import { subjectLook, useSubjectLooks, useSubjects } from '../../state/subjects';
 import { covers, fonts, useTheme } from '../../theme';
 import { registerTabScreen, TabSwipe } from '../../components/TabSwipe';
 import { Icon } from '../../components/icons';
@@ -59,8 +63,6 @@ function HomeScreen() {
     .filter((i) => i.dayOffset === 1 && RANK[i.kind] !== undefined)
     .sort((a, b) => (RANK[a.kind] ?? 9) - (RANK[b.kind] ?? 9))[0];
   const deadlines = demoAgenda.filter((i) => i.kind === 'activity' && i.dayOffset >= 1 && i.dayOffset <= 7).sort((a, b) => a.dayOffset - b.dayOffset);
-  // Appunti "collegati a oggi": quelli delle materie che compaiono negli impegni di oggi.
-  const notes = demoNotes.filter((n) => todayItems.some((i) => i.title.includes(n.subject)));
   const klass = demoClasses[active.id];
 
   return (
@@ -73,7 +75,7 @@ function HomeScreen() {
         <ResumeRow />
         <TodayCard items={schedule} tomorrow={tomorrow} />
         <Deadlines items={deadlines} />
-        <NotesShelf notes={notes} />
+        <RecentBooks />
         {klass && <ClassTile klass={klass} />}
       </Screen>
     </PushDrawer>
@@ -309,68 +311,57 @@ function Deadlines({ items }: { items: DemoAgendaItem[] }) {
   );
 }
 
-/** Appunti come libri che scorrono in orizzontale (copertina "Classico" della dec. 112). */
-function NotesShelf({ notes }: { notes: DemoNote[] }) {
+/** I tuoi appunti (dec. 183): gli ultimi 4 quaderni usati, con le stesse copertine e scritte della pagina Appunti. */
+function RecentBooks() {
   const { colors, typography, spacing } = useTheme();
+  const sheets = useSheets();
+  const subjects = useSubjects();
+  const looks = useSubjectLooks();
+  const [w, setW] = useState(0);
+  const books = sortBooks(
+    subjects.map((s, i) => {
+      const list = sheetsOf(sheets, s);
+      return { subject: s, label: s, look: subjectLook(looks, s, i), count: list.length, lastEdit: Math.max(0, ...list.map((x) => x.at)) };
+    }),
+    'recent',
+  ).slice(0, 4);
+  // Due per riga come in Appunti; su iPad e in orizzontale quattro.
+  const gap = spacing.md;
+  const cols = w >= 700 ? 4 : 2;
+  const bw = w > 0 ? (w - gap * (cols - 1)) / cols : 0;
+  const bh = Math.round(bw / COVER_RATIO);
+  const open = (name: string) => router.push({ pathname: '/quaderno/[name]', params: { name } });
   return (
     <View style={{ gap: spacing.md, marginTop: spacing.xl }}>
-      <Text accessibilityRole="header" style={[typography.title1, { color: colors.text }]}>
-        {t.home.notes}
-      </Text>
-      {notes.length === 0 ? (
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <Text accessibilityRole="header" style={[typography.title1, { color: colors.text, flex: 1 }]}>
+          {t.home.notes}
+        </Text>
+        <Pressable onPress={() => router.navigate('/attivita')} accessibilityRole="link" hitSlop={8} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+          <Text style={[typography.callout, { color: colors.accent, fontWeight: '600' }]}>{t.home.seeAll}</Text>
+        </Pressable>
+      </View>
+      {books.length === 0 ? (
         <Text style={[typography.body, { color: colors.textSecondary }]}>{t.home.emptyNotes}</Text>
       ) : (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={{ marginHorizontal: -spacing.lg }}
-          contentContainerStyle={{ paddingHorizontal: spacing.lg, gap: spacing.md }}
-        >
-          {notes.map((n) => (
-            <Book key={n.id} note={n} />
-          ))}
-        </ScrollView>
+        <View onLayout={(e) => setW(e.nativeEvent.layout.width)} style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: gap, rowGap: spacing.lg }}>
+          {bw > 0 &&
+            books.map((bk) => (
+              <CoverCard
+                key={bk.subject}
+                width={bw}
+                height={bh}
+                label={bk.label}
+                caption={bk.count ? t.activitiesHub.sheetCount(bk.count) : t.activitiesHub.emptyBook}
+                onOpen={() => open(bk.subject)}
+                onMenu={() => open(bk.subject)}
+              >
+                <NotebookCover look={bk.look} name={bk.label} width={bw} height={bh} />
+              </CoverCard>
+            ))}
+        </View>
       )}
     </View>
-  );
-}
-
-const BOOK = { w: 140, h: 190 };
-
-function Book({ note }: { note: DemoNote }) {
-  const { colors, typography, spacing, radius } = useTheme();
-  const cover = note.cover ?? colors.accent;
-  return (
-    <Pressable
-      onPress={() => router.push(`/lavagna/${note.id}`)}
-      accessibilityRole="button"
-      accessibilityLabel={`${note.title}, ${note.subject}`}
-      style={({ pressed }) => ({ width: BOOK.w, gap: spacing.sm, transform: [{ scale: pressed ? 0.97 : 1 }] })}
-    >
-      <View
-        style={{
-          width: BOOK.w,
-          height: BOOK.h,
-          borderRadius: radius.lg,
-          backgroundColor: cover,
-          overflow: 'hidden',
-          justifyContent: 'center',
-          boxShadow: colors.shadowRaised,
-        }}
-      >
-        {/* Dorso e cucitura */}
-        <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 14, backgroundColor: 'rgba(0,0,0,0.18)' }} />
-        <View style={{ position: 'absolute', left: 14, top: 0, bottom: 0, width: 1, backgroundColor: 'rgba(255,255,255,0.25)' }} />
-        <View style={{ marginLeft: 26, marginRight: spacing.md, padding: spacing.sm, borderRadius: radius.sm, backgroundColor: 'rgba(255,255,255,0.92)' }}>
-          <Text style={[typography.headline, { fontSize: 14, lineHeight: 18, color: '#16161A' }]} numberOfLines={3}>
-            {note.title}
-          </Text>
-        </View>
-      </View>
-      <Text style={[typography.caption, { color: colors.textSecondary }]} numberOfLines={1}>
-        {note.subject}
-      </Text>
-    </Pressable>
   );
 }
 

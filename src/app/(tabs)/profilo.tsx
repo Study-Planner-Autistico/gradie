@@ -8,6 +8,7 @@ import { Mascot } from '../../components/Mascot';
 import { Flag } from '../../components/Flag';
 import { Button, Chip } from '../../components/ui';
 import { demoCountries, demoFriends, demoGrades, demoMe } from '../../data/demo';
+import { useFriends } from '../../state/friends';
 import { locale, t } from '../../i18n';
 import { missingSteps, myTag, useProfile, type InterestId, type ProfileState } from '../../state/profile';
 import { avatarPalette, useTheme } from '../../theme';
@@ -217,22 +218,33 @@ function Overview({ bio, interests }: { bio: string; interests: InterestId[] }) 
   );
 }
 
-/** Amici: avatar (per ora iniziali) con il nome, e un + tratteggiato per aggiungerne (in arrivo). */
+/** Amici: avatar (per ora iniziali) con il nome, e un + tratteggiato per aggiungerne (in arrivo). Toccandone uno si apre il suo profilo (dec. 183). */
 function Friends() {
   const { colors, typography, spacing } = useTheme();
+  const state = useFriends();
+  const shown = demoFriends.filter((f) => !state.blocked.includes(f.id));
   return (
     <View style={{ gap: spacing.lg }}>
       <Text style={[typography.label, { color: colors.textTertiary }]}>{t.profile.friends}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -spacing.xxl }} contentContainerStyle={{ paddingHorizontal: spacing.xxl, gap: spacing.xl }}>
-        {demoFriends.map((f) => (
-          <View key={f.id} style={{ alignItems: 'center', gap: spacing.sm, width: 72 }}>
+        {shown.map((f) => (
+          <Pressable
+            key={f.id}
+            onPress={() => {
+              tap();
+              router.push({ pathname: '/amico/[id]', params: { id: f.id } });
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={t.profile.openFriend(f.name)}
+            style={({ pressed }) => ({ alignItems: 'center', gap: spacing.sm, width: 72, opacity: pressed ? 0.6 : 1 })}
+          >
             <View style={{ width: 68, height: 68, borderRadius: 34, backgroundColor: f.color, alignItems: 'center', justifyContent: 'center' }}>
               <Text style={[typography.title2, { color: '#FFFFFF' }]}>{f.initials}</Text>
             </View>
             <Text style={[typography.callout, { color: colors.text }]} numberOfLines={1}>
               {f.name}
             </Text>
-          </View>
+          </Pressable>
         ))}
         <Pressable onPress={tap} accessibilityRole="button" accessibilityLabel={t.profile.addFriendSoon} style={{ alignItems: 'center', gap: spacing.sm, width: 72 }}>
           <View style={{ width: 68, height: 68, borderRadius: 34, borderWidth: 2, borderStyle: 'dashed', borderColor: colors.borderBold, alignItems: 'center', justifyContent: 'center' }}>

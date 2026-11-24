@@ -56,6 +56,8 @@ export const ICONS = {
   'person-circle': H.UserCircleIcon,
   'person-circle-outline': H.UserCircleIcon,
   'person-add-outline': H.UserAdd01Icon,
+  'person-remove-outline': H.UserRemove01Icon,
+  'person-block-outline': H.UserBlock01Icon,
   users: H.UserGroupIcon,
   people: H.UserGroupIcon,
   'people-outline': H.UserGroupIcon,
