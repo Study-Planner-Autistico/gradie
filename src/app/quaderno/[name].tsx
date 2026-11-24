@@ -3,13 +3,14 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import { notify } from '../../components/dialogs';
 import { AddCard, CoverCard, downloadNotebook, ItemMenu, NotebookEditor, SortBar, STATUS_ICON } from '../../components/notebooks';
+import { SortableGrid } from '../../components/SortableGrid';
 import { showUndo } from '../../components/UndoToast';
 import { IconButton, Screen, ScreenHeader } from '../../components/ui';
 import { BoardPreview } from '../../components/whiteboard/BoardPreview';
 import { downloadNotes } from '../../components/whiteboard/exportPdf';
 import { CoverThumb, PaperThumb } from '../../components/whiteboard/Paper';
 import { t } from '../../i18n';
-import { metaOf, moveSheet, NO_SUBJECT, renameNotebook, restoreSheet, setSheetSort, sheetsOf, sortSheets, useOrder, useSheets, type Sheet } from '../../state/notebooks';
+import { metaOf, NO_SUBJECT, renameNotebook, restoreSheet, setSheetOrder, setSheetSort, sheetsOf, sortSheets, useOrder, useSheets, type Sheet } from '../../state/notebooks';
 import { setSubjectLook, subjectLook, useSubjectLooks, useSubjects } from '../../state/subjects';
 import {
   clearStudyStatus,
@@ -28,7 +29,7 @@ import { useTheme } from '../../theme';
 
 const STATUSES: StudyStatus[] = ['todo', 'doing', 'done'];
 
-/** Quaderno di una materia: i fogli salvati e Nuovo foglio (dec. 143, 145). */
+/** Quaderno di una materia: i fogli salvati e Nuovo foglio (dec. 143, 145-146). */
 export default function Quaderno() {
   const { spacing } = useTheme();
   const { name = '' } = useLocalSearchParams<{ name: string }>();
@@ -41,7 +42,7 @@ export default function Quaderno() {
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [statusFor, setStatusFor] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
-  const [reordering, setReordering] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const [listW, setListW] = useState(0);
 
   const others = name === NO_SUBJECT;
@@ -74,17 +75,12 @@ export default function Quaderno() {
     trashNote(s.id);
     showUndo(t.trash.sheetTrashed(s.title), () => restoreSheet(s));
   };
-  const toggleReorder = () => {
-    if (!reordering) setSheetSort('custom');
-    setReordering(!reordering);
-  };
-  const sameGroup = (a?: Sheet, b?: Sheet) => !!a && !!b && pinned.includes(a.id) === pinned.includes(b.id);
   const menuSheet = list.find((s) => s.id === menuFor);
   const statusSheet = list.find((s) => s.id === statusFor);
 
   return (
     <View style={{ flex: 1 }}>
-      <Screen withTabBar={false}>
+      <Screen withTabBar={false} scrollEnabled={!dragging}>
         <ScreenHeader
           title={label}
           subtitle={list.length ? t.activitiesHub.sheetCount(list.length) : t.activitiesHub.emptyBook}
@@ -98,24 +94,24 @@ export default function Quaderno() {
         />
 
         {list.length > 1 && (
-          <SortBar
-            value={order.sheets}
-            onChange={(m) => {
-              setSheetSort(m);
-              if (m !== 'custom') setReordering(false);
-            }}
-            reordering={reordering}
-            onReorder={toggleReorder}
-          />
+          <SortBar value={order.sheets} onChange={setSheetSort} />
         )}
 
-        <View onLayout={(e) => setListW(e.nativeEvent.layout.width)} style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: gap, rowGap: spacing.lg }}>
+        {/* Tenendo premuto un foglio lo si trascina in un altro posto; i fissati restano tra loro, in cima (dec. 146). */}
+        <View onLayout={(e) => setListW(e.nativeEvent.layout.width)}>
           {w > 0 && (
-            <>
-              {!reordering && <AddCard width={w} height={h} label={t.activitiesHub.newSheet} onPress={newSheet} />}
-              {list.map((s, i) => (
+            <SortableGrid
+              items={list}
+              keyOf={(s) => s.id}
+              groupOf={(s) => (pinned.includes(s.id) ? 0 : 1)}
+              cols={cols}
+              cellW={w}
+              cellH={h + 52}
+              colGap={gap}
+              rowGap={spacing.lg}
+              leading={[<AddCard key="add" width={w} height={h} label={t.activitiesHub.newSheet} onPress={newSheet} />]}
+              renderItem={(s, drag) => (
                 <CoverCard
-                  key={s.id}
                   width={w}
                   height={h}
                   label={s.title}
@@ -124,19 +120,15 @@ export default function Quaderno() {
                   onMenu={() => setMenuFor(s.id)}
                   pinned={pinned.includes(s.id)}
                   status={statuses[s.id]}
-                  move={
-                    reordering
-                      ? {
-                          prev: sameGroup(s, list[i - 1]) ? () => moveSheet(name, list, s.id, -1, pinned) : undefined,
-                          next: sameGroup(s, list[i + 1]) ? () => moveSheet(name, list, s.id, 1, pinned) : undefined,
-                        }
-                      : undefined
-                  }
+                  drag={drag}
                 >
                   <SheetThumb sheet={s} items={itemsOf(s.id)} width={w} height={h} />
                 </CoverCard>
-              ))}
-            </>
+              )}
+              onReorder={(ids) => setSheetOrder(name, ids)}
+              onLongPressRelease={(s) => setMenuFor(s.id)}
+              onDragging={setDragging}
+            />
           )}
         </View>
       </Screen>

@@ -1,4 +1,4 @@
-// Pezzi comuni di Appunti e quaderno (dec. 142-145): copertina con ⋯, menu rapido, copertina disegnata, editor del quaderno, ordine.
+// Pezzi comuni di Appunti e quaderno (dec. 142-145): copertina con ⋯, menu rapido, copertina disegnata, editor del quaderno, ordine (dec. 146: trascinando).
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState, type ReactNode } from 'react';
 import { Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
@@ -12,6 +12,7 @@ import { downloadNotes } from './whiteboard/exportPdf';
 import { useTheme } from '../theme';
 import { COVER_ART, COVER_COLORS, COVER_RATIO, COVER_SWATCH, COVER_THEMES, COVER_TITLE } from './coverArt';
 import { tap } from './haptics';
+import type { DragHandle } from './SortableGrid';
 import { Button, TextField, type IconName } from './ui';
 
 /** Elemento della griglia (quaderno o foglio): tocco per aprire, ⋯ o pressione lunga per il menu. */
@@ -25,7 +26,7 @@ export function CoverCard({
   onMenu,
   pinned,
   status,
-  move,
+  drag,
 }: {
   width: number;
   height: number;
@@ -38,18 +39,30 @@ export function CoverCard({
   pinned?: boolean;
   /** Stato di studio del foglio (dec. 145). */
   status?: StudyStatus;
-  /** In modalità Riordina: sposta prima o dopo (undefined = già al bordo). */
-  move?: { prev?: () => void; next?: () => void };
+  /** Trascinamento nella griglia (dec. 146): la pressione lunga solleva l'elemento invece di aprire il menu. */
+  drag?: DragHandle;
 }) {
   const { colors, typography, radius } = useTheme();
+  const lifted = drag?.lifted;
   const menu = () => {
     tap();
     onMenu();
   };
   return (
     <View style={{ width, gap: 6 }}>
-      <View style={{ borderRadius: radius.md, boxShadow: colors.shadowRaised }}>
-        <Pressable onPress={onOpen} onLongPress={menu} delayLongPress={400} accessibilityRole="button" accessibilityLabel={label} style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>
+      <View style={{ borderRadius: radius.md, boxShadow: lifted ? colors.shadowOverlay : colors.shadowRaised }}>
+        <Pressable
+          onPress={onOpen}
+          onLongPress={drag ? drag.onLongPress : menu}
+          onPressOut={drag?.onPressOut}
+          delayLongPress={drag ? 300 : 400}
+          accessibilityRole="button"
+          accessibilityLabel={label}
+          accessibilityHint={drag ? t.activitiesHub.dragHint : undefined}
+          accessibilityActions={drag ? [{ name: 'moveBefore', label: t.activitiesHub.moveBefore }, { name: 'moveAfter', label: t.activitiesHub.moveAfter }] : undefined}
+          onAccessibilityAction={(e) => drag?.move(e.nativeEvent.actionName === 'moveBefore' ? -1 : 1)}
+          style={({ pressed }) => ({ opacity: pressed && !lifted ? 0.85 : 1 })}
+        >
           <View style={{ width, height, borderRadius: radius.md, overflow: 'hidden', borderWidth: 1, borderColor: colors.border }}>{children}</View>
         </Pressable>
         {(pinned || status) && (
@@ -89,42 +102,7 @@ export function CoverCard({
       <Text style={[typography.caption, { color: colors.textSecondary }]} numberOfLines={1}>
         {caption}
       </Text>
-      {move && (
-        <View style={{ flexDirection: 'row', gap: 6 }}>
-          <MoveButton icon="arrow-back" label={`${t.activitiesHub.moveBefore}: ${label}`} onPress={move.prev} />
-          <MoveButton icon="arrow-forward" label={`${t.activitiesHub.moveAfter}: ${label}`} onPress={move.next} />
-        </View>
-      )}
     </View>
-  );
-}
-
-function MoveButton({ icon, label, onPress }: { icon: IconName; label: string; onPress?: () => void }) {
-  const { colors, radius } = useTheme();
-  return (
-    <Pressable
-      onPress={() => {
-        tap();
-        onPress?.();
-      }}
-      disabled={!onPress}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled: !onPress }}
-      style={({ pressed }) => ({
-        flex: 1,
-        height: 44,
-        borderRadius: radius.md,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: colors.border,
-        backgroundColor: pressed ? colors.surfaceMuted : colors.surface,
-        opacity: onPress ? 1 : 0.35,
-      })}
-    >
-      <Ionicons name={icon} size={20} color={colors.text} />
-    </Pressable>
   );
 }
 
@@ -144,49 +122,27 @@ export function StatusBadge({ status }: { status: StudyStatus }) {
   );
 }
 
-/** Scelta dell'ordine e modalità Riordina (dec. 145). */
-export function SortBar({ value, onChange, reordering, onReorder }: { value: SortMode; onChange: (m: SortMode) => void; reordering: boolean; onReorder: () => void }) {
+/** Scelta dell'ordine (dec. 145); l'ordine a mano si cambia trascinando (dec. 146). */
+export function SortBar({ value, onChange }: { value: SortMode; onChange: (m: SortMode) => void }) {
   const { colors, typography, radius, spacing } = useTheme();
   const modes: SortMode[] = ['custom', 'alpha', 'recent'];
   return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm }}>
-      <View accessibilityRole="radiogroup" accessibilityLabel={t.activitiesHub.sortLabel} style={{ flexDirection: 'row', padding: 2, borderRadius: radius.lg, backgroundColor: colors.surfaceMuted }}>
-        {modes.map((m) => {
-          const on = value === m;
-          return (
-            <Pressable
-              key={m}
-              onPress={() => onChange(m)}
-              accessibilityRole="radio"
-              accessibilityState={{ checked: on }}
-              accessibilityLabel={`${t.activitiesHub.sortLabel}: ${t.activitiesHub.sort[m]}`}
-              style={{ minHeight: 36, paddingHorizontal: spacing.md, justifyContent: 'center', borderRadius: radius.md, backgroundColor: on ? colors.surface : 'transparent', boxShadow: on ? colors.shadowRaised : undefined }}
-            >
-              <Text style={[typography.callout, { color: on ? colors.text : colors.textSecondary, fontWeight: on ? '700' : '400' }]}>{t.activitiesHub.sort[m]}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
-      <Pressable
-        onPress={onReorder}
-        accessibilityRole="button"
-        accessibilityState={{ selected: reordering }}
-        accessibilityLabel={reordering ? t.activitiesHub.reorderDone : t.activitiesHub.reorder}
-        style={({ pressed }) => ({
-          minHeight: 40,
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 6,
-          paddingHorizontal: spacing.md,
-          borderRadius: radius.md,
-          borderWidth: 1,
-          borderColor: reordering ? colors.accent : colors.border,
-          backgroundColor: reordering ? colors.accent : pressed ? colors.surfaceMuted : 'transparent',
-        })}
-      >
-        <Ionicons name={reordering ? 'checkmark' : 'swap-horizontal'} size={18} color={reordering ? colors.onAccent : colors.text} />
-        <Text style={[typography.callout, { color: reordering ? colors.onAccent : colors.text, fontWeight: '600' }]}>{reordering ? t.activitiesHub.reorderDone : t.activitiesHub.reorder}</Text>
-      </Pressable>
+    <View accessibilityRole="radiogroup" accessibilityLabel={t.activitiesHub.sortLabel} style={{ flexDirection: 'row', alignSelf: 'flex-start', padding: 2, borderRadius: radius.lg, backgroundColor: colors.surfaceMuted }}>
+      {modes.map((m) => {
+        const on = value === m;
+        return (
+          <Pressable
+            key={m}
+            onPress={() => onChange(m)}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: on }}
+            accessibilityLabel={`${t.activitiesHub.sortLabel}: ${t.activitiesHub.sort[m]}`}
+            style={{ minHeight: 36, paddingHorizontal: spacing.md, justifyContent: 'center', borderRadius: radius.md, backgroundColor: on ? colors.surface : 'transparent', boxShadow: on ? colors.shadowRaised : undefined }}
+          >
+            <Text style={[typography.callout, { color: on ? colors.text : colors.textSecondary, fontWeight: on ? '700' : '400' }]}>{t.activitiesHub.sort[m]}</Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }

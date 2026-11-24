@@ -4,13 +4,14 @@ import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { COVER_RATIO } from '../../components/coverArt';
 import { AddCard, CoverCard, downloadNotebook, ItemMenu, NotebookCover, NotebookEditor, SortBar } from '../../components/notebooks';
+import { SortableGrid } from '../../components/SortableGrid';
 import { registerTabScreen, TabSwipe } from '../../components/TabSwipe';
 import { showUndo } from '../../components/UndoToast';
 import { Chip, IconButton, Screen, ScreenHeader, type IconName } from '../../components/ui';
 import { t } from '../../i18n';
 import { useEnvironment } from '../../state/environment';
 import { NO_SUBJECT, renameNotebook, restoreNotebook, setBookSort, sheetsOf, sortBooks, trashNotebook, useOrder, useSheets } from '../../state/notebooks';
-import { addSubject, moveSubject, setSubjectLook, subjectLook, useSubjectLooks, useSubjects, type NotebookLook } from '../../state/subjects';
+import { addSubject, reorderSubjects, setSubjectLook, subjectLook, useSubjectLooks, useSubjects, type NotebookLook } from '../../state/subjects';
 import { useTheme } from '../../theme';
 
 type QuickAction = { key: keyof typeof t.activitiesHub.actions; icon: IconName; brand?: boolean };
@@ -24,7 +25,7 @@ const ACTIONS: QuickAction[] = [
 /** Quaderno: una materia con i suoi fogli (dec. 143). `lastEdit`: ultima modifica tra i suoi fogli. */
 type Notebook = { subject: string; label: string; look: NotebookLook; count: number; lastEdit: number };
 
-/** Appunti: i quaderni, uno per materia, due per riga (dec. 141-145; prima Attività, dec. 109 e 135). */
+/** Appunti: i quaderni, uno per materia, due per riga (dec. 141-146; prima Attività, dec. 109 e 135). */
 function AttivitaScreen() {
   const { colors, spacing } = useTheme();
   const { active } = useEnvironment();
@@ -34,7 +35,7 @@ function AttivitaScreen() {
   const order = useOrder();
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [editing, setEditing] = useState<Notebook | 'new' | null>(null);
-  const [reordering, setReordering] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const [listW, setListW] = useState(0);
 
   const bookOf = (subject: string, label: string, look: NotebookLook): Notebook => {
@@ -45,8 +46,8 @@ function AttivitaScreen() {
     subjects.map((s, i) => bookOf(s, s, subjectLook(looks, s, i))),
     order.books,
   );
-  // I fogli senza materia restano raggiungibili in un quaderno a parte, sempre in fondo.
-  if (sheetsOf(sheets, NO_SUBJECT).length) books.push(bookOf(NO_SUBJECT, t.activitiesHub.otherSheets, { theme: 'polka', color: 'lilac' }));
+  // I fogli senza materia restano raggiungibili in un quaderno a parte, sempre in fondo (non si sposta).
+  const others = sheetsOf(sheets, NO_SUBJECT).length ? bookOf(NO_SUBJECT, t.activitiesHub.otherSheets, { theme: 'polka', color: 'lilac' }) : null;
 
   // Due quaderni per riga (dec. 143); su iPad e in orizzontale quattro.
   const gap = spacing.md;
@@ -60,15 +61,24 @@ function AttivitaScreen() {
     const ids = trashNotebook(b.subject, sheets);
     showUndo(t.trash.bookTrashed(b.label), () => restoreNotebook(b.subject, ids));
   };
-  const toggleReorder = () => {
-    if (!reordering) setBookSort('custom');
-    setReordering(!reordering);
-  };
-  const menuBook = books.find((b) => b.subject === menuFor);
+  const card = (b: Notebook, drag?: Parameters<typeof CoverCard>[0]['drag']) => (
+    <CoverCard
+      width={bookW}
+      height={bookH}
+      label={b.label}
+      caption={b.count ? t.activitiesHub.sheetCount(b.count) : t.activitiesHub.emptyBook}
+      onOpen={() => open(b)}
+      onMenu={() => setMenuFor(b.subject)}
+      drag={drag}
+    >
+      <NotebookCover look={b.look} name={b.label} width={bookW} height={bookH} />
+    </CoverCard>
+  );
+  const menuBook = others?.subject === menuFor ? others : books.find((b) => b.subject === menuFor);
 
   return (
     <View style={{ flex: 1 }}>
-      <Screen>
+      <Screen scrollEnabled={!dragging}>
         <ScreenHeader
           title={t.tabs.activities}
           subtitle={active.name}
@@ -91,43 +101,29 @@ function AttivitaScreen() {
           ))}
         </ScrollView>
 
-        <SortBar
-          value={order.books}
-          onChange={(m) => {
-            setBookSort(m);
-            if (m !== 'custom') setReordering(false);
-          }}
-          reordering={reordering}
-          onReorder={toggleReorder}
-        />
+        <SortBar value={order.books} onChange={setBookSort} />
 
-        <View onLayout={(e) => setListW(e.nativeEvent.layout.width)} style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: gap, rowGap: spacing.lg }}>
+        {/* Tenendo premuto un quaderno lo si trascina in un altro posto (dec. 146). */}
+        <View onLayout={(e) => setListW(e.nativeEvent.layout.width)}>
           {bookW > 0 && (
-            <>
-              {books.map((b) => {
-                const i = subjects.indexOf(b.subject);
-                const movable = reordering && b.subject !== NO_SUBJECT;
-                return (
-                  <CoverCard
-                    key={b.subject}
-                    width={bookW}
-                    height={bookH}
-                    label={b.label}
-                    caption={b.count ? t.activitiesHub.sheetCount(b.count) : t.activitiesHub.emptyBook}
-                    onOpen={() => open(b)}
-                    onMenu={() => setMenuFor(b.subject)}
-                    move={
-                      movable
-                        ? { prev: i > 0 ? () => moveSubject(b.subject, -1) : undefined, next: i < subjects.length - 1 ? () => moveSubject(b.subject, 1) : undefined }
-                        : undefined
-                    }
-                  >
-                    <NotebookCover look={b.look} name={b.label} width={bookW} height={bookH} />
-                  </CoverCard>
-                );
-              })}
-              {!reordering && <AddCard width={bookW} height={bookH} label={t.activitiesHub.newBook} onPress={() => setEditing('new')} />}
-            </>
+            <SortableGrid
+              items={books}
+              keyOf={(b) => b.subject}
+              cols={cols}
+              cellW={bookW}
+              cellH={bookH + 52}
+              colGap={gap}
+              rowGap={spacing.lg}
+              trailing={[...(others ? [card(others)] : []), <AddCard key="add" width={bookW} height={bookH} label={t.activitiesHub.newBook} onPress={() => setEditing('new')} />]}
+              renderItem={(b, drag) => card(b, drag)}
+              onReorder={(keys) => {
+                // Spostare a mano rende l'ordine visto quello scelto a mano.
+                reorderSubjects(keys);
+                setBookSort('custom');
+              }}
+              onLongPressRelease={(b) => setMenuFor(b.subject)}
+              onDragging={setDragging}
+            />
           )}
         </View>
         <View style={{ alignItems: 'flex-start' }}>

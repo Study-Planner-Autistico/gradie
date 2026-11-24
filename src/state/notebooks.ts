@@ -203,13 +203,8 @@ export function sortSheets(list: Sheet[], subject: string, pinned: string[], o: 
   return [...sorted.filter((s) => pinned.includes(s.id)), ...sorted.filter((s) => !pinned.includes(s.id))];
 }
 
-/** Sposta un foglio di un posto dentro il suo gruppo (fissati o no); `shown` è l'ordine mostrato ora. */
-export function moveSheet(subject: string, shown: Sheet[], id: string, delta: -1 | 1, pinned: string[]) {
-  const ids = shown.map((s) => s.id);
-  const i = ids.indexOf(id);
-  const j = i + delta;
-  if (i < 0 || j < 0 || j >= ids.length || pinned.includes(ids[i]) !== pinned.includes(ids[j])) return;
-  [ids[i], ids[j]] = [ids[j], ids[i]];
+/** Nuovo ordine dei fogli del quaderno dopo un trascinamento (dec. 146): diventa l'ordine a mano. */
+export function setSheetOrder(subject: string, ids: string[]) {
   setOrder({ sheets: 'custom', sheetOrder: { ...order.sheetOrder, [key(subject)]: ids } });
 }
 

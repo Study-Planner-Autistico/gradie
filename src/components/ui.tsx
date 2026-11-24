@@ -30,7 +30,8 @@ export type TextInputRef = ComponentRef<typeof TextInput>;
 
 /** Contenitore schermata: sfondo surface.sunken, margini 16, spazio per la tab bar. */
 /** Schermata con scorrimento. `header` resta fisso in alto, fuori dallo scorrimento. */
-export function Screen({ children, withTabBar = true, header }: { children: ReactNode; withTabBar?: boolean; header?: ReactNode }) {
+/** `scrollEnabled`: false mentre si trascina un elemento (dec. 146). */
+export function Screen({ children, withTabBar = true, header, scrollEnabled = true }: { children: ReactNode; withTabBar?: boolean; header?: ReactNode; scrollEnabled?: boolean }) {
   const { colors, spacing, layout } = useTheme();
   const tabScroll = useTabScroll();
   const scrollY = useRef(new Animated.Value(tabScroll.initialY)).current;
@@ -57,6 +58,7 @@ export function Screen({ children, withTabBar = true, header }: { children: Reac
           listener: (e: { nativeEvent: { contentOffset: { y: number } } }) => tabScroll.record(e.nativeEvent.contentOffset.y),
         })}
         scrollEventThrottle={16}
+        scrollEnabled={scrollEnabled}
         contentOffset={tabScroll.contentOffset}
         ref={tabScroll.ref}
         contentInsetAdjustmentBehavior="automatic"

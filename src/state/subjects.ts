@@ -70,15 +70,11 @@ function freezeLooks() {
   });
 }
 
-/** Sposta il quaderno di un posto prima (-1) o dopo (+1) nell'ordine scelto a mano (dec. 145). */
-export function moveSubject(name: string, delta: -1 | 1) {
-  const i = subjects.findIndex((s) => same(s, name));
-  const j = i + delta;
-  if (i < 0 || j < 0 || j >= subjects.length) return;
+/** Nuovo ordine dei quaderni dopo un trascinamento (dec. 146); le materie non in `names` restano in fondo. */
+export function reorderSubjects(names: string[]) {
   freezeLooks();
-  const next = [...subjects];
-  [next[i], next[j]] = [next[j], next[i]];
-  subjects = next;
+  const listed = names.map((n) => subjects.find((s) => same(s, n))).filter((s): s is string => !!s);
+  subjects = [...listed, ...subjects.filter((s) => !listed.includes(s))];
   emit();
 }
 
