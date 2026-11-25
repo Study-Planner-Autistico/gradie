@@ -19,6 +19,7 @@ import { covers, fonts, useTheme } from '../../theme';
 import { registerTabScreen, TabSwipe } from '../../components/TabSwipe';
 import { Icon } from '../../components/icons';
 import { unreadTotal, useThreads } from '../../state/messages';
+import { useProfile } from '../../state/profile';
 
 /** Ordine di importanza per scegliere l'impegno di domani. */
 const RANK: Partial<Record<DemoAgendaItem['kind'], number>> = { activity: 0, holiday: 1, official: 2, appointment: 3 };
@@ -74,6 +75,7 @@ function HomeScreen() {
         </View>
 
         <ResumeRow />
+        <Greeting />
         <TodayCard items={schedule} tomorrow={tomorrow} />
         <Deadlines items={deadlines} />
         <RecentBooks />
@@ -195,6 +197,23 @@ function ResumeRow() {
 }
 
 /** Riquadro in evidenza: impegni di oggi come un orario, con quello in corso evidenziato; sotto l'impegno di domani. */
+/**
+ * Saluto sopra "Oggi" (dec. 199), al centro, con il solo nome dell'account: buongiorno fino a mezzogiorno,
+ * buon pomeriggio dalle 12, buonasera dalle 19 (e di notte, fino alle 5). Cambia da solo con l'ora.
+ */
+function Greeting() {
+  const { colors, spacing } = useTheme();
+  const { firstName } = useProfile();
+  const h = Math.floor(useMinutesNow() / 60);
+  const g = h >= 19 || h < 5 ? t.greeting.evening : h >= 12 ? t.greeting.afternoon : t.greeting.morning;
+  const name = firstName.trim();
+  return (
+    <Text accessibilityRole="header" style={{ fontFamily: fonts.heading, fontSize: 24, lineHeight: 30, textAlign: 'center', color: colors.text, marginBottom: spacing.sm }}>
+      {name ? `${g}, ${name}` : g}
+    </Text>
+  );
+}
+
 function TodayCard({ items, tomorrow }: { items: DemoAgendaItem[]; tomorrow?: DemoAgendaItem }) {
   const { colors, typography, spacing, radius } = useTheme();
   const nowMin = useMinutesNow();
