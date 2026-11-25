@@ -12,3 +12,13 @@ export async function listCalendars(): Promise<DeviceCalendar[] | null> {
 export async function readEvents(_ids: string[]): Promise<AgendaItem[]> {
   return [];
 }
+
+export type CalendarPermission = 'granted' | 'denied' | 'undetermined' | 'unavailable';
+
+export async function calendarPermission(): Promise<CalendarPermission> {
+  return 'unavailable';
+}
+
+export async function askCalendarPermission(): Promise<CalendarPermission> {
+  return 'unavailable';
+}

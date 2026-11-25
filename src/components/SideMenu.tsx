@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Animated, Easing, PanResponder, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,9 +13,10 @@ import { Chip } from './ui';
 import { Icon, type IconName } from './icons';
 
 /** Pagine del menu: moduli ancora da progettare (dec. 124), si definiranno più avanti. Impostazioni stanno in fondo (dec. 128). */
-const ITEMS: { label: string; icon: IconName }[] = [
+const ITEMS: { label: string; icon: IconName; href?: '/registro-voti' }[] = [
   { get label() { return t.menu.materials; }, icon: 'folder' },
-  { get label() { return t.menu.grades; }, icon: 'chart' },
+  // Registro voti (dec. 195): la prima voce già pronta.
+  { get label() { return t.menu.grades; }, icon: 'chart', href: '/registro-voti' },
   { get label() { return t.menu.groups; }, icon: 'users' },
 ];
 
@@ -113,7 +115,7 @@ function MenuPanel({ open }: { open: boolean }) {
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.md, gap: spacing.xxs }}>
         {ITEMS.map((item) => (
-          <MenuItem key={item.label} label={item.label} icon={item.icon} />
+          <MenuItem key={item.label} label={item.label} icon={item.icon} href={item.href} />
         ))}
       </ScrollView>
 
@@ -126,13 +128,18 @@ function MenuPanel({ open }: { open: boolean }) {
 }
 
 /** Voce del menu: icona a tratto arrotondato senza sfondo, testo leggero (dec. 128). */
-function MenuItem({ label, icon }: { label: string; icon: IconName }) {
+function MenuItem({ label, icon, href }: { label: string; icon: IconName; href?: '/registro-voti' }) {
   const { colors, typography, spacing, radius } = useTheme();
   return (
     <Pressable
-      onPress={tap}
+      onPress={() => {
+        tap();
+        if (!href) return;
+        setMenuOpen(false);
+        router.push(href);
+      }}
       accessibilityRole="button"
-      accessibilityHint={t.menu.soon}
+      accessibilityHint={href ? undefined : t.menu.soon}
       style={({ pressed }) => ({
         flexDirection: 'row',
         alignItems: 'center',
@@ -145,7 +152,7 @@ function MenuItem({ label, icon }: { label: string; icon: IconName }) {
     >
       <Icon name={icon} size={22} color={colors.text} />
       <Text style={[typography.body, { fontSize: 17, color: colors.text, flex: 1 }]}>{label}</Text>
-      <Chip variant="muted" label={t.menu.soon} />
+      {href ? <Icon name="chevron" size={18} color={colors.textTertiary} /> : <Chip variant="muted" label={t.menu.soon} />}
     </Pressable>
   );
 }

@@ -9,7 +9,8 @@ import { Coin } from '../../components/Coin';
 import { useCoins } from '../../state/coins';
 import { Flag } from '../../components/Flag';
 import { Button, Chip } from '../../components/ui';
-import { demoCountries, demoGrades, demoMe } from '../../data/demo';
+import { demoCountries, demoMe } from '../../data/demo';
+import { formatAvg, useGradeBook } from '../../state/grades';
 import { friendsOf, useFriends } from '../../state/friends';
 import { locale, t } from '../../i18n';
 import { missingSteps, myTag, useProfile, type InterestId, type ProfileState } from '../../state/profile';
@@ -196,18 +197,29 @@ function CompleteCard({ steps }: { steps: number }) {
 function Overview({ bio, interests }: { bio: string; interests: InterestId[] }) {
   const { colors, typography, spacing } = useTheme();
   const edit = () => router.push('/modifica-profilo');
+  const grades = useGradeBook();
   return (
     <View style={{ gap: spacing.lg }}>
       <Text style={[typography.label, { color: colors.textTertiary }]}>{t.profile.overview}</Text>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+      {/* Un tocco apre il Registro voti, lo stesso del menu laterale (dec. 195). */}
+      <Pressable
+        onPress={() => {
+          tap();
+          router.push('/registro-voti');
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={`${formatAvg(grades.average)} ${t.profile.average}, ${t.menu.grades}`}
+        style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.md, opacity: pressed ? 0.6 : 1 })}
+      >
         <Icon name="chart" size={28} color={colors.accent} />
         <Text style={[typography.title2, { color: colors.text }]}>
-          {demoGrades.average} <Text style={[typography.body, { color: colors.textSecondary }]}>{t.profile.average}</Text>
+          {formatAvg(grades.average)} <Text style={[typography.body, { color: colors.textSecondary }]}>{t.profile.average}</Text>
         </Text>
         <View style={{ flex: 1 }} />
         <Chip variant="muted" icon="lock-closed" label={t.profile.onlyYou} />
-      </View>
+        <Icon name="chevron" size={18} color={colors.textTertiary} />
+      </Pressable>
 
       <Pressable onPress={edit} accessibilityRole="button" accessibilityLabel={t.profile.bio} style={({ pressed }) => ({ gap: spacing.xs, opacity: pressed ? 0.6 : 1 })}>
         <Text style={[typography.headline, { color: colors.text }]}>{t.profile.bio}</Text>

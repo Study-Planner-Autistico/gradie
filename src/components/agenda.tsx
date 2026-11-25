@@ -93,12 +93,16 @@ function EventCard({ item, onPress }: { item: DemoAgendaItem; onPress?: () => vo
       </Text>
     </View>
   );
-  // Un tocco apre la modifica (dec. 186).
+  // Un tocco non fa niente; tenendo premuto si apre la modifica (dec. 195, prima bastava un tocco, dec. 186).
   return (
     <Pressable
-      onPress={onPress}
+      onLongPress={onPress}
+      delayLongPress={350}
       disabled={!onPress}
       accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityHint={onPress ? t.agenda.holdToEdit : undefined}
+      accessibilityActions={onPress ? [{ name: 'activate' }, { name: 'longpress' }] : undefined}
+      onAccessibilityAction={onPress ? () => onPress() : undefined}
       accessibilityLabel={[t.agenda.kind[item.kind], item.title, time, item.meta, item.locked && t.agenda.teacherTimetable].filter(Boolean).join(', ')}
       style={({ pressed }) => ({ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, backgroundColor: colors.surface, borderRadius: radius.xl, opacity: pressed ? 0.75 : 1 })}
     >
@@ -120,11 +124,11 @@ function EventCard({ item, onPress }: { item: DemoAgendaItem; onPress?: () => vo
 const RAIL = 72;
 const minutes = (hhmm: string) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
 
-/** Ora attuale, aggiornata ogni minuto, per far avanzare la linea del tempo. */
+/** Ora attuale, aggiornata ogni 30 secondi, per far avanzare la linea del tempo e "Ora". */
 function useNow() {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 60000);
+    const id = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(id);
   }, []);
   return now;
@@ -139,6 +143,7 @@ export function DayTimeline<T extends DemoAgendaItem>({ items, day, onOpen }: { 
   const { colors, typography, spacing, radius } = useTheme();
   const now = useNow();
   const [centers, setCenters] = useState<number[]>([]);
+  const [heights, setHeights] = useState<number[]>([]);
   const timed = items.filter((i) => i.start && i.end).sort((a, b) => a.start!.localeCompare(b.start!));
   const starts = timed.map((i) => minutes(i.start!));
 
@@ -171,10 +176,14 @@ export function DayTimeline<T extends DemoAgendaItem>({ items, day, onOpen }: { 
       )}
       {timed.map((item, i) => {
         const reached = nowMin >= starts[i];
+        // Impegno in corso: al posto dell'orario la colonna di pallini verdi con "Ora" (dec. 195).
+        const endMin = minutes(item.end!);
+        const live = reached && nowMin < endMin;
         return (
           <View
             key={item.id}
-            style={[styles.row, { gap: spacing.sm }]}
+            // In corso: la riga si allunga, così la fila di pallini e "Ora" hanno spazio per scendere.
+            style={[styles.row, { gap: spacing.sm }, live && { minHeight: 132, alignItems: 'stretch' }]}
             onLayout={(e) => {
               const { y, height } = e.nativeEvent.layout;
               setCenters((c) => {
@@ -182,8 +191,16 @@ export function DayTimeline<T extends DemoAgendaItem>({ items, day, onOpen }: { 
                 n[i] = y + height / 2;
                 return n;
               });
+              setHeights((h) => {
+                const n = [...h];
+                n[i] = height;
+                return n;
+              });
             }}
           >
+            {live && heights[i] ? (
+              <NowRail height={heights[i]} progress={(nowMin - starts[i]) / (endMin - starts[i])} />
+            ) : (
             <View style={{ width: RAIL, alignItems: 'center' }}>
               <View
                 style={{
@@ -198,10 +215,48 @@ export function DayTimeline<T extends DemoAgendaItem>({ items, day, onOpen }: { 
                 <Text style={[typography.time, { color: reached ? colors.onAccent : colors.textSecondary }]} numberOfLines={1}>{item.start}</Text>
               </View>
             </View>
+            )}
             <EventCard item={item} onPress={onOpen ? () => onOpen(item) : undefined} />
           </View>
         );
       })}
+    </View>
+  );
+}
+
+const NOW_GREEN = '#16A34A';
+const DOT = 6;
+const DOT_STEP = 11;
+const PILL_H = 24;
+
+/**
+ * Impegno in corso (dec. 195): nella colonna dell'orario, una fila di pallini verdi lunga quanto la card e la
+ * pillola "Ora" che scende col passare del tempo. I pallini sopra (tempo passato) si spengono, quelli sotto
+ * (tempo che resta) diminuiscono fino alla fine dell'impegno.
+ */
+function NowRail({ height, progress }: { height: number; progress: number }) {
+  const { typography, radius, colors } = useTheme();
+  const p = Math.max(0, Math.min(1, progress));
+  const pillTop = p * (height - PILL_H);
+  const n = Math.max(2, Math.floor((height - DOT) / DOT_STEP) + 1);
+  const step = n > 1 ? (height - DOT) / (n - 1) : 0;
+  return (
+    <View style={{ width: RAIL, height, alignItems: 'center' }} accessible accessibilityLabel={t.agenda.now}>
+      {Array.from({ length: n }, (_, k) => {
+        const y = k * step;
+        // Sotto la pillola non si disegna niente.
+        if (y + DOT > pillTop - 2 && y < pillTop + PILL_H + 2) return null;
+        const passed = y < pillTop;
+        return (
+          <View
+            key={k}
+            style={{ position: 'absolute', top: y, width: DOT, height: DOT, borderRadius: DOT / 2, backgroundColor: passed ? colors.border : NOW_GREEN }}
+          />
+        );
+      })}
+      <View style={{ position: 'absolute', top: pillTop, height: PILL_H, paddingHorizontal: 12, borderRadius: radius.pill, justifyContent: 'center', backgroundColor: NOW_GREEN }}>
+        <Text style={[typography.caption, { color: '#fff', fontWeight: '700' }]}>{t.agenda.now}</Text>
+      </View>
     </View>
   );
 }

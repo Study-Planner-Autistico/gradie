@@ -1,5 +1,6 @@
 // Creazione e modifica degli impegni dell'Agenda (dec. 186): lezione (anche ogni settimana), scadenza, blocco di studio.
 // Riepilogo delle cose senza orario di un giorno e importazione dai calendari del telefono.
+import { router } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import { locale, t } from '../i18n';
@@ -444,7 +445,19 @@ export function ImportSheet({ onClose, onDone }: { onClose: () => void; onDone: 
       <Text style={[typography.body, { color: colors.textSecondary }]}>{I.loading}</Text>
     </View>
   );
-  else if (cals === null) body = <Text style={[typography.body, { color: colors.danger }]}>{I.denied}</Text>;
+  else if (cals === null)
+    body = (
+      <View style={{ gap: spacing.md }}>
+        <Text style={[typography.body, { color: colors.danger }]}>{I.denied}</Text>
+        <Button
+          title={I.openSecurity}
+          onPress={() => {
+            onClose();
+            router.push('/sicurezza');
+          }}
+        />
+      </View>
+    );
   else if (cals.length === 0) body = <Text style={[typography.body, { color: colors.textSecondary }]}>{I.none}</Text>;
   else
     body = cals.map((c) => {

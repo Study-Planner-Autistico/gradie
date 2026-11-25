@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { CalendarSheet, DayStrip, DayTimeline } from '../../components/agenda';
 import { COVER_SWATCH } from '../../components/coverArt';
@@ -11,6 +11,7 @@ import { subjectLook, useSubjectLooks, useSubjects } from '../../state/subjects'
 import { useTheme } from '../../theme';
 import { registerTabScreen, TabSwipe } from '../../components/TabSwipe';
 import { Icon } from '../../components/icons';
+import { enableReminders, syncReminders, useReminderPermission } from '../../state/reminders';
 
 /** Agenda (modulo 02 §5 AG-01): sette giorni con quello scelto al centro e gli eventi in verticale (dec. 151). */
 function AgendaScreen() {
@@ -23,6 +24,11 @@ function AgendaScreen() {
   const [untimedOpen, setUntimedOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const agenda = useAgenda();
+  // Promemoria (dec. 195): con il permesso, una notifica all'inizio di ogni impegno; si riprogrammano a ogni modifica.
+  const reminders = useReminderPermission();
+  useEffect(() => {
+    syncReminders(agenda).catch(() => {});
+  }, [agenda, reminders]);
   // Impegni salvati (dec. 186): sulla linea quelli con orario; quelli senza in un riepilogo del giorno.
   const allOf = (d: Date) => occurrencesOn(agenda, ymd(d));
   const itemsOf = (d: Date) => allOf(d).filter((i) => i.start);
@@ -108,6 +114,7 @@ function AgendaScreen() {
         </Text>
       </View>
       <DayStrip selected={selected} onSelect={setSelected} dotsFor={dotsFor} />
+      {(reminders === 'undetermined' || reminders === 'denied') && <ReminderCard denied={reminders === 'denied'} />}
       {/* Scadenze e impegni senza orario del giorno: un riepilogo a parte, aperto da qui (dec. 186). */}
       {untimed.length > 0 && (
         <Pressable
@@ -154,6 +161,37 @@ function AgendaScreen() {
     )}
     {importOpen && <ImportSheet onClose={() => setImportOpen(false)} onDone={() => setImportOpen(false)} />}
     </>
+  );
+}
+
+/**
+ * Invito ai promemoria (dec. 195): alto come "N senza orario" ma largo tutta la riga, color pesca con la campanella e
+ * il bottone "Attiva" che chiede il permesso delle notifiche. Se era stato negato, il bottone apre le Impostazioni del telefono.
+ */
+function ReminderCard({ denied }: { denied: boolean }) {
+  const { typography, spacing, radius, isDark } = useTheme();
+  const R = t.agenda.reminders;
+  const bg = isDark ? '#3A2418' : '#FFE8D9';
+  const fg = isDark ? '#FFC9A3' : '#5A2D0C';
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: 40, paddingLeft: spacing.md, paddingRight: 4, borderRadius: radius.pill, backgroundColor: bg }}>
+      <Icon name="bell" size={18} color={isDark ? '#FF9F5A' : '#E8641B'} />
+      <Text numberOfLines={1} style={[typography.callout, { flex: 1, color: fg, fontWeight: '600' }]}>
+        {R.title}
+        <Text style={{ fontWeight: '400' }}>{` · ${R.detail}`}</Text>
+      </Text>
+      <Pressable
+        onPress={() => {
+          tap();
+          enableReminders();
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={`${R.title}: ${R.detail}`}
+        style={({ pressed }) => ({ height: 32, paddingHorizontal: spacing.md, borderRadius: radius.pill, justifyContent: 'center', backgroundColor: fg, opacity: pressed ? 0.75 : 1 })}
+      >
+        <Text style={[typography.callout, { color: bg, fontWeight: '700' }]}>{denied ? R.openSettings : R.enable}</Text>
+      </Pressable>
+    </View>
   );
 }
 

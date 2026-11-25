@@ -39,3 +39,23 @@ export async function readEvents(calendarIds: string[]): Promise<AgendaItem[]> {
     } satisfies AgendaItem;
   });
 }
+
+export type CalendarPermission = 'granted' | 'denied' | 'undetermined' | 'unavailable';
+
+/** Stato del permesso, per la riga Calendario in Sicurezza (dec. 195). */
+export async function calendarPermission(): Promise<CalendarPermission> {
+  try {
+    const p = await Calendar.getCalendarPermissionsAsync();
+    return p.granted ? 'granted' : p.canAskAgain ? 'undetermined' : 'denied';
+  } catch {
+    return 'unavailable';
+  }
+}
+
+/** Chiede il permesso; se è già stato negato si cambia solo dalle Impostazioni del telefono. */
+export async function askCalendarPermission(): Promise<CalendarPermission> {
+  const now = await calendarPermission();
+  if (now !== 'undetermined') return now;
+  const p = await Calendar.requestCalendarPermissionsAsync();
+  return p.granted ? 'granted' : p.canAskAgain ? 'undetermined' : 'denied';
+}
