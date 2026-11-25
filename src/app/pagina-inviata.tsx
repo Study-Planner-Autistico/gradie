@@ -43,10 +43,6 @@ export default function PaginaInviata() {
           </Text>
         </View>
       </View>
-      <View style={{ flexDirection: 'row', gap: spacing.sm, marginHorizontal: spacing.lg, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.informationBg }}>
-        <Icon name="lock-closed-outline" size={18} color={colors.information} />
-        <Text style={[typography.caption, { flex: 1, color: colors.information }]}>{T.copyNote}</Text>
-      </View>
       <View style={{ flex: 1, padding: spacing.lg }} onLayout={(e) => setBox({ w: e.nativeEvent.layout.width - spacing.lg * 2, h: e.nativeEvent.layout.height - spacing.lg * 2 })}>
         {pw > 0 && (
           <View style={{ alignSelf: 'center', width: pw, height: ph, borderRadius: radius.lg, overflow: 'hidden', borderWidth: 1, borderColor: colors.border, backgroundColor: '#FFFFFF' }}>

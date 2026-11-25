@@ -5,6 +5,8 @@ import { Avatar } from '../../components/avatar/Avatar';
 import { AvatarPlaceholder } from '../../components/avatar/Placeholder';
 import { tap } from '../../components/haptics';
 import { Mascot } from '../../components/Mascot';
+import { Coin } from '../../components/Coin';
+import { useCoins } from '../../state/coins';
 import { Flag } from '../../components/Flag';
 import { Button, Chip } from '../../components/ui';
 import { demoCountries, demoGrades, demoMe } from '../../data/demo';
@@ -63,6 +65,7 @@ function Header({ topInset, avatar, name }: { topInset: number; avatar: ProfileS
   const { colors, typography, spacing, layout } = useTheme();
   const bg = avatar ? avatar.bg : colors.selected;
   const fg = avatar ? avatarPalette.ink : colors.text;
+  const coins = useCoins();
   return (
     <View style={{ backgroundColor: bg, paddingTop: topInset + spacing.md }}>
       {/* Il colore continua sopra: tirando giù la pagina (rimbalzo di iOS) non compare lo sfondo grigio. */}
@@ -71,6 +74,15 @@ function Header({ topInset, avatar, name }: { topInset: number; avatar: ProfileS
         <Text accessibilityRole="header" style={[typography.title1, { color: fg, flex: 1 }]} numberOfLines={1}>
           {name}
         </Text>
+        {/* Monete (dec. 193): piccola moneta col saldo, accanto alle impostazioni. */}
+        <View
+          accessible
+          accessibilityLabel={t.profile.coins(coins)}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, height: 34, paddingLeft: 6, paddingRight: 12, marginRight: 4, borderRadius: 17, backgroundColor: 'rgba(255,255,255,0.7)' }}
+        >
+          <Coin size={22} />
+          <Text style={[typography.headline, { color: fg, fontVariant: ['tabular-nums'] }]}>{coins}</Text>
+        </View>
         <Pressable
           onPress={() => {
             tap();

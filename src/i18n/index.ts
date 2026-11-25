@@ -406,6 +406,7 @@ const it = {
     },
     save: 'Salva',
     settingsTitle: 'Impostazioni',
+    coins: (n: number) => (n === 1 ? '1 moneta' : `${n} monete`),
     editAvatar: 'Modifica il tuo avatar',
   },
   avatar: {
@@ -1257,6 +1258,7 @@ const en: Dict = {
     },
     save: 'Save',
     settingsTitle: 'Settings',
+    coins: (n: number) => (n === 1 ? '1 coin' : `${n} coins`),
     editAvatar: 'Edit your avatar',
   },
   avatar: {
