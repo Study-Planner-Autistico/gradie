@@ -48,7 +48,7 @@ function useMinutesNow() {
 }
 
 /**
- * Home (dec. 120–124). Dall'alto: menu, notifiche e messaggi (fissi); giorno e data; "Riprendi";
+ * Home (dec. 120–124). Dall'alto: menu, notifiche e messaggi (fissi); giorno e data; saluto con il nome e "Riprendi" (dec. 199, 200);
  * riquadro "Oggi" come un orario; prossime scadenze; appunti delle materie di oggi; la tua classe.
  */
 function HomeScreen() {
@@ -74,8 +74,8 @@ function HomeScreen() {
           <DayTitle date={now} />
         </View>
 
-        <ResumeRow />
         <Greeting />
+        <ResumeRow />
         <TodayCard items={schedule} tomorrow={tomorrow} />
         <Deadlines items={deadlines} />
         <RecentBooks />
