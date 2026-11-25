@@ -30,8 +30,9 @@ export type DemoEnvironment = { id: string; name: string; detail: string; kind: 
 
 /** Ambienti = istituti (dec. 62). */
 export const demoEnvironments: DemoEnvironment[] = [
-  { id: 'env-1', name: 'Liceo Scientifico G. Galilei', detail: '4ª B · Scientifico', kind: 'superiori' },
+  // L'università viene prima: è l'ambiente di partenza (dec. 196).
   { id: 'env-2', name: 'Università di Bologna', detail: 'Ingegneria Informatica · 1° anno', kind: 'universita' },
+  { id: 'env-1', name: 'Liceo Scientifico G. Galilei', detail: '4ª B · Scientifico', kind: 'superiori' },
 ];
 
 export type DemoAgendaItem = {
@@ -50,16 +51,17 @@ export type DemoAgendaItem = {
 };
 
 export const demoAgenda: DemoAgendaItem[] = [
-  { id: 'a1', kind: 'lesson', title: 'Matematica', subject: 'Matematica', start: '08:00', end: '09:00', meta: 'Aula 12', locked: true, dayOffset: 0 },
-  { id: 'a2', kind: 'lesson', title: 'Fisica', subject: 'Fisica', start: '09:00', end: '10:00', meta: 'Lab. 2', dayOffset: 0 },
-  { id: 'a3', kind: 'official', title: 'Assemblea di classe', start: '11:15', end: '12:00', dayOffset: 0 },
-  { id: 'a9', kind: 'activity', title: 'Esercizi di Fisica pag. 48', subject: 'Fisica', meta: 'Compito', dayOffset: 0 },
+  // Università di Bologna, Ingegneria Informatica (dec. 196).
+  { id: 'a1', kind: 'lesson', title: 'Analisi I', subject: 'Analisi I', start: '09:00', end: '11:00', meta: 'Aula 0.4', locked: true, dayOffset: 0 },
+  { id: 'a2', kind: 'lesson', title: 'Fisica I', subject: 'Fisica I', start: '11:00', end: '13:00', meta: 'Aula Magna', dayOffset: 0 },
+  { id: 'a3', kind: 'official', title: 'Ricevimento di Geometria', start: '14:30', end: '15:00', meta: 'Studio 3.12', dayOffset: 0 },
+  { id: 'a9', kind: 'activity', title: 'Esercizi di Fisica I, foglio 3', subject: 'Fisica I', meta: 'Compito', dayOffset: 0 },
   { id: 'a4', kind: 'appointment', title: 'Allenamento pallavolo', start: '17:30', end: '19:00', dayOffset: 0 },
-  { id: 'a5', kind: 'activity', title: 'Verifica di Storia', subject: 'Storia', meta: 'Verifica', dayOffset: 1 },
-  { id: 'a6', kind: 'lesson', title: 'Inglese', subject: 'Inglese', start: '08:00', end: '10:00', meta: 'Aula 12', locked: true, dayOffset: 1 },
-  { id: 'a7', kind: 'activity', title: 'Esercizi pag. 112', subject: 'Matematica', meta: 'Compito', dayOffset: 2 },
-  { id: 'a10', kind: 'activity', title: 'Ricerca su Leopardi', subject: 'Italiano', meta: 'Compito', dayOffset: 5 },
-  { id: 'a8', kind: 'holiday', title: 'Ponte dell’Immacolata', meta: 'Chiusura istituto', dayOffset: 4 },
+  { id: 'a5', kind: 'activity', title: 'Prova parziale di Geometria', subject: 'Geometria', meta: 'Esame', dayOffset: 1 },
+  { id: 'a6', kind: 'lesson', title: 'Programmazione', subject: 'Programmazione', start: '09:00', end: '12:00', meta: 'Lab. 2', locked: true, dayOffset: 1 },
+  { id: 'a7', kind: 'activity', title: 'Esercizi di Analisi I, cap. 4', subject: 'Analisi I', meta: 'Compito', dayOffset: 2 },
+  { id: 'a10', kind: 'activity', title: 'Progetto di Programmazione', subject: 'Programmazione', meta: 'Consegna', dayOffset: 5 },
+  { id: 'a8', kind: 'holiday', title: 'Ponte dell’Immacolata', meta: 'Chiusura ateneo', dayOffset: 4 },
 ];
 
 /** Classe (superiori) o corso (università) dell'ambiente, per il riquadro in fondo alla Home (dec. 124). */
@@ -156,9 +158,9 @@ export const demoGrades = { average: '7,8', count: 14 };
 export type DemoNote = { id: string; title: string; subject: string; edited: string; tint: TintName; cover?: string | null };
 
 export const demoNotes: DemoNote[] = [
-  { id: 'n1', title: 'Derivate e limiti', subject: 'Matematica', edited: 'Oggi, 09:12', tint: 'lesson', cover: '#2F5DA8' },
-  { id: 'n2', title: 'La Rivoluzione francese', subject: 'Storia', edited: 'Ieri', tint: 'activity', cover: '#B23A48' },
-  { id: 'n3', title: 'Moto rettilineo uniforme', subject: 'Fisica', edited: '18 nov', tint: 'official', cover: '#2E6B4F' },
-  { id: 'n4', title: 'Vettori e forze', subject: 'Fisica', edited: '15 nov', tint: 'official', cover: '#C77A2E' },
-  { id: 'n5', title: 'Funzioni esponenziali', subject: 'Matematica', edited: '12 nov', tint: 'lesson', cover: '#5B4B9A' },
+  { id: 'n1', title: 'Derivate e limiti', subject: 'Analisi I', edited: 'Oggi, 09:12', tint: 'lesson', cover: '#2F5DA8' },
+  { id: 'n2', title: 'Puntatori e memoria', subject: 'Programmazione', edited: 'Ieri', tint: 'activity', cover: '#B23A48' },
+  { id: 'n3', title: 'Moto rettilineo uniforme', subject: 'Fisica I', edited: '18 nov', tint: 'official', cover: '#2E6B4F' },
+  { id: 'n4', title: 'Vettori e forze', subject: 'Fisica I', edited: '15 nov', tint: 'official', cover: '#C77A2E' },
+  { id: 'n5', title: 'Funzioni esponenziali', subject: 'Analisi I', edited: '12 nov', tint: 'lesson', cover: '#5B4B9A' },
 ];

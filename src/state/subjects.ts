@@ -3,8 +3,9 @@ import { useSyncExternalStore } from 'react';
 import { demoSubjects } from '../data/demo';
 import { COVER_COLORS, COVER_THEMES, type CoverColor, type CoverTheme } from '../components/coverArt';
 
-// Si parte dalle materie dell'onboarding; finché l'onboarding è disattivato (dec. 130) quelle predefinite delle superiori.
-let subjects: string[] = [...demoSubjects.superiori];
+// Si parte dalle materie dell'onboarding; finché l'onboarding è disattivato (dec. 130) quelle predefinite
+// dell'università, perché l'ambiente di partenza è l'Università di Bologna (dec. 196).
+let subjects: string[] = [...demoSubjects.universita];
 /** Copertina del quaderno: tema (fantasia) e colore (dec. 144). */
 export type NotebookLook = { theme: CoverTheme; color: CoverColor };
 /** Copertine scelte, per materia (chiave in minuscolo). */

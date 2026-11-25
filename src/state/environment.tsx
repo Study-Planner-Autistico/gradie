@@ -5,7 +5,8 @@ import { demoEnvironments, type DemoEnvironment } from '../data/demo';
 const Ctx = createContext<{ active: DemoEnvironment; setActive: (id: string) => void } | null>(null);
 
 export function EnvironmentProvider({ children }: { children: ReactNode }) {
-  const [activeId, setActiveId] = useState(demoEnvironments[0].id);
+  // All'apertura l'ambiente è l'Università di Bologna (dec. 196).
+  const [activeId, setActiveId] = useState('env-2');
   const active = demoEnvironments.find((e) => e.id === activeId) ?? demoEnvironments[0];
   return <Ctx.Provider value={{ active, setActive: setActiveId }}>{children}</Ctx.Provider>;
 }

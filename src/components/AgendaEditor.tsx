@@ -2,7 +2,7 @@
 // Riepilogo delle cose senza orario di un giorno e importazione dai calendari del telefono.
 import { router } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
 import { locale, t } from '../i18n';
 import {
   addDaysYmd,
@@ -98,8 +98,35 @@ function Pills<T extends string>({ value, options, onChange, label }: { value: T
 }
 
 /** Valore con – e + ai lati (giorni, orari): niente rotelle, si tocca e basta. */
-function Stepper({ label, value, onMinus, onPlus }: { label: string; value: string; onMinus: () => void; onPlus: () => void }) {
+/** "930" → 09:30, "15" → 15:00, "9.5" → 09:05, "21:30" → 21:30; null se non è un orario. */
+export function parseTime(s: string): string | null {
+  const t = s.trim().replace(/[.,h ]/g, ':');
+  let h: number;
+  let m: number;
+  if (t.includes(':')) {
+    const [a, b = '0'] = t.split(':');
+    if (!/^\d{1,2}$/.test(a) || !/^\d{0,2}$/.test(b)) return null;
+    h = Number(a);
+    m = Number(b || 0);
+  } else {
+    if (!/^\d{1,4}$/.test(t)) return null;
+    h = Number(t.length <= 2 ? t : t.slice(0, t.length - 2));
+    m = t.length <= 2 ? 0 : Number(t.slice(-2));
+  }
+  if (h > 23 || m > 59) return null;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+function Stepper({ label, value, onMinus, onPlus, onType }: { label: string; value: string; onMinus: () => void; onPlus: () => void; onType?: (hhmm: string) => void }) {
   const { colors, typography, radius, spacing } = useTheme();
+  // Orario scrivibile (dec. 196): toccando il valore si scrive con la tastiera; le frecce restano.
+  const [typing, setTyping] = useState(false);
+  const [draft, setDraft] = useState(value);
+  const commit = () => {
+    const v = parseTime(draft);
+    if (v && onType) onType(v);
+    setTyping(false);
+  };
   const btn = (icon: IconName, a11y: string, onPress: () => void) => (
     <Pressable
       onPress={() => {
@@ -118,9 +145,40 @@ function Stepper({ label, value, onMinus, onPlus }: { label: string; value: stri
       <Label>{label}</Label>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, padding: spacing.xs, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border }}>
         {btn('chevron-left', t.agenda.editor.earlier(label), onMinus)}
-        <Text style={[typography.headline, { flex: 1, textAlign: 'center', color: colors.text }]} numberOfLines={1} accessibilityLiveRegion="polite">
-          {value}
-        </Text>
+        {onType && typing ? (
+          <TextInput
+            value={draft}
+            onChangeText={setDraft}
+            autoFocus
+            selectTextOnFocus
+            keyboardType="numbers-and-punctuation"
+            returnKeyType="done"
+            maxLength={5}
+            onSubmitEditing={commit}
+            onBlur={commit}
+            accessibilityLabel={label}
+            style={[typography.headline, { flex: 1, minWidth: 0, textAlign: 'center', color: colors.text, padding: 0, height: 44 }]}
+          />
+        ) : onType ? (
+          <Pressable
+            onPress={() => {
+              tap();
+              setDraft(value);
+              setTyping(true);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={`${value}. ${t.agenda.editor.typeTime(label)}`}
+            style={({ pressed }) => ({ flex: 1, height: 44, justifyContent: 'center', borderRadius: radius.md, opacity: pressed ? 0.6 : 1 })}
+          >
+            <Text style={[typography.headline, { textAlign: 'center', color: colors.text, textDecorationLine: 'underline', textDecorationStyle: 'dotted', textDecorationColor: colors.textTertiary }]} numberOfLines={1} accessibilityLiveRegion="polite">
+              {value}
+            </Text>
+          </Pressable>
+        ) : (
+          <Text style={[typography.headline, { flex: 1, textAlign: 'center', color: colors.text }]} numberOfLines={1} accessibilityLiveRegion="polite">
+            {value}
+          </Text>
+        )}
         {btn('chevron-right', t.agenda.editor.later(label), onPlus)}
       </View>
     </View>
@@ -206,6 +264,17 @@ export function AgendaEditor({ target, onClose, onSaved, onImport }: { target: E
     } else setEnd(fromMin(Math.max(s + STEP, Math.min(23 * 60 + 59, e + d))));
   };
 
+  // Orario scritto a mano (dec. 196): l'inizio sposta anche la fine tenendo la durata; la fine resta dopo l'inizio.
+  const typeTime = (which: 'start' | 'end', hhmm: string) => {
+    const s = toMin(start);
+    const e = toMin(end);
+    const v = toMin(hhmm);
+    if (which === 'start') {
+      setStart(hhmm);
+      setEnd(fromMin(Math.min(23 * 60 + 59, v + (e - s))));
+    } else setEnd(fromMin(v > s ? v : Math.min(23 * 60 + 59, s + STEP)));
+  };
+
   // Valori finali dell'impegno.
   const kind: AgendaKind = type === 'other' ? editing!.kind : TYPE_KIND[type];
   const finalTitle = (type === 'lesson' ? subject || title.trim() : type === 'study' ? title.trim() || (subject ? E.studyOf(subject) : '') : title.trim()) || '';
@@ -261,19 +330,6 @@ export function AgendaEditor({ target, onClose, onSaved, onImport }: { target: E
       onClose={onClose}
       footer={
         <>
-          {conflicts.length > 0 && (
-            <View accessibilityLiveRegion="polite" style={{ flexDirection: 'row', gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.warningBg }}>
-              <Icon name="warning" size={18} color={colors.warning} />
-              <View style={{ flex: 1, gap: 2 }}>
-                <Text style={[typography.callout, { color: colors.warning, fontWeight: '700' }]}>{E.overlap}</Text>
-                {conflicts.map((c, k) => (
-                  <Text key={k} style={[typography.caption, { color: colors.warning }]}>
-                    {E.overlapItem(c.title, `${shortDay(c.date)} ${c.start}–${c.end}`)}
-                  </Text>
-                ))}
-              </View>
-            </View>
-          )}
           <Button title={conflicts.length ? E.saveAnyway : E.save} appearance={conflicts.length ? 'warning' : 'primary'} onPress={save} />
           {editing && isSeries && (
             <View style={{ flexDirection: 'row', gap: spacing.sm }}>
@@ -345,8 +401,23 @@ export function AgendaEditor({ target, onClose, onSaved, onImport }: { target: E
       {type === 'deadline' && <ToggleRow label={E.withTime} detail={E.withTimeDetail} value={timed} onChange={setTimed} />}
       {withTime && (
         <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-          <Stepper label={E.start} value={start} onMinus={() => shiftTime('start', -STEP)} onPlus={() => shiftTime('start', STEP)} />
-          <Stepper label={E.end} value={end} onMinus={() => shiftTime('end', -STEP)} onPlus={() => shiftTime('end', STEP)} />
+          <Stepper label={E.start} value={start} onMinus={() => shiftTime('start', -STEP)} onPlus={() => shiftTime('start', STEP)} onType={(v) => typeTime('start', v)} />
+          <Stepper label={E.end} value={end} onMinus={() => shiftTime('end', -STEP)} onPlus={() => shiftTime('end', STEP)} onType={(v) => typeTime('end', v)} />
+        </View>
+      )}
+      {/* "Si sovrappone a" (dec. 196): nel contenuto, sotto gli orari, non più fisso in basso sopra il contenuto che
+          ne copriva la vista. */}
+      {conflicts.length > 0 && (
+        <View accessibilityLiveRegion="polite" style={{ flexDirection: 'row', gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.warningBg }}>
+          <Icon name="warning" size={18} color={colors.warning} />
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={[typography.callout, { color: colors.warning, fontWeight: '700' }]}>{E.overlap}</Text>
+            {conflicts.map((c, k) => (
+              <Text key={k} style={[typography.caption, { color: colors.warning }]}>
+                {E.overlapItem(c.title, `${shortDay(c.date)} ${c.start}–${c.end}`)}
+              </Text>
+            ))}
+          </View>
         </View>
       )}
 
