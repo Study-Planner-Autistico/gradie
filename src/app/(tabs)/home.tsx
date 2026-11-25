@@ -18,6 +18,7 @@ import { subjectLook, useSubjectLooks, useSubjects } from '../../state/subjects'
 import { covers, fonts, useTheme } from '../../theme';
 import { registerTabScreen, TabSwipe } from '../../components/TabSwipe';
 import { Icon } from '../../components/icons';
+import { unreadTotal, useThreads } from '../../state/messages';
 
 /** Ordine di importanza per scegliere l'impegno di domani. */
 const RANK: Partial<Record<DemoAgendaItem['kind'], number>> = { activity: 0, holiday: 1, official: 2, appointment: 3 };
@@ -85,6 +86,7 @@ function HomeScreen() {
 /** In alto, senza bordi e fissi: menu e campanella a sinistra, messaggi a destra. Icone Hugeicons (dec. 124, 159). */
 function TopBar({ menuOpen, onMenu }: { menuOpen: boolean; onMenu: () => void }) {
   const { colors, layout, radius } = useTheme();
+  const unread = unreadTotal(useThreads());
   const btn = ({ pressed }: { pressed: boolean }) => ({
     width: layout.iconButton,
     height: layout.iconButton,
@@ -128,10 +130,18 @@ function TopBar({ menuOpen, onMenu }: { menuOpen: boolean; onMenu: () => void })
           router.push('/messaggi');
         }}
         accessibilityRole="button"
-        accessibilityLabel={t.a11y.messages}
+        accessibilityLabel={unread ? `${t.a11y.messages}, ${t.messages.unreadA11y(unread)}` : t.a11y.messages}
         style={(s) => ({ ...btn(s), marginRight: -10 })}
       >
-        <Icon name="paper-plane-outline" size={26} color={colors.text} />
+        <View>
+          <Icon name="paper-plane-outline" size={26} color={colors.text} />
+          {/* Messaggi non letti (dec. 189). */}
+          {unread > 0 && (
+            <View style={{ position: 'absolute', top: -6, right: -8, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, backgroundColor: colors.danger, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '700' }}>{unread}</Text>
+            </View>
+          )}
+        </View>
       </Pressable>
     </View>
   );
