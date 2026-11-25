@@ -184,7 +184,8 @@ function CompleteCard({ steps }: { steps: number }) {
       <View style={{ position: 'absolute', right: -4, top: 10 }}>
         <Mascot size={100} mood="happy" />
       </View>
-      <View style={{ marginRight: 96, gap: spacing.sm }}>
+      {/* Alta quanto la mascotte: il pulsante parte sotto il logo e non lo copre (dec. 203, si vedeva su iPad). */}
+      <View style={{ marginRight: 96, gap: spacing.sm, minHeight: 80 }}>
         <Text style={[typography.title2, { color: colors.text }]}>{t.profile.complete}</Text>
         <Text style={[typography.label, { color: colors.textTertiary }]}>{t.profile.stepsLeft(steps)}</Text>
       </View>
