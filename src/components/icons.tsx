@@ -123,6 +123,8 @@ export const ICONS = {
   send: H.SentIcon,
   attach: H.Attachment01Icon,
   star: H.StarIcon,
+  archive: H.Archive01Icon,
+  'bell-off': H.NotificationOff01Icon,
   'search-outline': H.Search01Icon,
   mail: H.Mail01Icon,
   'mail-open-outline': H.MailOpen01Icon,

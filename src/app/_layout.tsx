@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AppLock } from '../components/AppLock';
+import { SimulatorInsets } from '../components/SimulatorInsets';
 import { UndoToast } from '../components/UndoToast';
 import { EnvironmentProvider } from '../state/environment';
 import { useTheme } from '../theme';
@@ -16,6 +17,7 @@ export default function RootLayout() {
   return (
     // Serve a Gesture Handler (Pencil sulla lavagna, dec. 166).
     <GestureHandlerRootView style={{ flex: 1 }}>
+    <SimulatorInsets>
     <EnvironmentProvider>
       <StatusBar style="auto" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
@@ -56,6 +58,7 @@ export default function RootLayout() {
       <UndoToast />
       <AppLock />
     </EnvironmentProvider>
+    </SimulatorInsets>
     </GestureHandlerRootView>
   );
 }

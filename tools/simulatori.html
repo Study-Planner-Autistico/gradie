@@ -142,14 +142,14 @@
     <div class="bar"><span class="name">iPhone 16</span><span class="size"></span>
       <button data-rotate>Ruota</button><button data-reload>Ricarica</button></div>
     <div class="slot"><div class="frame" style="--pad:12px; --outer:58px; --inner:47px">
-      <div class="screen"><div class="island"></div><iframe title="Gradie su iPhone"></iframe></div>
+      <div class="screen"><div class="island"></div><iframe name="sim-iphone" title="Gradie su iPhone"></iframe></div>
     </div></div>
   </section>
   <section class="device" id="pad">
     <div class="bar"><span class="name">iPad Air 11"</span><span class="size"></span>
       <button data-rotate>Ruota</button><button data-reload>Ricarica</button></div>
     <div class="slot"><div class="frame" style="--pad:18px; --outer:38px; --inner:20px">
-      <div class="screen"><iframe title="Gradie su iPad"></iframe></div>
+      <div class="screen"><iframe name="sim-ipad" title="Gradie su iPad"></iframe></div>
     </div></div>
   </section>
 </main>
@@ -197,6 +197,16 @@
       el.querySelector('.size').textContent = `${w}×${h} · ${Math.round(s * 100)}%`;
       const island = el.querySelector('.island');
       if (island) island.style.display = d.landscape ? 'none' : '';
+      // Il nome dice all'app quali aree sicure usare (Dynamic Island, barra di stato): src/components/SimulatorInsets.tsx.
+      const frameEl = el.querySelector('iframe');
+      const name = `sim-${id === 'phone' ? 'iphone' : 'ipad'}${d.landscape ? '-land' : ''}`;
+      if (frameEl.name !== name) {
+        frameEl.name = name;
+        try {
+          frameEl.contentWindow.name = name;
+          frameEl.contentWindow.dispatchEvent(new Event('resize'));
+        } catch (e) {}
+      }
     }
   }
 

@@ -10,12 +10,21 @@ export type Message = {
   text?: string;
   /** Foto scattata o scelta dalla libreria. */
   image?: string;
+  /** Video girato o scelto dalla libreria (dec. 190). */
+  video?: string;
+  /** File allegato: nome, dimensione in byte e indirizzo. */
+  file?: { uri: string; name: string; size?: number };
+  /** Pagina degli Appunti condivisa: si apre nella lavagna (dec. 190). */
+  note?: { id: string; title: string; subject: string; cover?: string | null };
   /** Vocale: file, durata e altezze della forma d'onda (0-1). */
   audio?: { uri?: string; seconds: number; bars: number[] };
   /** Risposte rapide sotto un messaggio di Gradie. */
   choices?: string[];
-  /** Messaggio mio visualizzato dall'altro. */
-  read?: boolean;
+  /**
+   * Messaggi miei (dec. 190): una spunta grigia = inviato ma non ancora arrivato; due grigie = arrivato;
+   * due blu = visualizzato.
+   */
+  status?: 'sent' | 'delivered' | 'read';
 };
 
 export type Thread = {
@@ -26,6 +35,10 @@ export type Thread = {
   request?: boolean;
   important: boolean;
   unread: number;
+  /** Silenziata: niente numero sui Direct della Home (dec. 190). */
+  muted?: boolean;
+  /** Archiviata: sta negli Archiviati, accanto alla ricerca (dec. 190). */
+  archived?: boolean;
   messages: Message[];
 };
 
@@ -51,7 +64,7 @@ let threads: Thread[] = [
     important: false,
     unread: 1,
     messages: [
-      { id: 'a1', from: 'me', at: ago(DAY + 50), text: M.marco[0], read: true },
+      { id: 'a1', from: 'me', at: ago(DAY + 50), text: M.marco[0], status: 'read' },
       { id: 'a2', from: 'them', at: ago(12), text: M.marco[1] },
     ],
   },
@@ -62,7 +75,7 @@ let threads: Thread[] = [
     unread: 0,
     messages: [
       { id: 'b1', from: 'them', at: ago(DAY + 200), text: M.sofia[0] },
-      { id: 'b2', from: 'me', at: ago(DAY + 190), text: M.sofia[1], read: true },
+      { id: 'b2', from: 'me', at: ago(DAY + 190), text: M.sofia[1], status: 'read' },
       { id: 'b3', from: 'them', at: ago(DAY + 185), text: M.sofia[2] },
     ],
   },
@@ -71,7 +84,7 @@ let threads: Thread[] = [
     personId: 'f3',
     important: false,
     unread: 0,
-    messages: [{ id: 'c1', from: 'me', at: ago(2 * DAY + 30), text: M.luca[0], read: true }],
+    messages: [{ id: 'c1', from: 'me', at: ago(2 * DAY + 30), text: M.luca[0], status: 'delivered' }],
   },
   {
     id: 't-f4',
@@ -114,10 +127,15 @@ export function threadFor(personId: string) {
 }
 
 export const lastOf = (th: Thread) => th.messages[th.messages.length - 1];
-export const unreadTotal = (list: Thread[]) => list.filter((x) => !x.request).reduce((n, x) => n + x.unread, 0);
+/** Numero sui Direct della Home: messaggi non letti, senza richieste, silenziate e archiviate. */
+export const unreadTotal = (list: Thread[]) => list.filter((x) => !x.request && !x.muted && !x.archived).reduce((n, x) => n + x.unread, 0);
 
 export const markRead = (id: string) => patch(id, (x) => (x.unread ? { ...x, unread: 0 } : x));
 export const toggleImportant = (id: string) => patch(id, (x) => ({ ...x, important: !x.important }));
+/** "Segna come da leggere": torna col numero, come se fosse appena arrivata. */
+export const markUnread = (id: string) => patch(id, (x) => ({ ...x, unread: Math.max(1, x.unread) }));
+export const toggleMuted = (id: string) => patch(id, (x) => ({ ...x, muted: !x.muted }));
+export const toggleArchived = (id: string) => patch(id, (x) => ({ ...x, archived: !x.archived }));
 export const acceptThread = (id: string) => patch(id, (x) => ({ ...x, request: false }));
 export function deleteThread(id: string) {
   threads = threads.filter((x) => x.id !== id);
@@ -126,7 +144,7 @@ export function deleteThread(id: string) {
 
 /** Manda un messaggio (testo, foto o vocale). L'amico lo "visualizza" poco dopo; Gradie risponde. */
 export function send(id: string, msg: Omit<Message, 'id' | 'from' | 'at'>) {
-  const mine: Message = { ...msg, id: newId(), from: 'me', at: Date.now() };
+  const mine: Message = { ...msg, id: newId(), from: 'me', at: Date.now(), status: 'sent' };
   patch(id, (x) => ({ ...x, messages: [...x.messages.map((m) => (m.choices ? { ...m, choices: undefined } : m)), mine] }));
   const th = threads.find((x) => x.id === id);
   if (!th) return;
@@ -137,9 +155,22 @@ export function send(id: string, msg: Omit<Message, 'id' | 'from' | 'at'>) {
       patch(id, (x) => ({ ...x, messages: [...x.messages, { id: newId(), from: 'them', at: Date.now(), ...assistantReply(msg) }] }));
     }, 1100);
   } else {
-    setTimeout(() => patch(id, (x) => ({ ...x, messages: x.messages.map((m) => (m.id === mine.id ? { ...m, read: true } : m)) })), 1500);
+    // Arriva dopo poco; chi è online lo visualizza, chi no lo vedrà più tardi (le spunte restano grigie).
+    const set = (status: Message['status']) => patch(id, (x) => ({ ...x, messages: x.messages.map((m) => (m.id === mine.id ? { ...m, status } : m)) }));
+    setTimeout(() => set('delivered'), 900);
+    if (ONLINE.has(th.personId)) setTimeout(() => set('read'), 2600);
   }
 }
+
+/** Chi risulta online negli esempi (pallino verde). */
+export const ONLINE = new Set([ASSISTANT, 'f1', 'f2']);
+
+// Esempio di notifica (dec. 190): mezzo minuto dopo l'apertura Sofia scrive, e sui Direct della Home compare il numero.
+setTimeout(() => {
+  const th = threads.find((x) => x.personId === 'f2');
+  if (!th) return;
+  patch(th.id, (x) => ({ ...x, unread: x.unread + 1, messages: [...x.messages, { id: newId(), from: 'them', at: Date.now(), text: t.messages.seed.sofiaLater }] }));
+}, 30000);
 
 /** Risposte pronte di Gradie, come nell'esempio: richiesta, conferma, poi genera o ricomincia. */
 function assistantReply(msg: Omit<Message, 'id' | 'from' | 'at'>): Pick<Message, 'text' | 'choices'> {
@@ -148,7 +179,7 @@ function assistantReply(msg: Omit<Message, 'id' | 'from' | 'at'>): Pick<Message,
   if (msg.text === R.newRequest) return { text: R.again, choices: t.messages.seed.gradieChoices };
   if (msg.text === R.continueRequest) return { text: R.goOn };
   if (msg.audio) return { text: R.heardAudio, choices: [R.generate, R.newRequest, R.continueRequest] };
-  if (msg.image) return { text: R.sawImage, choices: [R.generate, R.newRequest, R.continueRequest] };
+  if (msg.image || msg.video || msg.file || msg.note) return { text: R.sawImage, choices: [R.generate, R.newRequest, R.continueRequest] };
   return { text: R.confirm, choices: [R.generate, R.newRequest, R.continueRequest] };
 }
 

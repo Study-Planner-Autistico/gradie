@@ -1,13 +1,15 @@
+import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Fragment, useEffect, useRef, useState, type ComponentRef } from 'react';
 import { Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AudioBubble, clock, dayLabel, isOnline, nameOf, PersonAvatar, RecorderBar, sameDay, Ticks } from '../../components/chat';
+import { ActionSheet, type SheetAction } from '../../components/ActionSheet';
+import { AudioBubble, clock, dayLabel, FileBubble, isOnline, nameOf, NoteBubble, NotePicker, PersonAvatar, RecorderBar, sameDay, Ticks, VideoBubble } from '../../components/chat';
 import { success, tap } from '../../components/haptics';
 import { Icon } from '../../components/icons';
 import { t } from '../../i18n';
-import { acceptThread, ASSISTANT, deleteThread, markRead, send, toggleImportant, useThreads, useTyping, type Message } from '../../state/messages';
+import { acceptThread, ASSISTANT, deleteThread, markRead, send, toggleArchived, toggleImportant, toggleMuted, useThreads, useTyping, type Message } from '../../state/messages';
 import { useTheme } from '../../theme';
 
 /**
@@ -24,6 +26,7 @@ export default function Chat() {
   const typing = useTyping(id);
   const [text, setText] = useState('');
   const [recording, setRecording] = useState(false);
+  const [sheet, setSheet] = useState<'attach' | 'notes' | 'more' | null>(null);
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
 
   useEffect(() => {
@@ -44,48 +47,70 @@ export default function Chat() {
     send(thread.id, { text: v });
     setText('');
   };
+  // Foto e video: dalla fotocamera (si apre subito, foto o video) o dalla libreria (dec. 190).
   const pick = async (camera: boolean) => {
     tap();
     try {
       const useCamera = camera && Platform.OS !== 'web';
       const perm = useCamera ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) return;
-      const res = useCamera
-        ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.7 })
-        : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7 });
-      if (!res.canceled && res.assets[0]) send(thread.id, { image: res.assets[0].uri });
+      const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ['images', 'videos'], quality: 0.7, videoMaxDuration: 120 };
+      const res = useCamera ? await ImagePicker.launchCameraAsync(opts) : await ImagePicker.launchImageLibraryAsync({ ...opts, allowsMultipleSelection: true, selectionLimit: 10 });
+      if (res.canceled) return;
+      for (const a of res.assets) send(thread.id, a.type === 'video' ? { video: a.uri } : { image: a.uri });
     } catch {}
   };
+  const pickFile = async () => {
+    try {
+      const res = await DocumentPicker.getDocumentAsync({ multiple: true, copyToCacheDirectory: true });
+      if (res.canceled) return;
+      for (const a of res.assets) send(thread.id, { file: { uri: a.uri, name: a.name, size: a.size ?? undefined } });
+    } catch {}
+  };
+  const confirmDelete = () => {
+    const go = () => {
+      router.back();
+      deleteThread(thread.id);
+    };
+    if (Platform.OS === 'web') {
+      if (window.confirm(`${T.deleteTitle}\n${T.deleteBody}`)) go();
+      return;
+    }
+    Alert.alert(T.deleteTitle, T.deleteBody, [
+      { text: T.cancel, style: 'cancel' },
+      { text: T.delete, style: 'destructive', onPress: go },
+    ]);
+  };
+  const attachActions: SheetAction[] = [
+    { icon: 'image-outline', label: T.attach.media, onPress: () => pick(false) },
+    { icon: 'document-outline', label: T.attach.file, onPress: pickFile },
+    { icon: 'book-outline', label: T.attach.notes, onPress: () => setTimeout(() => setSheet('notes'), 250) },
+  ];
+  const moreActions: SheetAction[] = [
+    { icon: 'star', label: thread.important ? T.unmarkImportant : T.markImportant, onPress: () => toggleImportant(thread.id) },
+    { icon: thread.muted ? 'bell' : 'bell-off', label: thread.muted ? T.unmute : T.mute, onPress: () => toggleMuted(thread.id) },
+    ...(assistant ? [] : [{ icon: 'person-circle-outline' as const, label: T.openProfile, onPress: () => router.push({ pathname: '/amico/[id]', params: { id: thread.personId } }) }]),
+    {
+      icon: 'archive',
+      label: thread.archived ? T.unarchive : T.archive,
+      onPress: () => {
+        toggleArchived(thread.id);
+        if (!thread.archived) router.back();
+      },
+    },
+    { icon: 'trash-outline', label: T.deleteChat, danger: true, onPress: () => setTimeout(confirmDelete, 250) },
+  ];
   const more = () => {
     tap();
-    Alert.alert(name, undefined, [
-      { text: thread.important ? T.unmarkImportant : T.markImportant, onPress: () => toggleImportant(thread.id) },
-      ...(assistant ? [] : [{ text: T.openProfile, onPress: () => router.push({ pathname: '/amico/[id]', params: { id: thread.personId } }) }]),
-      {
-        text: T.deleteChat,
-        style: 'destructive' as const,
-        onPress: () =>
-          Alert.alert(T.deleteTitle, T.deleteBody, [
-            { text: T.cancel, style: 'cancel' },
-            {
-              text: T.delete,
-              style: 'destructive',
-              onPress: () => {
-                router.back();
-                deleteThread(thread.id);
-              },
-            },
-          ]),
-      },
-      { text: T.cancel, style: 'cancel' },
-    ]);
+    setSheet('more');
   };
   const iconBtn = ({ pressed }: { pressed: boolean }) => ({ width: layout.iconButton, height: layout.iconButton, alignItems: 'center' as const, justifyContent: 'center' as const, opacity: pressed ? 0.6 : 1 });
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: colors.bg }}>
       {/* Intestazione: indietro, avatar, nome e stato; stella e altre azioni. */}
-      <View style={{ paddingTop: insets.top, paddingHorizontal: spacing.md, paddingBottom: spacing.sm, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+      {/* Sotto la Dynamic Island e la barra di stato, su iPhone e iPad (dec. 190). */}
+      <View style={{ paddingTop: insets.top + spacing.xs, paddingHorizontal: spacing.md, paddingBottom: spacing.sm, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border }}>
         <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel={T.back} style={iconBtn}>
           <Icon name="chevron-back" size={26} color={colors.text} />
         </Pressable>
@@ -144,7 +169,7 @@ export default function Chat() {
               {lastOfGroup && (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, alignSelf: m.from === 'me' ? 'flex-end' : 'flex-start', marginLeft: m.from === 'me' ? 0 : 44, marginBottom: spacing.sm }}>
                   <Text style={[typography.caption, { color: colors.textTertiary }]}>{clock(m.at)}</Text>
-                  {m.from === 'me' && !assistant && <Ticks read={m.read} />}
+                  {m.from === 'me' && !assistant && <Ticks status={m.status} />}
                 </View>
               )}
             </Fragment>
@@ -222,7 +247,13 @@ export default function Chat() {
               accessibilityLabel={assistant ? T.askGradie : T.placeholder}
               style={[typography.body, { flex: 1, color: colors.text, maxHeight: 120, paddingTop: 13, paddingBottom: 13 }]}
             />
-            <Pressable onPress={() => pick(false)} accessibilityRole="button" accessibilityLabel={T.attachA11y} style={({ pressed }) => ({ width: 40, height: 48, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
+            <Pressable
+              onPress={() => {
+                tap();
+                setSheet('attach');
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={T.attachA11y} style={({ pressed }) => ({ width: 40, height: 48, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
               <Icon name="attach" size={22} color={colors.textSecondary} />
             </Pressable>
             <Pressable onPress={() => pick(true)} accessibilityRole="button" accessibilityLabel={T.cameraA11y} style={({ pressed }) => ({ width: 40, height: 48, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
@@ -243,6 +274,16 @@ export default function Chat() {
           </Pressable>
         </View>
       )}
+      <ActionSheet visible={sheet === 'attach'} title={T.attach.title} actions={attachActions} onClose={() => setSheet(null)} />
+      <ActionSheet visible={sheet === 'more'} title={name} actions={moreActions} onClose={() => setSheet(null)} />
+      <ActionSheet visible={sheet === 'notes'} onClose={() => setSheet(null)}>
+        <NotePicker
+          onSend={(pages) => {
+            setSheet(null);
+            for (const p of pages) send(thread.id, { note: { id: p.id, title: p.title, subject: p.subject, cover: p.cover } });
+          }}
+        />
+      </ActionSheet>
     </KeyboardAvoidingView>
   );
 }
@@ -251,8 +292,15 @@ export default function Chat() {
 function Bubble({ message: m, personId, showAvatar }: { message: Message; personId: string; showAvatar: boolean }) {
   const { colors, typography, spacing, radius } = useTheme();
   const mine = m.from === 'me';
+  const media = !!(m.image || m.video);
   const body = m.image ? (
     <Image source={{ uri: m.image }} style={{ width: 220, height: 220, borderRadius: radius.lg }} accessibilityLabel={t.messages.photo} />
+  ) : m.video ? (
+    <VideoBubble uri={m.video} />
+  ) : m.file ? (
+    <FileBubble file={m.file} mine={mine} />
+  ) : m.note ? (
+    <NoteBubble note={m.note} mine={mine} />
   ) : m.audio ? (
     <AudioBubble uri={m.audio.uri} seconds={m.audio.seconds} bars={m.audio.bars} mine={mine} />
   ) : (
@@ -264,8 +312,8 @@ function Bubble({ message: m, personId, showAvatar }: { message: Message; person
       <View
         style={{
           maxWidth: '78%',
-          padding: m.image ? spacing.xs : spacing.md,
-          paddingHorizontal: m.image ? spacing.xs : spacing.lg,
+          padding: media ? spacing.xs : spacing.md,
+          paddingHorizontal: media ? spacing.xs : spacing.lg,
           borderRadius: radius.xl,
           borderBottomRightRadius: mine && showAvatar ? spacing.xs : radius.xl,
           borderBottomLeftRadius: !mine && showAvatar ? spacing.xs : radius.xl,

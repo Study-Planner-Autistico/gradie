@@ -8,19 +8,20 @@ import {
   useAudioRecorder,
   useAudioRecorderState,
 } from 'expo-audio';
-import { useEffect, useRef, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { useVideoPlayer, VideoView } from 'expo-video';
+import { router } from 'expo-router';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Linking, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { t } from '../i18n';
 import { findPerson } from '../state/friends';
-import { ASSISTANT } from '../state/messages';
+import { NO_SUBJECT, useSheets, type Sheet } from '../state/notebooks';
+import { ASSISTANT, ONLINE, type Message } from '../state/messages';
 import { useTheme } from '../theme';
 import { FriendAvatar } from './FriendAvatar';
 import { tap } from './haptics';
 import { Icon } from './icons';
 import { MascotBadge } from './Mascot';
 
-/** Chi risulta online negli esempi (pallino verde). */
-const ONLINE = new Set([ASSISTANT, 'f1', 'f2']);
 export const isOnline = (personId: string) => ONLINE.has(personId);
 
 export function nameOf(personId: string) {
@@ -31,7 +32,8 @@ export function nameOf(personId: string) {
 export function PersonAvatar({ personId, size = 48, dot = false }: { personId: string; size?: number; dot?: boolean }) {
   const { colors } = useTheme();
   const p = findPerson(personId);
-  const d = Math.max(10, Math.round(size * 0.26));
+  // Pallino dell'online più grande (dec. 190), con il bordo del colore dello sfondo.
+  const d = Math.max(14, Math.round(size * 0.32));
   return (
     <View style={{ width: size, height: size }}>
       {personId === ASSISTANT ? (
@@ -78,16 +80,22 @@ export function dayLabel(at: number) {
 export const sameDay = (a: number, b: number) => dayDiff(a) === dayDiff(b);
 export const mmss = (s: number) => `${Math.floor(s / 60)}:${pad(Math.floor(s % 60))}`;
 
-/** Due spunte: grigie se inviato, viola se visualizzato. */
-export function Ticks({ read }: { read?: boolean }) {
+/** Blu delle spunte "visualizzato" (dec. 190). */
+export const READ_BLUE = '#1D9BF0';
+
+/** Spunte (dec. 190): una grigia = inviato, non ancora arrivato; due grigie = arrivato; due blu = visualizzato. */
+export function Ticks({ status = 'sent' }: { status?: Message['status'] }) {
   const { colors } = useTheme();
-  const c = read ? colors.accent : colors.textTertiary;
+  const c = status === 'read' ? READ_BLUE : colors.textTertiary;
+  const label = status === 'read' ? t.messages.read : status === 'delivered' ? t.messages.delivered : t.messages.sent;
   return (
-    <View accessibilityLabel={read ? t.messages.read : t.messages.sent} style={{ flexDirection: 'row', width: 20 }}>
+    <View accessible accessibilityLabel={label} style={{ flexDirection: 'row', width: status === 'sent' ? 14 : 20 }}>
       <Icon name="check" size={14} color={c} />
-      <View style={{ position: 'absolute', left: 5 }}>
-        <Icon name="check" size={14} color={c} />
-      </View>
+      {status !== 'sent' && (
+        <View style={{ position: 'absolute', left: 5 }}>
+          <Icon name="check" size={14} color={c} />
+        </View>
+      )}
     </View>
   );
 }
@@ -224,6 +232,185 @@ export function RecorderBar({ onCancel, onSend }: { onCancel: () => void; onSend
           <Icon name="send" size={24} color={colors.accent} />
         </Pressable>
       </View>
+    </View>
+  );
+}
+
+/** Video in una bolla: si guarda lì, con i comandi del sistema (dec. 190). */
+export function VideoBubble({ uri }: { uri: string }) {
+  const { radius } = useTheme();
+  const player = useVideoPlayer(uri, (p) => {
+    p.loop = false;
+  });
+  return <VideoView player={player} nativeControls contentFit="cover" style={{ width: 240, height: 180, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: '#000' }} />;
+}
+
+const size = (b?: number) => (b == null ? '' : b < 1024 * 1024 ? `${Math.max(1, Math.round(b / 1024))} KB` : `${(b / 1024 / 1024).toFixed(1)} MB`);
+
+/** File in una bolla: icona, nome e dimensione; un tocco lo apre. */
+export function FileBubble({ file, mine }: { file: NonNullable<Message['file']>; mine: boolean }) {
+  const { colors, typography, spacing, radius } = useTheme();
+  const fg = mine ? colors.onAccent : colors.text;
+  return (
+    <Pressable
+      onPress={() => {
+        tap();
+        if (Platform.OS === 'web') window.open(file.uri, '_blank');
+        else Linking.openURL(file.uri).catch(() => {});
+      }}
+      accessibilityRole="button"
+      accessibilityLabel={`${t.messages.file}: ${file.name}`}
+      style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, width: 230 }}
+    >
+      <View style={{ width: 44, height: 44, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: mine ? 'rgba(255,255,255,0.22)' : colors.selected }}>
+        <Icon name="document-outline" size={24} color={mine ? colors.onAccent : colors.selectedText} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={[typography.callout, { color: fg, fontWeight: '600' }]} numberOfLines={2}>
+          {file.name}
+        </Text>
+        {!!file.size && <Text style={[typography.caption, { color: fg, opacity: 0.8 }]}>{size(file.size)}</Text>}
+      </View>
+    </Pressable>
+  );
+}
+
+/** Pagina degli Appunti in una bolla: copertina, titolo e materia; un tocco la apre nella lavagna. */
+export function NoteBubble({ note, mine }: { note: NonNullable<Message['note']>; mine: boolean }) {
+  const { colors, typography, spacing, radius } = useTheme();
+  const fg = mine ? colors.onAccent : colors.text;
+  return (
+    <Pressable
+      onPress={() => {
+        tap();
+        router.push(`/lavagna/${note.id}`);
+      }}
+      accessibilityRole="button"
+      accessibilityLabel={t.messages.openNote(note.title)}
+      style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, width: 230 }}
+    >
+      <View style={{ width: 44, height: 56, borderRadius: radius.sm, backgroundColor: note.cover ?? colors.accent, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: mine ? 'rgba(255,255,255,0.5)' : colors.border }}>
+        <Icon name="book-outline" size={20} color="#FFFFFF" />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={[typography.caption, { color: fg, opacity: 0.8 }]} numberOfLines={1}>
+          {note.subject || t.messages.notes}
+        </Text>
+        <Text style={[typography.callout, { color: fg, fontWeight: '600' }]} numberOfLines={2}>
+          {note.title}
+        </Text>
+      </View>
+      <Icon name="chevron-forward" size={18} color={fg} />
+    </Pressable>
+  );
+}
+
+/**
+ * Scelta delle pagine degli Appunti da mandare (dec. 190): prima la materia (il quaderno), poi le pagine.
+ * Se ne possono scegliere più di una; "Invia" le manda tutte.
+ */
+export function NotePicker({ onSend }: { onSend: (pages: Sheet[]) => void }) {
+  const { colors, typography, spacing, radius } = useTheme();
+  const T = t.messages;
+  const sheets = useSheets();
+  const subjects = useMemo(() => {
+    const map = new Map<string, Sheet[]>();
+    for (const s of sheets) {
+      const k = s.subject || NO_SUBJECT;
+      map.set(k, [...(map.get(k) ?? []), s]);
+    }
+    return [...map.entries()].sort((a, b) => (a[0] === NO_SUBJECT ? 1 : b[0] === NO_SUBJECT ? -1 : a[0].localeCompare(b[0])));
+  }, [sheets]);
+  const [subject, setSubject] = useState<string | null>(null);
+  const [chosen, setChosen] = useState<string[]>([]);
+  const pages = subject ? (subjects.find(([k]) => k === subject)?.[1] ?? []) : [];
+  const label = (k: string) => (k === NO_SUBJECT ? T.otherSheets : k);
+
+  const row = (key: string, children: ReactNode, onPress: () => void, a11y: string, selected?: boolean) => (
+    <Pressable
+      key={key}
+      onPress={() => {
+        tap();
+        onPress();
+      }}
+      accessibilityRole={selected === undefined ? 'button' : 'checkbox'}
+      accessibilityState={selected === undefined ? undefined : { checked: selected }}
+      accessibilityLabel={a11y}
+      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 60, paddingHorizontal: spacing.xl, backgroundColor: pressed ? colors.surfaceMuted : 'transparent' })}
+    >
+      {children}
+    </Pressable>
+  );
+
+  return (
+    <View style={{ flexShrink: 1 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md, minHeight: 44 }}>
+        {subject ? (
+          <Pressable onPress={() => (setSubject(null), setChosen([]))} accessibilityRole="button" accessibilityLabel={T.back} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+            <Icon name="chevron-back" size={24} color={colors.text} />
+          </Pressable>
+        ) : (
+          <View style={{ width: 44 }} />
+        )}
+        <Text accessibilityRole="header" style={[typography.headline, { flex: 1, textAlign: 'center', color: colors.text }]} numberOfLines={1}>
+          {subject ? label(subject) : T.pickSubject}
+        </Text>
+        <View style={{ width: 44 }} />
+      </View>
+      <ScrollView style={{ flexShrink: 1 }}>
+        {!subject &&
+          subjects.map(([k, list]) =>
+            row(
+              k,
+              <>
+                <View style={{ width: 40, height: 50, borderRadius: radius.sm, backgroundColor: list[0]?.cover ?? colors.accent }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.headline, { color: colors.text }]}>{label(k)}</Text>
+                  <Text style={[typography.caption, { color: colors.textTertiary }]}>{T.pagesCount(list.length)}</Text>
+                </View>
+                <Icon name="chevron-forward" size={18} color={colors.textTertiary} />
+              </>,
+              () => setSubject(k),
+              `${label(k)}, ${T.pagesCount(list.length)}`,
+            ),
+          )}
+        {subject &&
+          pages.map((p) => {
+            const on = chosen.includes(p.id);
+            return row(
+              p.id,
+              <>
+                <View style={{ width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: on ? colors.accent : colors.borderBold, backgroundColor: on ? colors.accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+                  {on && <Icon name="check" size={16} color={colors.onAccent} />}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.headline, { color: colors.text }]} numberOfLines={1}>
+                    {p.title}
+                  </Text>
+                  <Text style={[typography.caption, { color: colors.textTertiary }]}>{p.edited}</Text>
+                </View>
+              </>,
+              () => setChosen((c) => (on ? c.filter((x) => x !== p.id) : [...c, p.id])),
+              p.title,
+              on,
+            );
+          })}
+      </ScrollView>
+      {subject && (
+        <View style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.md }}>
+          <Pressable
+            disabled={!chosen.length}
+            onPress={() => {
+              tap();
+              onSend(pages.filter((p) => chosen.includes(p.id)));
+            }}
+            accessibilityRole="button"
+            style={({ pressed }) => ({ height: 52, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center', backgroundColor: !chosen.length ? colors.surfaceMuted : pressed ? colors.accentPressed : colors.accent })}
+          >
+            <Text style={[typography.headline, { color: chosen.length ? colors.onAccent : colors.textDisabled }]}>{T.sendPages(chosen.length)}</Text>
+          </Pressable>
+        </View>
+      )}
     </View>
   );
 }

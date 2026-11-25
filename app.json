@@ -68,7 +68,8 @@
             "backgroundColor": "#18191A"
           }
         }
-      ]
+      ],
+      "expo-video"
     ],
     "scheme": "gradie"
   }
