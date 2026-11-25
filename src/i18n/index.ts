@@ -253,6 +253,12 @@ const it = {
       withTimeDetail: 'Senza orario resta nelle scadenze del giorno',
       earlier: (what: string) => `${what}: prima`,
       later: (what: string) => `${what}: dopo`,
+      alert: 'Avviso',
+      overlapMore: (n: number) => (n === 1 ? 'e un altro' : `e altri ${n}`),
+      hours: 'Ore',
+      minutes: 'Minuti',
+      typeHint: 'Scrivi l’orario: i due punti si mettono da soli',
+      badTime: 'Orario non valido: da 00:00 a 23:59 (24:00 è mezzanotte)',
       typeTime: (what: string) => `${what}: tocca per scrivere l'orario`,
       repeat: 'Ogni settimana',
       repeatDetail: 'Salta da sola le festività',
@@ -278,9 +284,24 @@ const it = {
       studyOf: (s: string) => `Studio di ${s}`,
       importFrom: 'Importa dal calendario del telefono',
     },
+    alerts: {
+      label: (a?: number) =>
+        a === undefined ? 'Nessuno'
+        : a === 0 ? "All'ora dell'evento"
+        : a < 60 ? `${a} minuti prima`
+        : a < 1440 ? (a === 60 ? '1 ora prima' : `${a / 60} ore prima`)
+        : a < 10080 ? (a === 1440 ? '1 giorno prima' : `${a / 1440} giorni prima`)
+        : '1 settimana prima',
+      lead: (a: number) =>
+        a === 0 ? 'Adesso'
+        : a < 60 ? `Tra ${a} minuti`
+        : a < 1440 ? (a === 60 ? 'Tra 1 ora' : `Tra ${a / 60} ore`)
+        : a < 10080 ? (a === 1440 ? 'Domani' : `Tra ${a / 1440} giorni`)
+        : 'Tra 1 settimana',
+    },
     reminders: {
-      title: 'Attiva i promemoria',
-      detail: 'Una notifica all’inizio di ogni impegno',
+      title: 'Attiva le notifiche',
+      detail: 'Per ricevere gli avvisi degli impegni',
       enable: 'Attiva',
       openSettings: 'Impostazioni',
       body: (start: string, end?: string, meta?: string) => [end ? `${start} – ${end}` : start, meta].filter(Boolean).join(' · '),
@@ -1150,6 +1171,12 @@ const en: Dict = {
       withTimeDetail: 'Without a time it stays in the day’s deadlines',
       earlier: (what: string) => `${what}: earlier`,
       later: (what: string) => `${what}: later`,
+      alert: 'Alert',
+      overlapMore: (n: number) => (n === 1 ? 'and 1 more' : `and ${n} more`),
+      hours: 'Hours',
+      minutes: 'Minutes',
+      typeHint: 'Type the time: the colon is added for you',
+      badTime: 'Invalid time: 00:00 to 23:59 (24:00 is midnight)',
       typeTime: (what: string) => `${what}: tap to type the time`,
       repeat: 'Every week',
       repeatDetail: 'Skips holidays automatically',
@@ -1175,9 +1202,24 @@ const en: Dict = {
       studyOf: (s: string) => `Study ${s}`,
       importFrom: 'Import from the phone calendar',
     },
+    alerts: {
+      label: (a?: number) =>
+        a === undefined ? 'None'
+        : a === 0 ? 'At time of event'
+        : a < 60 ? `${a} minutes before`
+        : a < 1440 ? (a === 60 ? '1 hour before' : `${a / 60} hours before`)
+        : a < 10080 ? (a === 1440 ? '1 day before' : `${a / 1440} days before`)
+        : '1 week before',
+      lead: (a: number) =>
+        a === 0 ? 'Now'
+        : a < 60 ? `In ${a} minutes`
+        : a < 1440 ? (a === 60 ? 'In 1 hour' : `In ${a / 60} hours`)
+        : a < 10080 ? (a === 1440 ? 'Tomorrow' : `In ${a / 1440} days`)
+        : 'In 1 week',
+    },
     reminders: {
-      title: 'Turn on reminders',
-      detail: 'A notification when each event starts',
+      title: 'Turn on notifications',
+      detail: 'To get event alerts',
       enable: 'Turn on',
       openSettings: 'Settings',
       body: (start: string, end?: string, meta?: string) => [end ? `${start} – ${end}` : start, meta].filter(Boolean).join(' · '),

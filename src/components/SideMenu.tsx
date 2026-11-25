@@ -13,7 +13,7 @@ import { Chip } from './ui';
 import { Icon, type IconName } from './icons';
 
 /** Pagine del menu: moduli ancora da progettare (dec. 124), si definiranno più avanti. Impostazioni stanno in fondo (dec. 128). */
-const ITEMS: { label: string; icon: IconName; href?: '/registro-voti' }[] = [
+const ITEMS: { label: string; icon: IconName; href?: '/registro-voti' | '/impostazioni' }[] = [
   { get label() { return t.menu.materials; }, icon: 'folder' },
   // Registro voti (dec. 195): la prima voce già pronta.
   { get label() { return t.menu.grades; }, icon: 'chart', href: '/registro-voti' },
@@ -120,7 +120,7 @@ function MenuPanel({ open }: { open: boolean }) {
       </ScrollView>
 
       <View style={{ paddingHorizontal: spacing.md, marginBottom: spacing.sm }}>
-        <MenuItem label={t.menu.settings} icon="settings" />
+        <MenuItem label={t.menu.settings} icon="settings" href="/impostazioni" />
       </View>
       <EnvironmentPicker open={envOpen} onToggle={() => setEnvOpen((v) => !v)} onPicked={() => setEnvOpen(false)} />
     </View>
@@ -128,7 +128,7 @@ function MenuPanel({ open }: { open: boolean }) {
 }
 
 /** Voce del menu: icona a tratto arrotondato senza sfondo, testo leggero (dec. 128). */
-function MenuItem({ label, icon, href }: { label: string; icon: IconName; href?: '/registro-voti' }) {
+function MenuItem({ label, icon, href }: { label: string; icon: IconName; href?: '/registro-voti' | '/impostazioni' }) {
   const { colors, typography, spacing, radius } = useTheme();
   return (
     <Pressable

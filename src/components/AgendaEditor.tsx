@@ -2,7 +2,7 @@
 // Riepilogo delle cose senza orario di un giorno e importazione dai calendari del telefono.
 import { router } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import { locale, t } from '../i18n';
 import {
   addDaysYmd,
@@ -24,9 +24,11 @@ import {
   type Occurrence,
 } from '../state/agenda';
 import { calendarAvailable, listCalendars, readEvents, type DeviceCalendar } from '../state/deviceCalendar';
+import { enableReminders } from '../state/reminders';
 import { useSubjects } from '../state/subjects';
 import { useTheme } from '../theme';
 import { KIND_ICON } from './agenda';
+import { FieldRow, MonthCalendar, TimeWheels } from './DateTimeFields';
 import { tap } from './haptics';
 import { Icon, type IconName } from './icons';
 import { Button, TextField } from './ui';
@@ -37,6 +39,10 @@ const TYPE_KIND: Record<Exclude<FormType, 'other'>, AgendaKind> = { lesson: 'les
 const typeOf = (k: AgendaKind): FormType => (k === 'lesson' ? 'lesson' : k === 'activity' ? 'deadline' : k === 'study' ? 'study' : 'other');
 const DEADLINE_KINDS = ['homework', 'test', 'project'] as const;
 const STEP = 15;
+
+/** Avvisi (dec. 198), in minuti prima dell'inizio; undefined = nessuno. */
+const ALERTS: (number | undefined)[] = [undefined, 0, 5, 10, 15, 30, 60, 120, 1440, 2880, 10080];
+const alertLabel = (a: number | undefined) => t.agenda.alerts.label(a);
 
 const dayLabel = (s: string) => fromYmd(s).toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' });
 const shortDay = (s: string) => fromYmd(s).toLocaleDateString(locale, { day: 'numeric', month: 'short' });
@@ -97,94 +103,6 @@ function Pills<T extends string>({ value, options, onChange, label }: { value: T
   );
 }
 
-/** Valore con – e + ai lati (giorni, orari): niente rotelle, si tocca e basta. */
-/** "930" → 09:30, "15" → 15:00, "9.5" → 09:05, "21:30" → 21:30; null se non è un orario. */
-export function parseTime(s: string): string | null {
-  const t = s.trim().replace(/[.,h ]/g, ':');
-  let h: number;
-  let m: number;
-  if (t.includes(':')) {
-    const [a, b = '0'] = t.split(':');
-    if (!/^\d{1,2}$/.test(a) || !/^\d{0,2}$/.test(b)) return null;
-    h = Number(a);
-    m = Number(b || 0);
-  } else {
-    if (!/^\d{1,4}$/.test(t)) return null;
-    h = Number(t.length <= 2 ? t : t.slice(0, t.length - 2));
-    m = t.length <= 2 ? 0 : Number(t.slice(-2));
-  }
-  if (h > 23 || m > 59) return null;
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-}
-
-function Stepper({ label, value, onMinus, onPlus, onType }: { label: string; value: string; onMinus: () => void; onPlus: () => void; onType?: (hhmm: string) => void }) {
-  const { colors, typography, radius, spacing } = useTheme();
-  // Orario scrivibile (dec. 196): toccando il valore si scrive con la tastiera; le frecce restano.
-  const [typing, setTyping] = useState(false);
-  const [draft, setDraft] = useState(value);
-  const commit = () => {
-    const v = parseTime(draft);
-    if (v && onType) onType(v);
-    setTyping(false);
-  };
-  const btn = (icon: IconName, a11y: string, onPress: () => void) => (
-    <Pressable
-      onPress={() => {
-        tap();
-        onPress();
-      }}
-      accessibilityRole="button"
-      accessibilityLabel={a11y}
-      style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceMuted, opacity: pressed ? 0.6 : 1 })}
-    >
-      <Icon name={icon} size={20} color={colors.text} />
-    </Pressable>
-  );
-  return (
-    <View style={{ flex: 1, gap: spacing.xs }}>
-      <Label>{label}</Label>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, padding: spacing.xs, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border }}>
-        {btn('chevron-left', t.agenda.editor.earlier(label), onMinus)}
-        {onType && typing ? (
-          <TextInput
-            value={draft}
-            onChangeText={setDraft}
-            autoFocus
-            selectTextOnFocus
-            keyboardType="numbers-and-punctuation"
-            returnKeyType="done"
-            maxLength={5}
-            onSubmitEditing={commit}
-            onBlur={commit}
-            accessibilityLabel={label}
-            style={[typography.headline, { flex: 1, minWidth: 0, textAlign: 'center', color: colors.text, padding: 0, height: 44 }]}
-          />
-        ) : onType ? (
-          <Pressable
-            onPress={() => {
-              tap();
-              setDraft(value);
-              setTyping(true);
-            }}
-            accessibilityRole="button"
-            accessibilityLabel={`${value}. ${t.agenda.editor.typeTime(label)}`}
-            style={({ pressed }) => ({ flex: 1, height: 44, justifyContent: 'center', borderRadius: radius.md, opacity: pressed ? 0.6 : 1 })}
-          >
-            <Text style={[typography.headline, { textAlign: 'center', color: colors.text, textDecorationLine: 'underline', textDecorationStyle: 'dotted', textDecorationColor: colors.textTertiary }]} numberOfLines={1} accessibilityLiveRegion="polite">
-              {value}
-            </Text>
-          </Pressable>
-        ) : (
-          <Text style={[typography.headline, { flex: 1, textAlign: 'center', color: colors.text }]} numberOfLines={1} accessibilityLiveRegion="polite">
-            {value}
-          </Text>
-        )}
-        {btn('chevron-right', t.agenda.editor.later(label), onPlus)}
-      </View>
-    </View>
-  );
-}
-
 function ToggleRow({ label, detail, value, onChange }: { label: string; detail?: string; value: boolean; onChange: (v: boolean) => void }) {
   const { colors, typography, spacing } = useTheme();
   return (
@@ -224,6 +142,10 @@ export function AgendaEditor({ target, onClose, onSaved, onImport }: { target: E
   const [until, setUntil] = useState(series?.repeat?.until ?? semesterEnd(fromYmd(date)));
   const [onlyThis, setOnlyThis] = useState(false);
   const [err, setErr] = useState<string | undefined>();
+  // Un selettore aperto alla volta (giorno, inizio, fine, fino al, avviso), come nel Calendario di Apple.
+  const [picker, setPicker] = useState<'date' | 'start' | 'end' | 'until' | 'alert' | null>(null);
+  const toggle = (p: NonNullable<typeof picker>) => setPicker((x) => (x === p ? null : p));
+  const [alert, setAlert] = useState<number | undefined>(editing ? series?.alert ?? editing.alert : undefined);
 
   // Cambiando tipo nel nuovo impegno: le scadenze partono senza orario, le lezioni ripetute.
   const pickType = (v: FormType) => {
@@ -254,17 +176,7 @@ export function AgendaEditor({ target, onClose, onSaved, onImport }: { target: E
   const withTime = type === 'deadline' ? timed : true;
   const willRepeat = canRepeat && repeat && !onlyThis;
 
-  const shiftTime = (which: 'start' | 'end', d: number) => {
-    const s = toMin(start);
-    const e = toMin(end);
-    if (which === 'start') {
-      const ns = Math.max(0, Math.min(23 * 60 + 45 - STEP, s + d));
-      setStart(fromMin(ns));
-      setEnd(fromMin(Math.min(23 * 60 + 59, ns + (e - s))));
-    } else setEnd(fromMin(Math.max(s + STEP, Math.min(23 * 60 + 59, e + d))));
-  };
-
-  // Orario scritto a mano (dec. 196): l'inizio sposta anche la fine tenendo la durata; la fine resta dopo l'inizio.
+  // Orario scelto con le rotelle o scritto (dec. 196, 198): l'inizio sposta anche la fine tenendo la durata; la fine resta dopo l'inizio.
   const typeTime = (which: 'start' | 'end', hhmm: string) => {
     const s = toMin(start);
     const e = toMin(end);
@@ -300,14 +212,16 @@ export function AgendaEditor({ target, onClose, onSaved, onImport }: { target: E
       date: candidate.date,
       ...(candidate.repeat ? { repeat: candidate.repeat } : {}),
       ...(editing?.imported ? { imported: editing.imported } : {}),
+      ...(alert !== undefined ? { alert } : {}),
     };
+    if (alert !== undefined) enableReminders();
     if (!editing) addItems([{ id: newAgendaId(), ...values }]);
     else if (isSeries && onlyThis) {
       // Solo questo giorno: la serie lo salta e al suo posto c'è un impegno singolo (recupero o cambio d'orario).
       skipDay(editing.seriesId, editing.date);
       addItems([{ id: newAgendaId(), ...values }]);
     } else {
-      updateItem(editing.seriesId, { ...values, subject, meta: meta.trim() || undefined, start: values.start, end: values.end, repeat: values.repeat });
+      updateItem(editing.seriesId, { ...values, subject, meta: meta.trim() || undefined, start: values.start, end: values.end, repeat: values.repeat, alert });
     }
     showUndo(editing ? E.changed : E.added, () => setAgenda(before));
     onSaved(isSeries && !onlyThis ? date : values.date);
@@ -330,6 +244,16 @@ export function AgendaEditor({ target, onClose, onSaved, onImport }: { target: E
       onClose={onClose}
       footer={
         <>
+          {conflicts.length > 0 && (
+            <View accessibilityLiveRegion="polite" style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+              <Icon name="warning" size={14} color={colors.warning} />
+              <Text numberOfLines={2} style={[typography.caption, { flex: 1, color: colors.warning }]}>
+                <Text style={{ fontWeight: '700' }}>{E.overlap} </Text>
+                {E.overlapItem(conflicts[0].title, `${shortDay(conflicts[0].date)} ${conflicts[0].start}–${conflicts[0].end}`)}
+                {conflicts.length > 1 ? ` ${E.overlapMore(conflicts.length - 1)}` : ''}
+              </Text>
+            </View>
+          )}
           <Button title={conflicts.length ? E.saveAnyway : E.save} appearance={conflicts.length ? 'warning' : 'primary'} onPress={save} />
           {editing && isSeries && (
             <View style={{ flexDirection: 'row', gap: spacing.sm }}>
@@ -396,36 +320,56 @@ export function AgendaEditor({ target, onClose, onSaved, onImport }: { target: E
       )}
       {type === 'lesson' && <TextField label={E.room} placeholder={E.roomPh} value={meta} onChangeText={setMeta} maxLength={30} />}
 
-      <Stepper label={E.day} value={dayLabel(date)} onMinus={() => setDate(addDaysYmd(date, -1))} onPlus={() => setDate(addDaysYmd(date, 1))} />
+      {/* Giorno e orari come nel Calendario di Apple (dec. 198): la pillola apre sotto il calendario o le rotelle. */}
+      <View>
+        <FieldRow label={E.day} value={dayLabel(date)} open={picker === 'date'} onPress={() => toggle('date')} />
+        {picker === 'date' && <MonthCalendar value={date} onChange={(v) => setDate(v)} />}
+      </View>
 
       {type === 'deadline' && <ToggleRow label={E.withTime} detail={E.withTimeDetail} value={timed} onChange={setTimed} />}
       {withTime && (
-        <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-          <Stepper label={E.start} value={start} onMinus={() => shiftTime('start', -STEP)} onPlus={() => shiftTime('start', STEP)} onType={(v) => typeTime('start', v)} />
-          <Stepper label={E.end} value={end} onMinus={() => shiftTime('end', -STEP)} onPlus={() => shiftTime('end', STEP)} onType={(v) => typeTime('end', v)} />
+        <View>
+          <FieldRow label={E.start} value={start} open={picker === 'start'} onPress={() => toggle('start')} />
+          {picker === 'start' && <TimeWheels value={start} onChange={(v) => typeTime('start', v)} label={E.start} />}
+          <FieldRow label={E.end} value={end} open={picker === 'end'} onPress={() => toggle('end')} />
+          {picker === 'end' && <TimeWheels value={end} onChange={(v) => typeTime('end', v)} label={E.end} />}
         </View>
       )}
-      {/* "Si sovrappone a" (dec. 196): nel contenuto, sotto gli orari, non più fisso in basso sopra il contenuto che
-          ne copriva la vista. */}
-      {conflicts.length > 0 && (
-        <View accessibilityLiveRegion="polite" style={{ flexDirection: 'row', gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.warningBg }}>
-          <Icon name="warning" size={18} color={colors.warning} />
-          <View style={{ flex: 1, gap: 2 }}>
-            <Text style={[typography.callout, { color: colors.warning, fontWeight: '700' }]}>{E.overlap}</Text>
-            {conflicts.map((c, k) => (
-              <Text key={k} style={[typography.caption, { color: colors.warning }]}>
-                {E.overlapItem(c.title, `${shortDay(c.date)} ${c.start}–${c.end}`)}
-              </Text>
-            ))}
+
+      {/* Avviso (dec. 198): la notifica arriva sul dispositivo; con "Nessuno" non arriva niente. */}
+      <View>
+        <FieldRow label={E.alert} value={alertLabel(alert)} open={picker === 'alert'} onPress={() => toggle('alert')} />
+        {picker === 'alert' && (
+          <View accessibilityRole="radiogroup" accessibilityLabel={E.alert} style={{ borderRadius: radius.lg, backgroundColor: colors.surfaceMuted, overflow: 'hidden' }}>
+            {ALERTS.map((a, k) => {
+              const on = a === alert;
+              return (
+                <Pressable
+                  key={String(a)}
+                  onPress={() => {
+                    tap();
+                    setAlert(a);
+                    setPicker(null);
+                  }}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: on }}
+                  style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', minHeight: 44, paddingHorizontal: spacing.md, borderTopWidth: k ? 1 : 0, borderTopColor: colors.border, backgroundColor: pressed ? colors.neutralPressed : 'transparent' })}
+                >
+                  <Text style={[typography.body, { flex: 1, color: colors.text }]}>{alertLabel(a)}</Text>
+                  {on && <Icon name="checkmark" size={18} color={colors.accent} />}
+                </Pressable>
+              );
+            })}
           </View>
-        </View>
-      )}
+        )}
+      </View>
 
       {isSeries && <ToggleRow label={E.onlyThis} detail={E.onlyThisDetail} value={onlyThis} onChange={setOnlyThis} />}
       {canRepeat && !onlyThis && <ToggleRow label={E.repeat} detail={E.repeatDetail} value={repeat} onChange={setRepeat} />}
       {willRepeat && (
         <View style={{ gap: spacing.sm }}>
-          <Stepper label={E.until} value={dayLabel(until)} onMinus={() => setUntil(addDaysYmd(until, -7) < date ? until : addDaysYmd(until, -7))} onPlus={() => setUntil(addDaysYmd(until, 7))} />
+          <FieldRow label={E.until} value={dayLabel(until)} open={picker === 'until'} onPress={() => toggle('until')} />
+          {picker === 'until' && <MonthCalendar value={until} onChange={setUntil} min={date} />}
           <Pills<string>
             label={E.until}
             value={until}

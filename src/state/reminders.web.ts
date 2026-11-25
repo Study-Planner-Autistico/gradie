@@ -40,22 +40,24 @@ export function useReminderPermission() {
 
 let timers: ReturnType<typeof setTimeout>[] = [];
 
-/** Solo gli impegni di oggi e domani: i timer del browser non sopravvivono alla chiusura della pagina. */
+/** Avvisi che scattano oggi o domani: i timer del browser non sopravvivono alla chiusura della pagina. */
 export async function syncReminders(agenda: AgendaItem[]) {
   timers.forEach(clearTimeout);
   timers = [];
   if (state !== 'granted' || !api) return;
   const now = Date.now();
-  for (let d = 0; d < 2; d++) {
+  for (let d = 0; d < 9; d++) {
     const day = new Date();
     day.setDate(day.getDate() + d);
     for (const o of occurrencesOn(agenda, ymd(day))) {
-      if (!o.start) continue;
+      if (o.alert === undefined) continue;
+      // Senza orario l'impegno conta dalle 9 del mattino.
       const at = fromYmd(o.date);
-      at.setHours(Number(o.start.slice(0, 2)), Number(o.start.slice(3, 5)), 0, 0);
+      at.setHours(o.start ? Number(o.start.slice(0, 2)) : 9, o.start ? Number(o.start.slice(3, 5)) : 0, 0, 0);
+      at.setMinutes(at.getMinutes() - o.alert);
       const wait = at.getTime() - now;
-      if (wait <= 0) continue;
-      timers.push(setTimeout(() => new api(o.title, { body: t.agenda.reminders.body(o.start!, o.end, o.meta) }), wait));
+      if (wait <= 0 || wait > 2 * 86400000) continue;
+      timers.push(setTimeout(() => new api(o.title, { body: `${t.agenda.alerts.lead(o.alert!)} · ${o.start ? t.agenda.reminders.body(o.start, o.end, o.meta) : o.meta ?? ''}` }), wait));
     }
   }
 }

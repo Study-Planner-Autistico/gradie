@@ -8,6 +8,7 @@ import { SortableGrid } from '../../components/SortableGrid';
 import { showUndo } from '../../components/UndoToast';
 import { IconButton, Screen, ScreenHeader } from '../../components/ui';
 import { SheetThumb } from '../../components/SheetThumb';
+import { BookOpening } from '../../components/BookOpening';
 import { downloadNotes } from '../../components/whiteboard/exportPdf';
 import { t } from '../../i18n';
 import { metaOf, NO_SUBJECT, renameNotebook, restoreSheet, setSheetOrder, setSheetSort, sheetsOf, sortSheets, useOrder, useSheets, type Sheet } from '../../state/notebooks';
@@ -201,6 +202,8 @@ export default function Quaderno() {
           }}
         />
       )}
+      {/* Apertura del libro (dec. 198): copertina, pagine sfogliate, poi la pagina dei fogli. */}
+      <BookOpening look={look} name={label} />
     </View>
   );
 }

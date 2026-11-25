@@ -1,5 +1,5 @@
-// Promemoria dell'Agenda (dec. 195): con il permesso delle notifiche, all'inizio di ogni impegno con orario
-// arriva una notifica del telefono con il suo titolo, l'orario e l'aula. Notifiche locali di expo-notifications,
+// Promemoria dell'Agenda (dec. 195, 198): con il permesso delle notifiche, per ogni impegno con un avviso arriva
+// una notifica del telefono all'ora scelta (all'inizio, 5 minuti prima… 1 settimana prima) con titolo, orario e aula. Notifiche locali di expo-notifications,
 // che funzionano anche in Expo Go. Sul web: reminders.web.ts.
 import * as Notifications from 'expo-notifications';
 import { Linking } from 'react-native';
@@ -58,22 +58,26 @@ export function useReminderPermission() {
 const MAX = 60;
 const DAYS = 14;
 
-/** Riprogramma tutte le notifiche dagli impegni con orario dei prossimi 14 giorni. */
+/** Riprogramma le notifiche degli impegni con un avviso (dec. 198) che scattano nei prossimi 14 giorni. */
 export async function syncReminders(agenda: AgendaItem[]) {
   if (state !== 'granted') return;
   await Notifications.cancelAllScheduledNotificationsAsync();
   const now = Date.now();
   let n = 0;
-  for (let d = 0; d < DAYS && n < MAX; d++) {
+  // Si guarda una settimana più in là: un avviso "1 settimana prima" può scattare entro i 14 giorni.
+  for (let d = 0; d < DAYS + 7 && n < MAX; d++) {
     const day = new Date();
     day.setDate(day.getDate() + d);
     for (const o of occurrencesOn(agenda, ymd(day))) {
-      if (!o.start || n >= MAX) continue;
+      if (n >= MAX) continue;
+      if (o.alert === undefined) continue;
+      // Senza orario l'impegno conta dalle 9 del mattino.
       const at = fromYmd(o.date);
-      at.setHours(Number(o.start.slice(0, 2)), Number(o.start.slice(3, 5)), 0, 0);
-      if (at.getTime() <= now) continue;
+      at.setHours(o.start ? Number(o.start.slice(0, 2)) : 9, o.start ? Number(o.start.slice(3, 5)) : 0, 0, 0);
+      at.setMinutes(at.getMinutes() - o.alert);
+      if (at.getTime() <= now || at.getTime() > now + DAYS * 86400000) continue;
       await Notifications.scheduleNotificationAsync({
-        content: { title: o.title, body: t.agenda.reminders.body(o.start, o.end, o.meta) },
+        content: { title: o.title, body: `${t.agenda.alerts.lead(o.alert!)} · ${o.start ? t.agenda.reminders.body(o.start, o.end, o.meta) : o.meta ?? ''}` },
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: at },
       });
       n++;

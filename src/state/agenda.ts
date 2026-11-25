@@ -25,10 +25,12 @@ export type AgendaItem = {
   repeat?: { until: string; skip: string[] };
   /** Evento preso dal calendario del telefono: serve a riconoscerlo se lo si importa di nuovo. */
   imported?: { calendarId: string; eventId: string };
+  /** Avviso, minuti prima dell'inizio (0 = all'ora dell'evento); senza, nessuna notifica (dec. 198). */
+  alert?: number;
 };
 
 /** Un impegno in un giorno preciso: per le ripetute `id` è "serie@giorno", `seriesId` la serie. */
-export type Occurrence = DemoAgendaItem & { date: string; seriesId: string; recurring: boolean; imported?: AgendaItem['imported'] };
+export type Occurrence = DemoAgendaItem & { date: string; seriesId: string; recurring: boolean; imported?: AgendaItem['imported']; alert?: number };
 
 const pad = (n: number) => String(n).padStart(2, '0');
 export const ymd = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
