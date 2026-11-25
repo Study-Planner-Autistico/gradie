@@ -6,14 +6,12 @@ import { tap } from '../../components/haptics';
 import { Icon } from '../../components/icons';
 import { showUndo } from '../../components/UndoToast';
 import { locale, t } from '../../i18n';
-import { addCoins } from '../../state/coins';
-import { addGrade, coinsFor, formatAvg, formatGrade, mean, removeGrade, useGrades } from '../../state/grades';
+import { addGrade, formatAvg, formatGrade, mean, removeGrade, useGrades } from '../../state/grades';
 import { useTheme } from '../../theme';
 
 /**
  * Voti di una materia (dec. 196), toccando la sua finestra nel Registro voti: media e tutte le volte che hai
- * inserito un voto, dal più recente. Il "+" aggiunge un voto già su questa materia; il cestino lo toglie
- * (con le monete che aveva dato), con "Annulla".
+ * inserito un voto, dal più recente. Il "+" aggiunge un voto già su questa materia; il cestino lo toglie, con "Annulla".
  */
 export default function VotiMateria() {
   const { colors, typography, spacing, radius, layout } = useTheme();
@@ -77,12 +75,9 @@ export default function VotiMateria() {
                 <Pressable
                   onPress={() =>
                     confirm(T.deleteConfirm(formatGrade(g, T.lode)), T.delete, () => {
-                      const coins = coinsFor(g.value, g.lode);
                       removeGrade(g.id);
-                      addCoins(-coins);
                       showUndo(T.deleted, () => {
                         addGrade({ subject: g.subject, value: g.value, lode: g.lode, kind: g.kind, date: g.date });
-                        addCoins(coins);
                       });
                     })
                   }

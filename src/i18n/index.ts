@@ -679,7 +679,7 @@ const it = {
     delete: 'Elimina',
     deleteConfirm: (g: string) => `Eliminare il voto ${g}?`,
     deleted: 'Voto eliminato',
-    added: (g: string, subject: string, coins: number) => `${g} in ${subject} · +${coins} monete`,
+    added: (g: string, subject: string) => `${g} aggiunto in ${subject}`,
     new: {
       title: 'Nuovo voto',
       subject: 'Materia',
@@ -687,7 +687,6 @@ const it = {
       hint: 'Scrivilo o scegli sulla barra, da 18 a 30',
       invalid: 'Scrivi un voto da 18 a 30',
       kind: 'Tipo',
-      earn: (n: number) => `Guadagni ${n} monete`,
       save: 'Salva il voto',
       pickSubject: 'Scegli la materia',
     },
@@ -1577,7 +1576,7 @@ const en: Dict = {
     delete: 'Delete',
     deleteConfirm: (g: string) => `Delete the grade ${g}?`,
     deleted: 'Grade deleted',
-    added: (g: string, subject: string, coins: number) => `${g} in ${subject} · +${coins} coins`,
+    added: (g: string, subject: string) => `${g} added to ${subject}`,
     new: {
       title: 'New grade',
       subject: 'Subject',
@@ -1585,7 +1584,6 @@ const en: Dict = {
       hint: 'Type it or pick it on the bar, 18 to 30',
       invalid: 'Enter a grade from 18 to 30',
       kind: 'Type',
-      earn: (n: number) => `You earn ${n} coins`,
       save: 'Save grade',
       pickSubject: 'Pick the subject',
     },

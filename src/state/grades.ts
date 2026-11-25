@@ -1,5 +1,5 @@
 // Registro voti (dec. 195-196): voti in trentesimi, come all'università (da 18 a 30, con la lode). In memoria
-// (dec. 53). Ogni voto inserito dà monete: più è alto, più monete (dec. 196). Le medie si calcolano da qui,
+// (dec. 53). I voti non danno monete (dec. 197, tolto da dec. 196). Le medie si calcolano da qui,
 // anche quella della Panoramica in Profilo.
 import { useSyncExternalStore } from 'react';
 import { locale } from '../i18n';
@@ -61,9 +61,6 @@ export function removeGrade(id: string) {
   grades = grades.filter((x) => x.id !== id);
   emit();
 }
-
-/** Monete per un voto: 18 → 1, ogni punto in più 2 monete (30 → 25), la lode altre 10. */
-export const coinsFor = (value: number, lode?: boolean) => Math.max(0, 1 + (value - MIN_GRADE) * 2) + (lode ? 10 : 0);
 
 /** La lode conta 30 nella media. */
 export const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);

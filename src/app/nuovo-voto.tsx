@@ -1,21 +1,19 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
-import { Coin } from '../components/Coin';
 import { GradeSlider } from '../components/GradeSlider';
 import { success, tap } from '../components/haptics';
 import { SheetPage } from '../components/settings';
 import { Button } from '../components/ui';
 import { showUndo } from '../components/UndoToast';
 import { t } from '../i18n';
-import { addCoins } from '../state/coins';
-import { addGrade, coinsFor, formatGrade, MAX_GRADE, MIN_GRADE, removeGrade, type GradeKind } from '../state/grades';
+import { addGrade, formatGrade, MAX_GRADE, MIN_GRADE, removeGrade, type GradeKind } from '../state/grades';
 import { useSubjects } from '../state/subjects';
 import { useTheme } from '../theme';
 
 /**
  * Nuovo voto (dec. 196), dal "+" del Registro voti: prima la materia, poi il voto, scritto a mano (es. 30) o scelto
- * sulla barra, con la lode solo sul 30; poi il tipo. Salvando si guadagnano monete: più alto il voto, più monete.
+ * sulla barra, con la lode solo sul 30; poi il tipo. I voti non danno monete (dec. 197).
  */
 export default function NuovoVoto() {
   const { colors, typography, spacing, radius } = useTheme();
@@ -31,7 +29,6 @@ export default function NuovoVoto() {
 
   const typed = Number(text);
   const valid = /^\d{1,2}$/.test(text) && typed >= MIN_GRADE && typed <= MAX_GRADE;
-  const coins = coinsFor(value, lode && value === MAX_GRADE);
 
   const fromSlider = (v: number) => {
     setValue(v);
@@ -52,12 +49,8 @@ export default function NuovoVoto() {
     if (!subject || !valid) return;
     const withLode = lode && value === MAX_GRADE;
     const grade = addGrade({ subject, value, lode: withLode || undefined, kind, date: new Date().toISOString().slice(0, 10) });
-    addCoins(coins);
     success();
-    showUndo(T.added(formatGrade(grade, T.lode), subject, coins), () => {
-      removeGrade(grade.id);
-      addCoins(-coins);
-    });
+    showUndo(T.added(formatGrade(grade, T.lode), subject), () => removeGrade(grade.id));
     router.back();
   };
 
@@ -120,11 +113,6 @@ export default function NuovoVoto() {
             {pill(kind === 'partial', T.partial, () => setKind('partial'))}
             {pill(kind === 'exam', T.exam, () => setKind('exam'))}
           </View>
-        </View>
-
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.surface }}>
-          <Coin size={26} />
-          <Text style={[typography.body, { flex: 1, color: colors.text }]}>{N.earn(coins)}</Text>
         </View>
 
         <Button title={subject ? N.save : N.pickSubject} appearance="primary" disabled={!subject || !valid} onPress={save} />
