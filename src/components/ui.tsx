@@ -524,7 +524,7 @@ export function PlaceholderScreen({ title, icon }: { title: string; icon: IconNa
     <Screen>
       <ScreenHeader title={title} />
       <Card style={{ alignItems: 'center', paddingVertical: spacing.xxxl }}>
-        <Mascot size={120} mood="wonder" />
+        <Mascot size={120} mood="sleepy" />
         <Chip variant="muted" icon={icon} label={title} />
         <Text style={[typography.headline, { color: colors.text }]}>{t.placeholder.title}</Text>
         <Text style={[typography.callout, { color: colors.textSecondary, textAlign: 'center', fontWeight: '400' }]}>{t.placeholder.body}</Text>

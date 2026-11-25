@@ -4,8 +4,8 @@ import { AccessibilityInfo, Animated, Easing, Image, View } from 'react-native';
 /**
  * Umori della mascotte (dec. 201):
  * - happy e celebrate: il nuovo logo (nuvoletta con il tocco e le stelline), che fluttua piano;
- * - sleepy: la GIF di Gradie che dorme (Home, blocco app, stati vuoti);
- * - wonder: la GIF con le stelline negli occhi ("Modulo in progettazione").
+ * - sleepy: la GIF di Gradie che dorme ("Modulo in progettazione", blocco app, onboarding);
+ * - wonder: la GIF con le stelline negli occhi (riquadro "Oggi" della Home, dec. 202).
  */
 export type MascotMood = 'happy' | 'celebrate' | 'sleepy' | 'wonder';
 

@@ -242,7 +242,7 @@ function TodayCard({ items, tomorrow }: { items: DemoAgendaItem[]; tomorrow?: De
       })}
     >
       <View style={{ position: 'absolute', right: -16, bottom: -16 }}>
-        <Mascot size={116} mood="sleepy" />
+        <Mascot size={116} mood="wonder" />
       </View>
 
       <View style={{ marginRight: 80, gap: spacing.md, flex: 1 }}>
