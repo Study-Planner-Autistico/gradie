@@ -1,7 +1,8 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Linking, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FriendAvatar } from '../components/FriendAvatar';
 import { success, tap, warn } from '../components/haptics';
 import { Icon, type IconName } from '../components/icons';
@@ -22,6 +23,22 @@ export default function AggiungiAmico() {
   const T = t.profile.hub;
   const [mode, setMode] = useState<Mode | null>(null);
   const [result, setResult] = useState<RequestResult | null>(null);
+  const [permission, requestPermission] = useCameraPermissions();
+  const [scanning, setScanning] = useState(false);
+  const [noCamera, setNoCamera] = useState(false);
+
+  // "Inquadra QR" apre subito la fotocamera a tutto schermo (dec. 188): prima chiede il permesso, se serve.
+  const openScanner = async () => {
+    setMode('scan');
+    setResult(null);
+    setNoCamera(false);
+    try {
+      const p = permission?.granted ? permission : await requestPermission();
+      if (p.granted) setScanning(true);
+    } catch {
+      setNoCamera(true);
+    }
+  };
 
   const send = (raw: string) => {
     const r = sendRequest(raw);
@@ -40,11 +57,31 @@ export default function AggiungiAmico() {
         {T.add}
       </Text>
       <View style={{ flexDirection: 'row', gap: spacing.md }}>
-        <Choice icon="qr-code-scan" label={T.scan} selected={mode === 'scan'} onPress={() => (setMode('scan'), setResult(null))} />
+        <Choice icon="qr-code-scan" label={T.scan} selected={mode === 'scan'} onPress={openScanner} />
         <Choice icon="keyboard-outline" label={T.enterCode} selected={mode === 'code'} onPress={() => (setMode('code'), setResult(null))} />
       </View>
 
-      {mode === 'scan' && <Scanner onScanned={send} result={result} onAgain={() => setResult(null)} />}
+      {mode === 'scan' && !scanning && (
+        <ScanStatus
+          denied={!!permission && !permission.granted}
+          canAskAgain={permission?.canAskAgain ?? true}
+          noCamera={noCamera}
+          scanned={!!result}
+          onOpen={openScanner}
+        />
+      )}
+      <Scanner
+        visible={scanning}
+        onClose={() => setScanning(false)}
+        onUnavailable={() => {
+          setScanning(false);
+          setNoCamera(true);
+        }}
+        onScanned={(data) => {
+          setScanning(false);
+          send(data);
+        }}
+      />
       {mode === 'code' && <CodeEntry onSend={send} onEdit={() => setResult(null)} />}
       {result && <ResultCard result={result} />}
 
@@ -95,50 +132,134 @@ function Choice({ icon, label, selected, onPress }: { icon: IconName; label: str
   );
 }
 
-/** Fotocamera che legge il QR del profilo (gradie://u/1234); si ferma al primo codice letto. */
-function Scanner({ onScanned, result, onAgain }: { onScanned: (data: string) => void; result: RequestResult | null; onAgain: () => void }) {
-  const { colors, typography, spacing, radius } = useTheme();
+/** Sotto le due scelte, quando la fotocamera è chiusa: riaprirla, oppure perché non si apre. */
+function ScanStatus({ denied, canAskAgain, noCamera, scanned, onOpen }: { denied: boolean; canAskAgain: boolean; noCamera: boolean; scanned: boolean; onOpen: () => void }) {
+  const { spacing } = useTheme();
   const T = t.profile.hub;
-  const [permission, requestPermission] = useCameraPermissions();
-  const busy = useRef(false);
-  if (Platform.OS === 'web') return <Note text={T.cameraWeb} />;
-  if (!permission) return null;
-  if (!permission.granted)
+  if (noCamera) return <Note text={T.cameraUnavailable} />;
+  if (denied)
     return (
       <View style={{ gap: spacing.md }}>
-        <Note text={T.cameraNeeded} />
-        <Button title={T.allowCamera} appearance="primary" iconBefore="camera" onPress={requestPermission} />
+        <Note text={canAskAgain ? T.cameraNeeded : T.cameraDenied} />
+        {canAskAgain || Platform.OS === 'web' ? (
+          <Button title={T.allowCamera} appearance="primary" iconBefore="camera" onPress={onOpen} />
+        ) : (
+          <Button title={T.openSettings} appearance="primary" iconBefore="settings" onPress={() => Linking.openSettings()} />
+        )}
       </View>
     );
+  return <Button title={scanned ? T.scanAgain : T.scan} appearance={scanned ? 'default' : 'primary'} iconBefore="qr-code-scan" onPress={onOpen} />;
+}
+
+/**
+ * Fotocamera a tutto schermo che legge il QR del profilo (gradie://u/1234), come l'app Fotocamera (dec. 188):
+ * un riquadro al centro dove mettere il codice; al primo QR letto si chiude e parte la richiesta.
+ */
+function Scanner({ visible, onClose, onScanned, onUnavailable }: { visible: boolean; onClose: () => void; onScanned: (data: string) => void; onUnavailable: () => void }) {
+  const { typography, spacing, layout } = useTheme();
+  const T = t.profile.hub;
+  const insets = useSafeAreaInsets();
+  const busy = useRef(false);
+  const [torch, setTorch] = useState(false);
+  const box = 250;
+  const veil = 'rgba(0,0,0,0.55)';
+  const round = (pressed: boolean) => ({ width: layout.iconButton + 4, height: layout.iconButton + 4, borderRadius: 30, backgroundColor: pressed ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.2)', alignItems: 'center' as const, justifyContent: 'center' as const });
   return (
-    <View style={{ gap: spacing.md, alignItems: 'center' }}>
-      <View style={{ width: 260, height: 260, borderRadius: radius.xxl, overflow: 'hidden', backgroundColor: '#000' }}>
-        {!result && (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="fullScreen"
+      statusBarTranslucent
+      onShow={() => {
+        busy.current = false;
+        setTorch(false);
+      }}
+      onRequestClose={onClose}
+    >
+      <View style={{ flex: 1, backgroundColor: '#000' }}>
+        {visible && (
           <CameraView
-            style={{ flex: 1 }}
+            style={{ position: 'absolute', inset: 0 }}
             facing="back"
+            enableTorch={torch}
             barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+            onMountError={onUnavailable}
             onBarcodeScanned={({ data }) => {
               if (busy.current) return;
               busy.current = true;
+              success();
               onScanned(data);
             }}
           />
         )}
+        {/* Velo scuro intorno al riquadro, con gli angoli bianchi. */}
+        <View pointerEvents="none" style={{ position: 'absolute', inset: 0 }}>
+          <View style={{ flex: 1, backgroundColor: veil }} />
+          <View style={{ flexDirection: 'row', height: box }}>
+            <View style={{ flex: 1, backgroundColor: veil }} />
+            <View style={{ width: box, height: box }}>
+              {(['tl', 'tr', 'bl', 'br'] as const).map((c) => (
+                <View
+                  key={c}
+                  style={{
+                    position: 'absolute',
+                    width: 44,
+                    height: 44,
+                    borderColor: '#FFFFFF',
+                    borderTopWidth: c[0] === 't' ? 5 : 0,
+                    borderBottomWidth: c[0] === 'b' ? 5 : 0,
+                    borderLeftWidth: c[1] === 'l' ? 5 : 0,
+                    borderRightWidth: c[1] === 'r' ? 5 : 0,
+                    borderTopLeftRadius: c === 'tl' ? 22 : 0,
+                    borderTopRightRadius: c === 'tr' ? 22 : 0,
+                    borderBottomLeftRadius: c === 'bl' ? 22 : 0,
+                    borderBottomRightRadius: c === 'br' ? 22 : 0,
+                    top: c[0] === 't' ? 0 : undefined,
+                    bottom: c[0] === 'b' ? 0 : undefined,
+                    left: c[1] === 'l' ? 0 : undefined,
+                    right: c[1] === 'r' ? 0 : undefined,
+                  }}
+                />
+              ))}
+            </View>
+            <View style={{ flex: 1, backgroundColor: veil }} />
+          </View>
+          <View style={{ flex: 1, backgroundColor: veil, alignItems: 'center', paddingTop: spacing.xxl, paddingHorizontal: spacing.xxl }}>
+            <Text style={[typography.headline, { color: '#FFFFFF', textAlign: 'center' }]}>{T.scanHint}</Text>
+          </View>
+        </View>
+        <View style={{ position: 'absolute', top: insets.top + spacing.md, left: spacing.lg, right: spacing.lg, flexDirection: 'row', alignItems: 'center' }}>
+          <Pressable
+            onPress={() => {
+              tap();
+              onClose();
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={T.closeScanner}
+            style={({ pressed }) => round(pressed)}
+          >
+            <Icon name="close" size={26} color="#FFFFFF" />
+          </Pressable>
+          <Text style={[typography.headline, { flex: 1, color: '#FFFFFF', textAlign: 'center' }]}>{T.scan}</Text>
+          {Platform.OS !== 'web' ? (
+            <Pressable
+              onPress={() => {
+                tap();
+                setTorch((v) => !v);
+              }}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: torch }}
+              accessibilityLabel={T.torch}
+              style={({ pressed }) => ({ ...round(pressed), backgroundColor: torch ? '#FFFFFF' : round(pressed).backgroundColor })}
+            >
+              <Icon name="flashlight" size={24} color={torch ? '#000000' : '#FFFFFF'} />
+            </Pressable>
+          ) : (
+            <View style={{ width: layout.iconButton + 4 }} />
+          )}
+        </View>
       </View>
-      {result ? (
-        <Button
-          title={T.scanAgain}
-          iconBefore="qr-code-scan"
-          onPress={() => {
-            busy.current = false;
-            onAgain();
-          }}
-        />
-      ) : (
-        <Text style={[typography.callout, { color: colors.textSecondary, textAlign: 'center' }]}>{T.scanHint}</Text>
-      )}
-    </View>
+    </Modal>
   );
 }
 

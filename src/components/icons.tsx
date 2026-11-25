@@ -119,6 +119,7 @@ export const ICONS = {
   qr: H.QrCodeIcon,
   'qr-code-scan': H.QrCodeScanIcon,
   'keyboard-outline': H.KeyboardIcon,
+  flashlight: H.FlashlightIcon,
   'search-outline': H.Search01Icon,
   mail: H.Mail01Icon,
   'mail-open-outline': H.MailOpen01Icon,
