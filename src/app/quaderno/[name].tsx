@@ -3,14 +3,12 @@ import { useState, type ReactElement } from 'react';
 import * as Sharing from 'expo-sharing';
 import { Linking, Platform, View } from 'react-native';
 import { notify } from '../../components/dialogs';
-import { Icon, IMPORT_ICON } from '../../components/icons';
 import { AddCard, CoverCard, downloadNotebook, ItemMenu, NotebookEditor, SortBar, STATUS_ICON } from '../../components/notebooks';
 import { SortableGrid } from '../../components/SortableGrid';
 import { showUndo } from '../../components/UndoToast';
 import { IconButton, Screen, ScreenHeader } from '../../components/ui';
-import { BoardPreview } from '../../components/whiteboard/BoardPreview';
+import { SheetThumb } from '../../components/SheetThumb';
 import { downloadNotes } from '../../components/whiteboard/exportPdf';
-import { CoverThumb, PaperThumb } from '../../components/whiteboard/Paper';
 import { t } from '../../i18n';
 import { metaOf, NO_SUBJECT, renameNotebook, restoreSheet, setSheetOrder, setSheetSort, sheetsOf, sortSheets, useOrder, useSheets, type Sheet } from '../../state/notebooks';
 import { setSubjectLook, subjectLook, useSubjectLooks, useSubjects } from '../../state/subjects';
@@ -19,11 +17,9 @@ import {
   duplicateNote,
   getBoardItems,
   getNoteMeta,
-  getViewport,
   setStudyStatus,
   toggleFavorite,
   trashNote,
-  useBoards,
   useNoteExtras,
   type ImportSource,
   type StudyStatus,
@@ -51,7 +47,6 @@ export default function Quaderno() {
   const sheets = useSheets();
   const subjects = useSubjects();
   const looks = useSubjectLooks();
-  const itemsOf = useBoards();
   const order = useOrder();
   const { favorites: pinned, statuses } = useNoteExtras();
   const [menuFor, setMenuFor] = useState<string | null>(null);
@@ -142,7 +137,7 @@ export default function Quaderno() {
                     drag={IOS ? undefined : drag}
                     systemMenu={IOS}
                   >
-                    <SheetThumb sheet={s} items={itemsOf(s.id)} width={w} height={h} />
+                    <SheetThumb sheet={s} width={w} height={h} />
                   </CoverCard>
                 );
                 return IOS ? <SheetMenu sheet={s} {...actions}>{card}</SheetMenu> : card;
@@ -208,21 +203,6 @@ export default function Quaderno() {
       )}
     </View>
   );
-}
-
-/** Anteprima del foglio: copertina, visuale dell'ultima volta o la carta scelta. */
-function SheetThumb({ sheet, items, width, height }: { sheet: Sheet; items: Parameters<typeof BoardPreview>[0]['items']; width: number; height: number }) {
-  const { colors } = useTheme();
-  if (sheet.source)
-    return (
-      <View style={{ width, height, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceMuted }}>
-        <Icon name={IMPORT_ICON[sheet.source.kind]} size={width * 0.3} color={sheet.source.kind === 'word' || sheet.source.kind === 'ppt' ? colors.textSecondary : colors.dangerIcon} />
-      </View>
-    );
-  const paper = getNoteMeta(sheet.id)?.paper ?? { template: 'blank' as const, color: '#FFFFFF', dark: false };
-  if (sheet.cover) return <CoverThumb color={sheet.cover} title={sheet.title} width={width} height={height} />;
-  if (items.length > 0) return <BoardPreview items={items} height={height} viewport={getViewport(sheet.id)} />;
-  return <PaperThumb template={paper.template} gap={'gap' in paper ? paper.gap : undefined} color={paper.color} dark={paper.dark} width={width} height={height} />;
 }
 
 /**

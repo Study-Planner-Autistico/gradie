@@ -10,11 +10,15 @@ import {
 } from 'expo-audio';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { router } from 'expo-router';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Linking, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { t } from '../i18n';
 import { findPerson } from '../state/friends';
-import { NO_SUBJECT, useSheets, type Sheet } from '../state/notebooks';
+import { NO_SUBJECT, sheetsOf, sortBooks, sortSheets, useOrder, useSheets, type Sheet } from '../state/notebooks';
+import { subjectLook, useSubjectLooks, useSubjects, type NotebookLook } from '../state/subjects';
+import { COVER_RATIO } from './coverArt';
+import { NotebookCover } from './notebooks';
+import { SheetThumb } from './SheetThumb';
 import { ASSISTANT, ONLINE, type Message } from '../state/messages';
 import { useTheme } from '../theme';
 import { FriendAvatar } from './FriendAvatar';
@@ -275,10 +279,20 @@ export function FileBubble({ file, mine }: { file: NonNullable<Message['file']>;
   );
 }
 
-/** Pagina degli Appunti in una bolla: copertina, titolo e materia; un tocco la apre nella lavagna. */
+/**
+ * Pagina degli Appunti in una bolla (dec. 191): l'anteprima vera del foglio e la copertina del suo quaderno, presi
+ * dagli Appunti in tempo reale: se cambi colore, copertina, titolo o disegno, la bolla si aggiorna. Un tocco apre la lavagna.
+ */
 export function NoteBubble({ note, mine }: { note: NonNullable<Message['note']>; mine: boolean }) {
   const { colors, typography, spacing, radius } = useTheme();
+  const sheet = useSheets().find((s) => s.id === note.id);
+  const subjects = useSubjects();
+  const looks = useSubjectLooks();
+  const subject = sheet?.subject ?? note.subject;
+  const i = subjects.indexOf(subject);
   const fg = mine ? colors.onAccent : colors.text;
+  const W = 64;
+  const H = Math.round(W * 1.32);
   return (
     <Pressable
       onPress={() => {
@@ -286,18 +300,25 @@ export function NoteBubble({ note, mine }: { note: NonNullable<Message['note']>;
         router.push(`/lavagna/${note.id}`);
       }}
       accessibilityRole="button"
-      accessibilityLabel={t.messages.openNote(note.title)}
-      style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, width: 230 }}
+      accessibilityLabel={t.messages.openNote(sheet?.title ?? note.title)}
+      style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, width: 236 }}
     >
-      <View style={{ width: 44, height: 56, borderRadius: radius.sm, backgroundColor: note.cover ?? colors.accent, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: mine ? 'rgba(255,255,255,0.5)' : colors.border }}>
-        <Icon name="book-outline" size={20} color="#FFFFFF" />
+      <View style={{ width: W, height: H, borderRadius: radius.sm, overflow: 'hidden', borderWidth: 1, borderColor: mine ? 'rgba(255,255,255,0.5)' : colors.border, backgroundColor: '#FFFFFF' }}>
+        {sheet ? <SheetThumb sheet={sheet} width={W} height={H} /> : <View style={{ flex: 1, backgroundColor: note.cover ?? colors.surfaceMuted }} />}
       </View>
-      <View style={{ flex: 1 }}>
-        <Text style={[typography.caption, { color: fg, opacity: 0.8 }]} numberOfLines={1}>
-          {note.subject || t.messages.notes}
-        </Text>
+      <View style={{ flex: 1, gap: spacing.xs }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+          {i >= 0 && (
+            <View style={{ width: 16, height: Math.round(16 / COVER_RATIO), borderRadius: 2, overflow: 'hidden' }}>
+              <NotebookCover look={subjectLook(looks, subject, i)} name="" width={16} height={Math.round(16 / COVER_RATIO)} />
+            </View>
+          )}
+          <Text style={[typography.caption, { flex: 1, color: fg, opacity: 0.85 }]} numberOfLines={1}>
+            {subject || t.messages.otherSheets}
+          </Text>
+        </View>
         <Text style={[typography.callout, { color: fg, fontWeight: '600' }]} numberOfLines={2}>
-          {note.title}
+          {sheet?.title ?? note.title}
         </Text>
       </View>
       <Icon name="chevron-forward" size={18} color={fg} />
@@ -306,41 +327,41 @@ export function NoteBubble({ note, mine }: { note: NonNullable<Message['note']>;
 }
 
 /**
- * Scelta delle pagine degli Appunti da mandare (dec. 190): prima la materia (il quaderno), poi le pagine.
+ * Scelta delle pagine degli Appunti da mandare (dec. 190, 191): prima i quaderni, con le stesse copertine e lo stesso
+ * ordine di Appunti; poi le pagine del quaderno con la loro anteprima. Tutto letto dagli Appunti in tempo reale.
  * Se ne possono scegliere più di una; "Invia" le manda tutte.
  */
 export function NotePicker({ onSend }: { onSend: (pages: Sheet[]) => void }) {
   const { colors, typography, spacing, radius } = useTheme();
   const T = t.messages;
   const sheets = useSheets();
-  const subjects = useMemo(() => {
-    const map = new Map<string, Sheet[]>();
-    for (const s of sheets) {
-      const k = s.subject || NO_SUBJECT;
-      map.set(k, [...(map.get(k) ?? []), s]);
-    }
-    return [...map.entries()].sort((a, b) => (a[0] === NO_SUBJECT ? 1 : b[0] === NO_SUBJECT ? -1 : a[0].localeCompare(b[0])));
-  }, [sheets]);
+  const subjects = useSubjects();
+  const looks = useSubjectLooks();
+  const order = useOrder();
+  const [w, setW] = useState(0);
   const [subject, setSubject] = useState<string | null>(null);
   const [chosen, setChosen] = useState<string[]>([]);
-  const pages = subject ? (subjects.find(([k]) => k === subject)?.[1] ?? []) : [];
-  const label = (k: string) => (k === NO_SUBJECT ? T.otherSheets : k);
 
-  const row = (key: string, children: ReactNode, onPress: () => void, a11y: string, selected?: boolean) => (
-    <Pressable
-      key={key}
-      onPress={() => {
-        tap();
-        onPress();
-      }}
-      accessibilityRole={selected === undefined ? 'button' : 'checkbox'}
-      accessibilityState={selected === undefined ? undefined : { checked: selected }}
-      accessibilityLabel={a11y}
-      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 60, paddingHorizontal: spacing.xl, backgroundColor: pressed ? colors.surfaceMuted : 'transparent' })}
-    >
-      {children}
-    </Pressable>
+  type Book = { subject: string; label: string; look: NotebookLook; count: number; lastEdit: number };
+  const bookOf = (s: string, label: string, look: NotebookLook): Book => {
+    const list = sheetsOf(sheets, s);
+    return { subject: s, label, look, count: list.length, lastEdit: Math.max(0, ...list.map((x) => x.at)) };
+  };
+  const books = sortBooks(
+    subjects.map((s, i) => bookOf(s, s, subjectLook(looks, s, i))),
+    order.books,
   );
+  const others = sheetsOf(sheets, NO_SUBJECT).length ? bookOf(NO_SUBJECT, T.otherSheets, { theme: 'polka', color: 'lilac' }) : null;
+  const all = others ? [...books, others] : books;
+  const book = all.find((b) => b.subject === subject);
+  const pages = subject ? sortSheets(sheetsOf(sheets, subject), subject, [], order) : [];
+
+  // Tre per riga come una mensola; su iPad quattro.
+  const gap = spacing.md;
+  const cols = w >= 480 ? 4 : 3;
+  const cw = w > 0 ? (w - gap * (cols - 1)) / cols : 0;
+  const bookH = Math.round(cw / COVER_RATIO);
+  const pageH = Math.round(cw * 1.32);
 
   return (
     <View style={{ flexShrink: 1 }}>
@@ -353,48 +374,63 @@ export function NotePicker({ onSend }: { onSend: (pages: Sheet[]) => void }) {
           <View style={{ width: 44 }} />
         )}
         <Text accessibilityRole="header" style={[typography.headline, { flex: 1, textAlign: 'center', color: colors.text }]} numberOfLines={1}>
-          {subject ? label(subject) : T.pickSubject}
+          {book ? book.label : T.pickSubject}
         </Text>
         <View style={{ width: 44 }} />
       </View>
-      <ScrollView style={{ flexShrink: 1 }}>
-        {!subject &&
-          subjects.map(([k, list]) =>
-            row(
-              k,
-              <>
-                <View style={{ width: 40, height: 50, borderRadius: radius.sm, backgroundColor: list[0]?.cover ?? colors.accent }} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[typography.headline, { color: colors.text }]}>{label(k)}</Text>
-                  <Text style={[typography.caption, { color: colors.textTertiary }]}>{T.pagesCount(list.length)}</Text>
+      <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ paddingHorizontal: spacing.xl, paddingVertical: spacing.sm }}>
+        <View onLayout={(e) => setW(e.nativeEvent.layout.width)} style={{ flexDirection: 'row', flexWrap: 'wrap', gap }}>
+          {cw > 0 &&
+            !subject &&
+            all.map((b) => (
+              <Pressable
+                key={b.subject}
+                onPress={() => {
+                  tap();
+                  setSubject(b.subject);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={`${b.label}, ${T.pagesCount(b.count)}`}
+                style={({ pressed }) => ({ width: cw, gap: spacing.xs, opacity: pressed ? 0.7 : 1 })}
+              >
+                <View style={{ borderRadius: radius.md, overflow: 'hidden' }}>
+                  <NotebookCover look={b.look} name={b.label} width={cw} height={bookH} />
                 </View>
-                <Icon name="chevron-forward" size={18} color={colors.textTertiary} />
-              </>,
-              () => setSubject(k),
-              `${label(k)}, ${T.pagesCount(list.length)}`,
-            ),
+                <Text style={[typography.caption, { color: colors.textTertiary }]}>{T.pagesCount(b.count)}</Text>
+              </Pressable>
+            ))}
+          {cw > 0 && subject && pages.length === 0 && (
+            <Text style={[typography.callout, { color: colors.textTertiary, paddingVertical: spacing.xl }]}>{T.noPages}</Text>
           )}
-        {subject &&
-          pages.map((p) => {
-            const on = chosen.includes(p.id);
-            return row(
-              p.id,
-              <>
-                <View style={{ width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: on ? colors.accent : colors.borderBold, backgroundColor: on ? colors.accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-                  {on && <Icon name="check" size={16} color={colors.onAccent} />}
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[typography.headline, { color: colors.text }]} numberOfLines={1}>
+          {cw > 0 &&
+            subject &&
+            pages.map((p) => {
+              const on = chosen.includes(p.id);
+              return (
+                <Pressable
+                  key={p.id}
+                  onPress={() => {
+                    tap();
+                    setChosen((c) => (on ? c.filter((x) => x !== p.id) : [...c, p.id]));
+                  }}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: on }}
+                  accessibilityLabel={p.title}
+                  style={{ width: cw, gap: spacing.xs }}
+                >
+                  <View style={{ borderRadius: radius.md, overflow: 'hidden', borderWidth: on ? 3 : 1, borderColor: on ? colors.accent : colors.border, backgroundColor: '#FFFFFF' }}>
+                    <SheetThumb sheet={p} width={cw - (on ? 6 : 2)} height={pageH - (on ? 6 : 2)} />
+                    <View style={{ position: 'absolute', top: 6, right: 6, width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: on ? colors.accent : '#FFFFFF', backgroundColor: on ? colors.accent : 'rgba(0,0,0,0.25)', alignItems: 'center', justifyContent: 'center' }}>
+                      {on && <Icon name="check" size={14} color={colors.onAccent} />}
+                    </View>
+                  </View>
+                  <Text style={[typography.caption, { color: colors.text, fontWeight: '600' }]} numberOfLines={2}>
                     {p.title}
                   </Text>
-                  <Text style={[typography.caption, { color: colors.textTertiary }]}>{p.edited}</Text>
-                </View>
-              </>,
-              () => setChosen((c) => (on ? c.filter((x) => x !== p.id) : [...c, p.id])),
-              p.title,
-              on,
-            );
-          })}
+                </Pressable>
+              );
+            })}
+        </View>
       </ScrollView>
       {subject && (
         <View style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.md }}>
