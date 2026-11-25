@@ -18,7 +18,7 @@ import { NO_SUBJECT, sheetsOf, sortBooks, sortSheets, useOrder, useSheets, type 
 import { subjectLook, useSubjectLooks, useSubjects, type NotebookLook } from '../state/subjects';
 import { COVER_RATIO } from './coverArt';
 import { NotebookCover } from './notebooks';
-import { SheetThumb } from './SheetThumb';
+import { SheetThumb, snapshotOf, ThumbView, type NoteSnapshot } from './SheetThumb';
 import { ASSISTANT, ONLINE, type Message } from '../state/messages';
 import { useTheme } from '../theme';
 import { FriendAvatar } from './FriendAvatar';
@@ -80,6 +80,11 @@ export function dayLabel(at: number) {
   if (d === 0) return `${t.messages.today} ${clock(at)}`;
   if (d === 1) return `${t.messages.yesterday} ${clock(at)}`;
   return shortWhen(at);
+}
+/** "Copia di oggi, 21:38", "Copia di ieri, …", "Copia del 23.11.2026, …" (dec. 192). */
+export function copyLabel(at: number) {
+  const d = dayDiff(at);
+  return d === 0 ? t.messages.copyToday(clock(at)) : d === 1 ? t.messages.copyYesterday(clock(at)) : t.messages.copyOn(shortWhen(at), clock(at));
 }
 export const sameDay = (a: number, b: number) => dayDiff(a) === dayDiff(b);
 export const mmss = (s: number) => `${Math.floor(s / 60)}:${pad(Math.floor(s % 60))}`;
@@ -280,16 +285,11 @@ export function FileBubble({ file, mine }: { file: NonNullable<Message['file']>;
 }
 
 /**
- * Pagina degli Appunti in una bolla (dec. 191): l'anteprima vera del foglio e la copertina del suo quaderno, presi
- * dagli Appunti in tempo reale: se cambi colore, copertina, titolo o disegno, la bolla si aggiorna. Un tocco apre la lavagna.
+ * Pagina degli Appunti in una bolla (dec. 191, 192): la copia com'era all'invio, non la pagina viva. Le modifiche fatte
+ * dopo (da chi l'ha mandata o da altri) non arrivano. Anteprima, mini copertina del quaderno, materia, titolo e ora della copia.
  */
-export function NoteBubble({ note, mine }: { note: NonNullable<Message['note']>; mine: boolean }) {
+export function NoteBubble({ note, mine, onOpen }: { note: NonNullable<Message['note']>; mine: boolean; onOpen: () => void }) {
   const { colors, typography, spacing, radius } = useTheme();
-  const sheet = useSheets().find((s) => s.id === note.id);
-  const subjects = useSubjects();
-  const looks = useSubjectLooks();
-  const subject = sheet?.subject ?? note.subject;
-  const i = subjects.indexOf(subject);
   const fg = mine ? colors.onAccent : colors.text;
   const W = 64;
   const H = Math.round(W * 1.32);
@@ -297,29 +297,30 @@ export function NoteBubble({ note, mine }: { note: NonNullable<Message['note']>;
     <Pressable
       onPress={() => {
         tap();
-        router.push(`/lavagna/${note.id}`);
+        onOpen();
       }}
       accessibilityRole="button"
-      accessibilityLabel={t.messages.openNote(sheet?.title ?? note.title)}
+      accessibilityLabel={t.messages.openNote(note.title)}
       style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, width: 236 }}
     >
       <View style={{ width: W, height: H, borderRadius: radius.sm, overflow: 'hidden', borderWidth: 1, borderColor: mine ? 'rgba(255,255,255,0.5)' : colors.border, backgroundColor: '#FFFFFF' }}>
-        {sheet ? <SheetThumb sheet={sheet} width={W} height={H} /> : <View style={{ flex: 1, backgroundColor: note.cover ?? colors.surfaceMuted }} />}
+        <ThumbView snap={note} width={W} height={H} />
       </View>
-      <View style={{ flex: 1, gap: spacing.xs }}>
+      <View style={{ flex: 1, gap: 2 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-          {i >= 0 && (
+          {note.look && (
             <View style={{ width: 16, height: Math.round(16 / COVER_RATIO), borderRadius: 2, overflow: 'hidden' }}>
-              <NotebookCover look={subjectLook(looks, subject, i)} name="" width={16} height={Math.round(16 / COVER_RATIO)} />
+              <NotebookCover look={note.look} name="" width={16} height={Math.round(16 / COVER_RATIO)} />
             </View>
           )}
           <Text style={[typography.caption, { flex: 1, color: fg, opacity: 0.85 }]} numberOfLines={1}>
-            {subject || t.messages.otherSheets}
+            {note.subject || t.messages.otherSheets}
           </Text>
         </View>
         <Text style={[typography.callout, { color: fg, fontWeight: '600' }]} numberOfLines={2}>
-          {sheet?.title ?? note.title}
+          {note.title}
         </Text>
+        <Text style={[typography.caption, { color: fg, opacity: 0.75 }]}>{copyLabel(note.at)}</Text>
       </View>
       <Icon name="chevron-forward" size={18} color={fg} />
     </Pressable>
@@ -331,7 +332,7 @@ export function NoteBubble({ note, mine }: { note: NonNullable<Message['note']>;
  * ordine di Appunti; poi le pagine del quaderno con la loro anteprima. Tutto letto dagli Appunti in tempo reale.
  * Se ne possono scegliere più di una; "Invia" le manda tutte.
  */
-export function NotePicker({ onSend }: { onSend: (pages: Sheet[]) => void }) {
+export function NotePicker({ onSend }: { onSend: (pages: NoteSnapshot[]) => void }) {
   const { colors, typography, spacing, radius } = useTheme();
   const T = t.messages;
   const sheets = useSheets();
@@ -438,7 +439,8 @@ export function NotePicker({ onSend }: { onSend: (pages: Sheet[]) => void }) {
             disabled={!chosen.length}
             onPress={() => {
               tap();
-              onSend(pages.filter((p) => chosen.includes(p.id)));
+              // Copia fissa di ogni pagina, presa adesso (dec. 192).
+              onSend(pages.filter((p) => chosen.includes(p.id)).map((p) => snapshotOf(p, book?.look)));
             }}
             accessibilityRole="button"
             style={({ pressed }) => ({ height: 52, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center', backgroundColor: !chosen.length ? colors.surfaceMuted : pressed ? colors.accentPressed : colors.accent })}

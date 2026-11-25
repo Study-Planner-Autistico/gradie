@@ -1,6 +1,7 @@
 // Messaggi (dec. 189), come i Direct di Instagram: conversazioni con gli amici, richieste di chi non è ancora amico
 // e la chat con Gradie, l'assistente. Stato solo in memoria: nessun backend (dec. 53); Gradie risponde con frasi pronte.
 import { useSyncExternalStore } from 'react';
+import type { NoteSnapshot } from '../components/SheetThumb';
 import { t } from '../i18n';
 
 export type Message = {
@@ -14,8 +15,8 @@ export type Message = {
   video?: string;
   /** File allegato: nome, dimensione in byte e indirizzo. */
   file?: { uri: string; name: string; size?: number };
-  /** Pagina degli Appunti condivisa: si apre nella lavagna (dec. 190). */
-  note?: { id: string; title: string; subject: string; cover?: string | null };
+  /** Pagina degli Appunti condivisa (dec. 190): una copia fissa, com'era all'invio (dec. 192). */
+  note?: NoteSnapshot;
   /** Vocale: file, durata e altezze della forma d'onda (0-1). */
   audio?: { uri?: string; seconds: number; bars: number[] };
   /** Risposte rapide sotto un messaggio di Gradie. */

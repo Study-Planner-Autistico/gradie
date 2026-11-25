@@ -165,7 +165,7 @@ export default function Chat() {
               {firstOfGroup && m.from === 'them' && (
                 <Text style={[typography.caption, { color: colors.textTertiary, marginLeft: 44, marginTop: spacing.sm }]}>{name}</Text>
               )}
-              <Bubble message={m} personId={thread.personId} showAvatar={lastOfGroup} />
+              <Bubble message={m} personId={thread.personId} showAvatar={lastOfGroup} threadId={thread.id} />
               {lastOfGroup && (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, alignSelf: m.from === 'me' ? 'flex-end' : 'flex-start', marginLeft: m.from === 'me' ? 0 : 44, marginBottom: spacing.sm }}>
                   <Text style={[typography.caption, { color: colors.textTertiary }]}>{clock(m.at)}</Text>
@@ -280,7 +280,7 @@ export default function Chat() {
         <NotePicker
           onSend={(pages) => {
             setSheet(null);
-            for (const p of pages) send(thread.id, { note: { id: p.id, title: p.title, subject: p.subject, cover: p.cover } });
+            for (const note of pages) send(thread.id, { note });
           }}
         />
       </ActionSheet>
@@ -289,7 +289,7 @@ export default function Chat() {
 }
 
 /** Una bolla: mia a destra in viola, sua a sinistra in bianco con l'avatar sull'ultima del gruppo. */
-function Bubble({ message: m, personId, showAvatar }: { message: Message; personId: string; showAvatar: boolean }) {
+function Bubble({ message: m, personId, showAvatar, threadId }: { message: Message; personId: string; showAvatar: boolean; threadId: string }) {
   const { colors, typography, spacing, radius } = useTheme();
   const mine = m.from === 'me';
   const media = !!(m.image || m.video);
@@ -300,7 +300,7 @@ function Bubble({ message: m, personId, showAvatar }: { message: Message; person
   ) : m.file ? (
     <FileBubble file={m.file} mine={mine} />
   ) : m.note ? (
-    <NoteBubble note={m.note} mine={mine} />
+    <NoteBubble note={m.note} mine={mine} onOpen={() => router.push({ pathname: '/pagina-inviata', params: { thread: threadId, msg: m.id } })} />
   ) : m.audio ? (
     <AudioBubble uri={m.audio.uri} seconds={m.audio.seconds} bars={m.audio.bars} mine={mine} />
   ) : (

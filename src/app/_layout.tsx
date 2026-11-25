@@ -53,6 +53,7 @@ export default function RootLayout() {
         {/* Messaggi a tutto schermo, come i Direct di Instagram (dec. 189). */}
         <Stack.Screen name="messaggi" />
         <Stack.Screen name="chat/[id]" />
+        <Stack.Screen name="pagina-inviata" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="menu"options={{ presentation: 'formSheet', sheetAllowedDetents: [0.7, 1], sheetGrabberVisible: true }} />
       </Stack>
       <UndoToast />
