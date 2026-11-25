@@ -1,6 +1,6 @@
 # DESIGN.md — regole di design (v3, Gradie)
 
-> Brand: **Gradie** (dec. 114). Icona e mascotte: la nuvoletta con il tocco (`assets/brand/gradie-logo.png`, `src/components/Mascot.tsx`).
+> Brand: **Gradie** (dec. 114). Icona e mascotte: la nuvoletta con il tocco (icona: `assets/brand/gradie-logo.png`; mascotte e GIF: `assets/mascot/`, `src/components/Mascot.tsx`, dec. 201).
 > Base: **Atlassian Design System** (atlassian.design). Valori presi da `@atlaskit/tokens` 20.14 (temi `atlassian-light` / `atlassian-dark`).
 > Regola dei colori: **il brand è il viola del logo**; neutri, semantici e tinte per tipo restano Atlassian.
 > Disposizione delle pagine: le immagini di ispirazione inviate dall'utente (card bianche su sfondo grigio, profilo con avatar grande).
