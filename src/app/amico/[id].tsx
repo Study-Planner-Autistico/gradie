@@ -1,9 +1,8 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Alert, Platform, ScrollView, Text, View } from 'react-native';
 import { Row, Section } from '../../components/settings';
-import { demoFriends } from '../../data/demo';
 import { t } from '../../i18n';
-import { blockFriend, setFollowing, useFriends } from '../../state/friends';
+import { blockFriend, findPerson, setFollowing, useFriends } from '../../state/friends';
 import { useTheme } from '../../theme';
 
 /** Profilo di un amico (dec. 183): si apre toccandolo in Profilo; messaggio, smetti di seguire, blocca. */
@@ -11,7 +10,8 @@ export default function Amico() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors, typography, spacing } = useTheme();
   const friends = useFriends();
-  const f = demoFriends.find((x) => x.id === id);
+  // Anche gli amici aggiunti col codice o col QR (dec. 187).
+  const f = findPerson(id);
   if (!f) return null;
   const following = !friends.unfollowed.includes(f.id);
   const T = t.profile.friend;

@@ -7,8 +7,8 @@ import { tap } from '../../components/haptics';
 import { Mascot } from '../../components/Mascot';
 import { Flag } from '../../components/Flag';
 import { Button, Chip } from '../../components/ui';
-import { demoCountries, demoFriends, demoGrades, demoMe } from '../../data/demo';
-import { useFriends } from '../../state/friends';
+import { demoCountries, demoGrades, demoMe } from '../../data/demo';
+import { friendsOf, useFriends } from '../../state/friends';
 import { locale, t } from '../../i18n';
 import { missingSteps, myTag, useProfile, type InterestId, type ProfileState } from '../../state/profile';
 import { avatarPalette, useTheme } from '../../theme';
@@ -218,14 +218,32 @@ function Overview({ bio, interests }: { bio: string; interests: InterestId[] }) 
   );
 }
 
-/** Amici: avatar (per ora iniziali) con il nome, e un + tratteggiato per aggiungerne (in arrivo). Toccandone uno si apre il suo profilo (dec. 183). */
+/**
+ * Amici: avatar (per ora iniziali) con il nome; toccandone uno si apre il suo profilo (dec. 183).
+ * Il + tratteggiato apre "Aggiungi un amico" (QR o codice); "Vedi tutti" e "Richieste d'amicizia" aprono l'elenco (dec. 187).
+ */
 function Friends() {
-  const { colors, typography, spacing } = useTheme();
+  const { colors, typography, spacing, radius } = useTheme();
   const state = useFriends();
-  const shown = demoFriends.filter((f) => !state.blocked.includes(f.id));
+  const shown = friendsOf(state);
+  const pending = state.incoming.length;
+  const H = t.profile.hub;
   return (
     <View style={{ gap: spacing.lg }}>
-      <Text style={[typography.label, { color: colors.textTertiary }]}>{t.profile.friends}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <Text style={[typography.label, { flex: 1, color: colors.textTertiary }]}>{t.profile.friends}</Text>
+        <Pressable
+          onPress={() => {
+            tap();
+            router.push('/amici');
+          }}
+          accessibilityRole="button"
+          hitSlop={8}
+          style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+        >
+          <Text style={[typography.callout, { color: colors.link, fontWeight: '600' }]}>{H.seeAll}</Text>
+        </Pressable>
+      </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -spacing.xxl }} contentContainerStyle={{ paddingHorizontal: spacing.xxl, gap: spacing.xl }}>
         {shown.map((f) => (
           <Pressable
@@ -246,12 +264,40 @@ function Friends() {
             </Text>
           </Pressable>
         ))}
-        <Pressable onPress={tap} accessibilityRole="button" accessibilityLabel={t.profile.addFriendSoon} style={{ alignItems: 'center', gap: spacing.sm, width: 72 }}>
+        <Pressable
+          onPress={() => {
+            tap();
+            router.push('/aggiungi-amico');
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={H.add}
+          style={({ pressed }) => ({ alignItems: 'center', gap: spacing.sm, width: 72, opacity: pressed ? 0.6 : 1 })}
+        >
           <View style={{ width: 68, height: 68, borderRadius: 34, borderWidth: 2, borderStyle: 'dashed', borderColor: colors.borderBold, alignItems: 'center', justifyContent: 'center' }}>
             <Icon name="add" size={30} color={colors.textSecondary} />
           </View>
         </Pressable>
       </ScrollView>
+      <Pressable
+        onPress={() => {
+          tap();
+          router.push({ pathname: '/amici', params: { tab: 'requests' } });
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={`${H.requests}, ${H.requestsCount(pending)}`}
+        style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 56, paddingHorizontal: spacing.lg, borderRadius: radius.xl, backgroundColor: pressed ? colors.surfaceMuted : colors.surface })}
+      >
+        <Icon name="people-outline" size={22} color={colors.text} />
+        <Text style={[typography.headline, { flex: 1, color: colors.text }]}>{H.requests}</Text>
+        {pending > 0 ? (
+          <View style={{ minWidth: 24, height: 24, paddingHorizontal: 7, borderRadius: 12, backgroundColor: colors.dangerIcon, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={[typography.caption, { color: '#FFFFFF', fontWeight: '700' }]}>{pending}</Text>
+          </View>
+        ) : (
+          <Text style={[typography.callout, { color: colors.textTertiary }]}>{H.requestsCount(0)}</Text>
+        )}
+        <Icon name="chevron-forward" size={18} color={colors.textTertiary} />
+      </Pressable>
     </View>
   );
 }

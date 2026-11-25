@@ -30,6 +30,13 @@
         }
       ],
       [
+        "expo-camera",
+        {
+          "cameraPermission": "La fotocamera serve per inquadrare il codice QR del profilo di un amico.",
+          "recordAudioAndroid": false
+        }
+      ],
+      [
         "expo-calendar",
         {
           "calendarPermission": "Il calendario serve per importare in Agenda gli eventi dei calendari che scegli."
