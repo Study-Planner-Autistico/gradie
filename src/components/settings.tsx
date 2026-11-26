@@ -35,7 +35,7 @@ export function Section({ title, children, first }: { title?: string; children: 
           {title}
         </Text>
       )}
-      {/* Prova storybook: voci in un riquadro con bordo pieno 2 px e divisori 2 px a tutta larghezza. */}
+      {/* Voci in un riquadro con bordo pieno 2 px e divisori 2 px a tutta larghezza. */}
       <View style={{ borderRadius: radius.xl, borderWidth: 2, borderColor: colors.border, overflow: 'hidden' }}>
         {items.map((child, i) => (
           <Fragment key={i}>

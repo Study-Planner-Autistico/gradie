@@ -171,7 +171,7 @@ function AgendaScreen() {
 function ReminderCard({ denied }: { denied: boolean }) {
   const { colors, typography, spacing, radius } = useTheme();
   const R = t.agenda.reminders;
-  // Prova storybook: azzurro dei link invece del pesca.
+  // Azzurro delle informazioni invece del pesca (dec. 223).
   const bg = colors.informationBg;
   const fg = colors.information;
   return (

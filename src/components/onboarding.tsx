@@ -17,7 +17,7 @@ function useReducedMotion() {
 
 const bezier = (b: readonly [number, number, number, number]) => Easing.bezier(b[0], b[1], b[2], b[3]);
 
-/** Progress bar della prova storybook: alta 16, raggio pieno, riempimento brand con riflesso chiaro sopra. */
+/** Progress bar (dec. 223): alta 16, raggio pieno, riempimento brand con riflesso chiaro sopra. */
 export function ProgressBar({ value }: { value: number }) {
   const { colors, motion } = useTheme();
   const w = useRef(new Animated.Value(value)).current;

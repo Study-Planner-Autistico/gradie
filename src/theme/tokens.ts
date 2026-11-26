@@ -1,10 +1,9 @@
-// Design tokens — fonte di verità: DESIGN.md (v3).
-// Brand Gradie (viola del logo) sopra la base Atlassian (@atlaskit/tokens 20.14):
-// neutri, semantici e tinte per tipo restano Atlassian. Non usare valori hardcoded.
+// Design tokens — fonte di verità: DESIGN.md (v4, stile "storybook", dec. 223).
+// Brand Gradie (viola del logo), carta bianca, bordi pieni 2 px, niente ombre sfumate. Non usare valori hardcoded.
 import type { TextStyle } from 'react-native';
 
 /** Tinte per tipo di elemento (DESIGN.md §2.3): color.background.accent.*.subtlest + color.text.accent.*. */
-// Prova storybook: tinte vivaci tipo app per le lingue (azzurro, rosa, arancio, verde, grigio, viola), testo ≥ 4.5:1.
+// Tinte vivaci (dec. 223) (azzurro, rosa, arancio, verde, grigio, viola), testo ≥ 4.5:1.
 const lightTints = {
   lesson: { bg: '#DDF4FF', fg: '#1270A8' }, // blue
   appointment: { bg: '#FFE3F3', fg: '#B0307A' }, // magenta
@@ -23,7 +22,7 @@ const darkTints: typeof lightTints = {
   study: { bg: '#33244A', fg: '#D7A6FF' },
 };
 
-// Prova "storybook" (ramo di prova, non è una decisione): carta bianca, viola Gradie per titoli e progresso,
+// Stile "storybook" (dec. 223, DESIGN.md v4): carta bianca, viola Gradie per titoli e progresso,
 // blu per link e azioni secondarie, grigi caldi per il testo, bordi pieni 2 px, niente ombre, sfumature o vetro.
 export const lightColors = {
   /** Carta bianca: schermo e card sono dello stesso bianco, le card si staccano col bordo. */
@@ -182,7 +181,7 @@ export type TintName = keyof typeof lightTints;
 /** space.050 … space.1000 (base 8). */
 export const spacing = { xxs: 2, xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, xxxl: 32, huge: 40, giant: 48 } as const;
 
-/** Prova storybook: 12 px su bottoni, card, pillole e campi. */
+/** 12 px su bottoni, card, pillole e campi. */
 export const radius = { xs: 2, sm: 8, md: 12, lg: 12, xl: 12, xxl: 16, pill: 999 } as const;
 
 /** Font caricati in src/app/_layout.tsx: Fredoka (tondo) per i titoli, Rubik per il testo. */

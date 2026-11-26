@@ -3,7 +3,7 @@ import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useTheme } from '../theme';
 
 /**
- * Prova storybook: niente vetro. Superficie piatta con bordo pieno 2 px; stessa interfaccia del Glass di prima
+ * Niente vetro (dec. 223). Superficie piatta con bordo pieno 2 px; stessa interfaccia del Glass di prima
  * (`variant` e `interactive` restano per compatibilità e non cambiano più l'aspetto).
  */
 export function Glass({

@@ -245,7 +245,7 @@ export function Button({
   accessibilityLabel?: string;
 }) {
   const { colors, radius, typography, layout, spacing } = useTheme();
-  // Prova storybook: pulsanti tridimensionali. `edge` è il bordo inferiore più scuro; premendo, il pulsante ci scende sopra.
+  // Pulsanti tridimensionali (dec. 223). `edge` è il bordo inferiore più scuro; premendo, il pulsante ci scende sopra.
   const palette: Record<ButtonAppearance, { bg: string; pressed: string; fg: string; edge?: string }> = {
     primary: { bg: colors.accent, pressed: colors.accent, fg: colors.onAccent, edge: colors.accentPressed },
     ink: { bg: colors.ink, pressed: colors.ink, fg: colors.onInk, edge: colors.textSecondary },
@@ -419,7 +419,7 @@ export function TextField({
 }: TextInputProps & { label: string; helper?: string; error?: string; ref?: Ref<TextInputRef> }) {
   const { colors, typography, radius, spacing, layout } = useTheme();
   const [focused, setFocused] = useState(false);
-  // Prova storybook: campo grigio chiaro con bordo pieno 2 px, colorato solo a fuoco o con errore.
+  // Campo grigio chiaro con bordo pieno 2 px, colorato solo a fuoco o con errore.
   const borderColor = error ? colors.dangerIcon : focused ? colors.borderFocused : colors.border;
   return (
     <View style={{ gap: spacing.xs }}>
@@ -551,6 +551,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
   box40: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   box56: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center' },
-  /** Etichette dei bottoni in maiuscolo spaziato (prova storybook). */
+  /** Etichette dei bottoni in maiuscolo spaziato (dec. 223). */
   buttonText: { fontSize: 15, letterSpacing: 0.8, textTransform: 'uppercase' },
 });

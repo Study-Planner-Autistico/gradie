@@ -309,7 +309,7 @@ function Deadlines({ items }: { items: DemoAgendaItem[] }) {
       {items.length === 0 ? (
         <Text style={[typography.body, { color: colors.textSecondary }]}>{t.home.emptyDeadlines}</Text>
       ) : (
-        // Prova storybook: riquadro con bordo 2 px e divisori 2 px (sul ramo principale niente card né divisori, dec. 131).
+        // Riquadro con bordo 2 px e divisori 2 px (dec. 223, cambia dec. 131).
         <View style={{ borderRadius: radius.xl, borderWidth: 2, borderColor: colors.border, overflow: 'hidden' }}>
           {items.map((d, i) => (
             <Fragment key={d.id}>

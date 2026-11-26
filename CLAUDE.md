@@ -2,7 +2,7 @@
 
 Leggi in quest'ordine prima di lavorare:
 1. `AGENTS.md` — regole Expo/React Native (SDK 58, Expo Router in `src/app/`).
-2. `DESIGN.md` — regole di design (base Atlassian Design System). Ogni UI passa dai token in `src/theme/tokens.ts`.
+2. `DESIGN.md` — regole di design (stile "storybook", dec. 223). Ogni UI passa dai token in `src/theme/tokens.ts`.
 3. `docs/briefing.md` — briefing di prodotto: le decisioni 1–61 sono **vincolanti**.
 4. `docs/decisioni.md` — decisioni successive (62+), vincolanti; prevalgono sul briefing se lo modificano.
 5. `docs/moduli/` — specifiche dei moduli già lavorati.

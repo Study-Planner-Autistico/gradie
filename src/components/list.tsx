@@ -11,7 +11,7 @@ export function ListGroup({ children, title }: { children: ReactNode; title?: st
   return (
     <View style={{ gap: spacing.sm }}>
       {title && <Text style={[typography.label, { color: colors.textSecondary, marginLeft: spacing.xs }]}>{title}</Text>}
-      {/* Prova storybook: riquadro con bordo pieno 2 px e divisori 2 px a tutta larghezza. */}
+      {/* Riquadro con bordo pieno 2 px e divisori 2 px a tutta larghezza. */}
       <View style={{ backgroundColor: colors.surface, borderRadius: radius.xl, borderWidth: 2, borderColor: colors.border, overflow: 'hidden' }}>
         {items.map((child, i) => (
           <Fragment key={i}>
