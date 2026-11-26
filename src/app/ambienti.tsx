@@ -20,7 +20,7 @@ export default function Ambienti() {
       contentContainerStyle={{ padding: spacing.lg, paddingTop: spacing.xxl, gap: spacing.lg }}
     >
       <View style={{ gap: spacing.xs }}>
-        <Text style={[typography.title1, { color: colors.text }]}>{t.envSwitcher.title}</Text>
+        <Text style={[typography.title1, { color: colors.accent }]}>{t.envSwitcher.title}</Text>
         <Text style={[typography.body, { color: colors.textSecondary }]}>{t.envSwitcher.subtitle}</Text>
       </View>
       <ListGroup>

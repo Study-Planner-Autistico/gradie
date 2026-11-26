@@ -110,7 +110,7 @@ function MenuPanel({ open }: { open: boolean }) {
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg, marginBottom: spacing.xl }}>
         <MascotBadge size={44} />
-        <Text style={[typography.title1, { color: colors.text }]}>{t.appName}</Text>
+        <Text style={[typography.title1, { color: colors.accent }]}>{t.appName}</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.md, gap: spacing.xxs }}>

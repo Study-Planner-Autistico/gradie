@@ -280,7 +280,7 @@ export function DayTimeline<T extends DemoAgendaItem>({ items, day, onOpen }: { 
 }
 
 /** Verde acceso di sistema (iOS systemGreen), come lo screen di riferimento (dec. 206). */
-const NOW_GREEN = '#34C759';
+const NOW_GREEN = '#58CC02';
 const GAP_DOTS = 4;
 /** Icone di alba e tramonto a capo e in fondo alla linea, e lo spazio che lasciano sopra e sotto le righe. */
 const EDGE_ICON = 26;

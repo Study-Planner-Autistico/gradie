@@ -41,7 +41,7 @@ export default function Amico() {
         <View style={{ width: 104, height: 104, borderRadius: 52, backgroundColor: f.color, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={[typography.display, { color: '#FFFFFF' }]}>{f.initials}</Text>
         </View>
-        <Text accessibilityRole="header" style={[typography.title1, { color: colors.text }]}>
+        <Text accessibilityRole="header" style={[typography.title1, { color: colors.accent }]}>
           {f.name}
         </Text>
         <Text style={[typography.callout, { color: colors.textSecondary }]}>{following ? T.mutual : T.followsYou}</Text>

@@ -1,4 +1,5 @@
-import { DelaGothicOne_400Regular, useFonts } from '@expo-google-fonts/dela-gothic-one';
+import { Nunito_800ExtraBold, Nunito_900Black, useFonts } from '@expo-google-fonts/nunito';
+import { NunitoSans_500Medium, NunitoSans_600SemiBold, NunitoSans_700Bold, NunitoSans_800ExtraBold } from '@expo-google-fonts/nunito-sans';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -10,9 +11,9 @@ import { useTheme } from '../theme';
 
 export default function RootLayout() {
   const { colors } = useTheme();
-  // Si aspetta Dela Gothic One (è nel pacchetto, si carica subito): senza attesa la Home veniva disegnata
-  // col font di sistema e il giorno restava così, perché la Home non si ridisegna quando il font arriva.
-  const [fontsReady] = useFonts({ DelaGothicOne_400Regular });
+  // Si aspettano i font (sono nel pacchetto, si caricano subito): senza attesa la Home veniva disegnata
+  // col font di sistema e restava così, perché non si ridisegna quando il font arriva.
+  const [fontsReady] = useFonts({ Nunito_800ExtraBold, Nunito_900Black, NunitoSans_500Medium, NunitoSans_600SemiBold, NunitoSans_700Bold, NunitoSans_800ExtraBold });
   if (!fontsReady) return null;
   return (
     // Serve a Gesture Handler (Pencil sulla lavagna, dec. 166).

@@ -112,7 +112,7 @@ export default function Messaggi() {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.xl, gap: spacing.md }} keyboardShouldPersistTaps="handled">
-        <Text accessibilityRole="header" style={[typography.title1, { color: colors.text, paddingTop: spacing.sm }]}>
+        <Text accessibilityRole="header" style={[typography.title1, { color: colors.accent, paddingTop: spacing.sm }]}>
           {T.chats}
         </Text>
         {/* Ricerca sotto Chat, sempre visibile (dec. 216). */}

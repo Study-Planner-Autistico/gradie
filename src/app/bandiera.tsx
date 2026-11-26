@@ -20,7 +20,7 @@ export default function Bandiera() {
       contentContainerStyle={{ padding: spacing.lg, paddingTop: spacing.xxl, gap: spacing.lg }}
     >
       <View style={{ gap: spacing.xs }}>
-        <Text style={[typography.title1, { color: colors.text }]}>{t.profile.chooseCountry}</Text>
+        <Text style={[typography.title1, { color: colors.accent }]}>{t.profile.chooseCountry}</Text>
         <Text style={[typography.body, { color: colors.textSecondary }]}>{t.profile.chooseCountryHint}</Text>
       </View>
       <ListGroup>

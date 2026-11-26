@@ -13,9 +13,9 @@ import { useTheme } from '../theme';
 
 const CHART_H = 140;
 const COL_W = 30;
-const GREEN = '#22C55E';
-const GREEN_DARK = '#15803D';
-const GREEN_SOFT = '#BBF7D0';
+const GREEN = '#58CC02';
+const GREEN_DARK = '#46A302';
+const GREEN_SOFT = '#D7FFB8';
 
 /** Etichetta corta sotto la colonna: "Pro", "Geo"; "Ana I", "Ing B2" se la seconda parola è corta; altrimenti le iniziali ("SM"). */
 const short = (name: string) => {
@@ -113,7 +113,7 @@ export default function RegistroVoti() {
                       <Defs>
                         <LinearGradient id={id} x1="0" y1="0" x2="0" y2="1">
                           <Stop offset="0" stopColor={on ? GREEN : GREEN_SOFT} />
-                          <Stop offset="1" stopColor={on ? GREEN_DARK : GREEN_SOFT} stopOpacity={on ? 1 : 0.45} />
+                          <Stop offset="1" stopColor={on ? GREEN : GREEN_SOFT} />
                         </LinearGradient>
                       </Defs>
                       <Rect x={0} y={0} width={COL_W} height={h} rx={8} fill={`url(#${id})`} />

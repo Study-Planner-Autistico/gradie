@@ -109,7 +109,7 @@ function AgendaScreen() {
     >
       {/* Centrato e con gli stessi margini del giorno della Home, ma più piccolo (40 invece di 52) sulla stessa riga di 60. */}
       <View style={{ alignItems: 'center', marginTop: spacing.xl, marginBottom: spacing.lg }}>
-        <Text style={[typography.hero, { lineHeight: 60, color: colors.text }]} accessibilityRole="header">
+        <Text style={[typography.hero, { lineHeight: 60, color: colors.accent }]} accessibilityRole="header">
           {t.agenda.title}
         </Text>
       </View>
@@ -169,13 +169,14 @@ function AgendaScreen() {
  * il bottone "Attiva" che chiede il permesso delle notifiche. Se era stato negato, il bottone apre le Impostazioni del telefono.
  */
 function ReminderCard({ denied }: { denied: boolean }) {
-  const { typography, spacing, radius, isDark } = useTheme();
+  const { colors, typography, spacing, radius } = useTheme();
   const R = t.agenda.reminders;
-  const bg = isDark ? '#3A2418' : '#FFE8D9';
-  const fg = isDark ? '#FFC9A3' : '#5A2D0C';
+  // Prova storybook: azzurro dei link invece del pesca.
+  const bg = colors.informationBg;
+  const fg = colors.information;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: 40, paddingLeft: spacing.md, paddingRight: 4, borderRadius: radius.pill, backgroundColor: bg }}>
-      <Icon name="bell" size={18} color={isDark ? '#FF9F5A' : '#E8641B'} />
+      <Icon name="bell" size={18} color={colors.link} />
       <Text numberOfLines={1} style={[typography.callout, { flex: 1, color: fg, fontWeight: '600' }]}>
         {R.title}
         <Text style={{ fontWeight: '400' }}>{` · ${R.detail}`}</Text>
@@ -189,7 +190,7 @@ function ReminderCard({ denied }: { denied: boolean }) {
         accessibilityLabel={`${R.title}: ${R.detail}`}
         style={({ pressed }) => ({ height: 32, paddingHorizontal: spacing.md, borderRadius: radius.pill, justifyContent: 'center', backgroundColor: fg, opacity: pressed ? 0.75 : 1 })}
       >
-        <Text style={[typography.callout, { color: bg, fontWeight: '700' }]}>{denied ? R.openSettings : R.enable}</Text>
+        <Text style={[typography.callout, { color: colors.onAccent, fontWeight: '700' }]}>{denied ? R.openSettings : R.enable}</Text>
       </Pressable>
     </View>
   );

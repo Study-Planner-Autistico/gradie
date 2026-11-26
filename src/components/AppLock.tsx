@@ -46,7 +46,7 @@ export function AppLock() {
     <Modal visible={locked} animationType="fade" presentationStyle="fullScreen" onRequestClose={unlock}>
       <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center', padding: spacing.xxl, gap: spacing.xl }}>
       <Mascot size={140} mood="sleepy" />
-      <Text accessibilityRole="header" style={[typography.title1, { color: colors.text, textAlign: 'center' }]}>
+      <Text accessibilityRole="header" style={[typography.title1, { color: colors.accent, textAlign: 'center' }]}>
         {t.settings.locked}
       </Text>
       <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>{t.settings.lockedHint}</Text>

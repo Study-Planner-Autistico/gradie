@@ -96,7 +96,7 @@ export function ScreenHeader({
       <View style={{ flex: 1 }}>
         {title && (
           <Text
-            style={[compact ? typography.headline : typography.title1, { color: colors.text }]}
+            style={[compact ? typography.headline : typography.title1, { color: compact ? colors.text : colors.accent }]}
             accessibilityRole="header"
             numberOfLines={compact ? 1 : undefined}
           >
@@ -191,10 +191,10 @@ export function Chip({
           gap: spacing.xs,
           paddingHorizontal: spacing.sm,
           height: 24,
-          borderRadius: radius.sm,
+          borderRadius: radius.md,
           backgroundColor: bg,
           alignSelf: 'flex-start',
-          borderWidth: variant === 'glass' ? 1 : 0,
+          borderWidth: variant === 'glass' ? 2 : 0,
           borderColor: colors.border,
         },
       ]}
@@ -248,13 +248,14 @@ export function Button({
   const palette: Record<ButtonAppearance, { bg: string; pressed: string; fg: string }> = {
     primary: { bg: colors.accent, pressed: colors.accentPressed, fg: colors.onAccent },
     ink: { bg: colors.ink, pressed: colors.textSecondary, fg: colors.onInk },
-    default: { bg: colors.surfaceMuted, pressed: colors.neutralPressed, fg: colors.textSecondary },
+    /** Bottone secondario a contorno: bordo grigio 2 px, testo blu (prova storybook). */
+    default: { bg: 'transparent', pressed: colors.surfaceMuted, fg: colors.link },
     subtle: { bg: 'transparent', pressed: colors.surfaceMuted, fg: colors.textSecondary },
     danger: { bg: colors.dangerIcon, pressed: colors.danger, fg: '#FFFFFF' },
     warning: { bg: '#FBC828', pressed: '#F5B000', fg: '#292A2E' },
     discovery: { bg: colors.discovery, pressed: colors.discovery, fg: '#FFFFFF' },
     /** Sul gradiente di brand: bianco pieno con testo viola, o trasparente con testo bianco. */
-    inverse: { bg: '#FFFFFF', pressed: '#EEECFF', fg: '#463FB5' },
+    inverse: { bg: '#FFFFFF', pressed: '#D7FFB8', fg: '#46A302' },
     inverseSubtle: { bg: 'transparent', pressed: 'rgba(255,255,255,0.16)', fg: '#FFFFFF' },
   };
   const p = palette[appearance];
@@ -273,6 +274,8 @@ export function Button({
         height: layout.button,
         paddingHorizontal: spacing.xl,
         borderRadius: radius.lg,
+        borderWidth: appearance === 'default' ? 2 : 0,
+        borderColor: colors.borderBold,
         backgroundColor: disabled ? colors.surfaceMuted : pressed ? p.pressed : p.bg,
         flexDirection: 'row',
         alignItems: 'center',
@@ -287,7 +290,7 @@ export function Button({
       ) : (
         <>
           {iconBefore && <Icon name={iconBefore} size={18} color={disabled ? colors.textDisabled : p.fg} />}
-          <Text style={[typography.headline, { color: disabled ? colors.textDisabled : p.fg }]}>{title}</Text>
+          <Text style={[typography.headline, styles.buttonText, { color: disabled ? colors.textDisabled : p.fg }]}>{title}</Text>
           {iconAfter && <Icon name={iconAfter} size={18} color={disabled ? colors.textDisabled : p.fg} />}
         </>
       )}
@@ -431,7 +434,7 @@ export function TextField({
             ...(props.multiline ? null : { paddingVertical: 0, textAlignVertical: 'center' as const, includeFontPadding: false }),
             paddingHorizontal: spacing.md,
             borderRadius: radius.md,
-            borderWidth: focused || error ? 2 : 1,
+            borderWidth: 2,
             borderColor,
             backgroundColor: colors.surface,
             color: colors.text,
@@ -537,4 +540,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
   box40: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   box56: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center' },
+  /** Etichette dei bottoni in maiuscolo spaziato (prova storybook). */
+  buttonText: { fontSize: 15, letterSpacing: 0.8, textTransform: 'uppercase' },
 });

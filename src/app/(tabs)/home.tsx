@@ -161,7 +161,7 @@ function DayTitle({ date }: { date: Date }) {
         accessibilityRole="header"
         numberOfLines={1}
         adjustsFontSizeToFit
-        style={{ fontFamily: fonts.heading, fontSize: 52, lineHeight: 60, letterSpacing: -0.5, paddingHorizontal: spacing.xs, color: colors.text }}
+        style={{ fontFamily: fonts.heading, fontSize: 52, lineHeight: 60, letterSpacing: -0.5, paddingHorizontal: spacing.xs, color: colors.accent }}
       >
         {weekday}
       </Text>
@@ -303,7 +303,7 @@ function Deadlines({ items }: { items: DemoAgendaItem[] }) {
   const tint = colors.tints.activity;
   return (
     <View style={{ gap: spacing.sm, marginTop: spacing.xl }}>
-      <Text accessibilityRole="header" style={[typography.title1, { color: colors.text }]}>
+      <Text accessibilityRole="header" style={[typography.title1, { color: colors.accent }]}>
         {t.home.deadlines}
       </Text>
       {items.length === 0 ? (
@@ -363,7 +363,7 @@ function RecentBooks() {
   return (
     <View style={{ gap: spacing.md, marginTop: spacing.xl }}>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Text accessibilityRole="header" style={[typography.title1, { color: colors.text, flex: 1 }]}>
+        <Text accessibilityRole="header" style={[typography.title1, { color: colors.accent, flex: 1 }]}>
           {t.home.notes}
         </Text>
         <Pressable onPress={() => router.navigate('/attivita')} accessibilityRole="link" hitSlop={8} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
@@ -401,7 +401,7 @@ function ClassTile({ klass }: { klass: DemoClass }) {
   const rows = [klass.members.slice(0, 4), klass.members.slice(4, 8)];
   return (
     <View style={{ gap: spacing.md, marginTop: spacing.xl }}>
-      <Text accessibilityRole="header" style={[typography.title1, { color: colors.text }]}>
+      <Text accessibilityRole="header" style={[typography.title1, { color: colors.accent }]}>
         {t.home.yourClass}
       </Text>
       <Pressable

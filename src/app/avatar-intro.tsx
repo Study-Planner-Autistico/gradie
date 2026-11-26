@@ -15,7 +15,7 @@ export default function AvatarIntro() {
   const { colors, typography, spacing, radius } = useTheme();
   return (
     <View style={{ flex: 1, backgroundColor: Platform.OS === 'ios' ? 'transparent' : colors.bg, padding: spacing.xxl, paddingTop: spacing.xxxl, gap: spacing.xxxl }}>
-      <Text accessibilityRole="header" style={[typography.title1, { color: colors.text, textAlign: 'center' }]}>
+      <Text accessibilityRole="header" style={[typography.title1, { color: colors.accent, textAlign: 'center' }]}>
         {t.avatar.introTitle}
       </Text>
 
