@@ -180,6 +180,7 @@ const it = {
   tabs: { home: 'Inizio', agenda: 'Agenda', activities: 'Appunti', community: 'Comunità', profile: 'Profilo' },
   greeting: { morning: 'Buongiorno', afternoon: 'Buon pomeriggio', evening: 'Buonasera' },
   home: {
+    testOnboarding: 'Test: avvia l’onboarding',
     today: 'Oggi',
     summary: (lessons: number, events: number) =>
       `${lessons} ${lessons === 1 ? 'lezione' : 'lezioni'} · ${events} ${events === 1 ? 'altro impegno' : 'altri impegni'}`,
@@ -1103,6 +1104,7 @@ const en: Dict = {
   tabs: { home: 'Home', agenda: 'Agenda', activities: 'Notes', community: 'Community', profile: 'Profile' },
   greeting: { morning: 'Good morning', afternoon: 'Good afternoon', evening: 'Good evening' },
   home: {
+    testOnboarding: 'Test: start onboarding',
     today: 'Today',
     summary: (lessons: number, events: number) =>
       `${lessons} ${lessons === 1 ? 'lesson' : 'lessons'} · ${events} other ${events === 1 ? 'event' : 'events'}`,

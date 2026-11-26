@@ -5,7 +5,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { tap } from '../../components/haptics';
 import { Mascot } from '../../components/Mascot';
 import { PushDrawer } from '../../components/SideMenu';
-import { Screen } from '../../components/ui';
+import { Button, Screen } from '../../components/ui';
 import { CoverCard, NotebookCover } from '../../components/notebooks';
 import { COVER_RATIO } from '../../components/coverArt';
 import { demoAgenda, demoClasses, demoNotes, type DemoAgendaItem, type DemoClass } from '../../data/demo';
@@ -80,6 +80,8 @@ function HomeScreen() {
         <Deadlines items={deadlines} />
         <RecentBooks />
         {klass && <ClassTile klass={klass} />}
+        {/* Solo per i test: l'onboarding è disattivato all'avvio (dec. 130), da qui si riapre. Da togliere. */}
+        <Button title={t.home.testOnboarding} iconBefore="play" onPress={() => router.push('/onboarding')} />
       </Screen>
     </PushDrawer>
   );
