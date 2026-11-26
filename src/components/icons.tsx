@@ -86,6 +86,8 @@ export const ICONS = {
   sunny: H.Sun03Icon,
   'sunny-outline': H.Sun03Icon,
   sunMoon: H.SunCloud01Icon,
+  sunrise: H.SunriseIcon,
+  sunset: H.SunsetIcon,
   bell: H.Notification01Icon,
   'notifications-outline': H.Notification01Icon,
   // Scuola, agenda, contenuti

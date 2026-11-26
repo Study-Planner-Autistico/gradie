@@ -25,8 +25,9 @@ export function addDays(d: Date, n: number) {
 }
 
 /**
- * Sette giorni con quello scelto al centro, come nello screen di riferimento (dec. 151-152): niente card né celle,
- * numero nel font di sistema (`stat`), il giorno scelto in un cerchio pieno del brand, oggi in viola; sotto, i pallini sovrapposti delle materie del giorno.
+ * Settimana da lunedì a domenica a foglietti di calendario (dec. 204): in alto il giorno breve in una fascia colorata
+ * (viola tenue; piena del brand per il giorno scelto; rossa sabato e domenica), sotto il numero. Sotto il foglietto, i pallini delle materie.
+ * Scorrendo di lato si va alla settimana prima o dopo, lo stesso giorno della settimana.
  */
 export function DayStrip({
   selected,
@@ -38,14 +39,45 @@ export function DayStrip({
   /** Colori delle materie del giorno, già senza doppioni. */
   dotsFor: (d: Date) => string[];
 }) {
-  const { colors, typography, spacing, layout, radius } = useTheme();
+  const { colors, typography, spacing, radius, layout } = useTheme();
+  const { width } = useWindowDimensions();
   const today = new Date().toDateString();
+  const monday = addDays(selected, -((selected.getDay() + 6) % 7));
+  const x = useRef(new Animated.Value(0)).current;
+  const latest = useRef({ selected, onSelect });
+  latest.current = { selected, onSelect };
+  const pan = useMemo(
+    () =>
+      PanResponder.create({
+        // Più interno della TabSwipe: lo scorrimento di lato sulla settimana non cambia scheda (dec. 140).
+        onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+        onPanResponderTerminationRequest: () => false,
+        onPanResponderMove: (_, g) => x.setValue(g.dx),
+        onPanResponderRelease: (_, g) => {
+          const dir = g.dx < -width / 5 || g.vx < -0.5 ? 1 : g.dx > width / 5 || g.vx > 0.5 ? -1 : 0;
+          if (!dir) return Animated.spring(x, { toValue: 0, useNativeDriver: true }).start();
+          Animated.timing(x, { toValue: -dir * width, duration: 160, easing: Easing.in(Easing.quad), useNativeDriver: true }).start(() => {
+            tap();
+            latest.current.onSelect(addDays(latest.current.selected, dir * 7));
+            x.setValue(dir * width);
+            Animated.timing(x, { toValue: 0, duration: 200, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
+          });
+        },
+        onPanResponderTerminate: () => Animated.spring(x, { toValue: 0, useNativeDriver: true }).start(),
+      }),
+    [x, width],
+  );
   return (
-    <View style={[styles.row, { justifyContent: 'space-between' }]}>
-      {Array.from({ length: 7 }, (_, i) => addDays(selected, i - 3)).map((d) => {
+    // I gesti li prende il contenitore fermo: anche a metà animazione la settimana resta sotto il dito.
+    <View {...pan.panHandlers}>
+    <Animated.View style={[styles.row, { gap: spacing.sm, alignItems: 'flex-start', transform: [{ translateX: x }] }]}>
+      {Array.from({ length: 7 }, (_, i) => addDays(monday, i)).map((d, i) => {
         const isSel = d.toDateString() === selected.toDateString();
         const isToday = d.toDateString() === today;
-        const dots = dotsFor(d);
+        const weekend = i >= 5;
+        const band = isSel ? colors.accent : weekend ? colors.dangerIcon : colors.selected;
+        const bandText = isSel || weekend ? colors.onAccent : colors.selectedText;
+        const number = isSel || isToday ? colors.accent : weekend ? colors.danger : colors.text;
         return (
           <Pressable
             key={d.toDateString()}
@@ -53,29 +85,23 @@ export function DayStrip({
             accessibilityRole="button"
             accessibilityState={{ selected: isSel }}
             accessibilityLabel={d.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' })}
-            style={{ alignItems: 'center', gap: spacing.sm, minWidth: layout.iconButton }}
+            style={{ flex: 1, alignItems: 'center', gap: spacing.sm }}
           >
-            <Text style={[typography.callout, { color: isToday && !isSel ? colors.accent : colors.textSecondary, textTransform: 'capitalize' }]}>
-              {d.toLocaleDateString(locale, { weekday: 'short' }).replace('.', '')}
-            </Text>
-            <View
-              style={{
-                width: layout.iconButton,
-                height: layout.iconButton,
-                borderRadius: radius.pill,
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: isSel ? colors.accent : 'transparent',
-              }}
-            >
-              <Text style={[typography.stat, { color: isSel ? colors.onAccent : isToday ? colors.accent : colors.text }]}>
-                {d.getDate()}
-              </Text>
+            <View style={{ alignSelf: 'stretch', borderRadius: radius.lg, overflow: 'hidden', backgroundColor: isSel ? colors.selected : colors.surface, boxShadow: colors.shadowRaised }}>
+              <View style={{ backgroundColor: band, paddingVertical: 2, alignItems: 'center' }}>
+                <Text style={[typography.caption, { color: bandText, fontWeight: '600', textTransform: 'capitalize' }]}>
+                  {d.toLocaleDateString(locale, { weekday: 'short' }).replace('.', '')}
+                </Text>
+              </View>
+              <View style={{ height: layout.iconButton, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={[typography.stat, { color: number }]}>{d.getDate()}</Text>
+              </View>
             </View>
-            <Dots colors={dots} ring={colors.bg} />
+            <Dots colors={dotsFor(d)} ring={colors.bg} />
           </Pressable>
         );
       })}
+    </Animated.View>
     </View>
   );
 }
@@ -136,7 +162,7 @@ function useNow() {
 
 /**
  * Eventi del giorno in verticale (dec. 151, 157): l'ora d'inizio sta sulla linea del tempo, accanto la card.
- * La linea si riempie del brand man mano che passano le ore: piena nei giorni passati, vuota in quelli futuri.
+ * Fra un orario e l'altro sempre GAP_DOTS pallini (dec. 206), mai sotto le pillole: verdi se quel momento è passato, grigi se no.
  * Solo gli eventi con orario.
  */
 export function DayTimeline<T extends DemoAgendaItem>({ items, day, onOpen }: { items: T[]; day: Date; onOpen?: (item: T) => void }) {
@@ -151,29 +177,58 @@ export function DayTimeline<T extends DemoAgendaItem>({ items, day, onOpen }: { 
   const t0 = new Date(now).setHours(0, 0, 0, 0);
   const nowMin = d0 < t0 ? Infinity : d0 > t0 ? -Infinity : now.getHours() * 60 + now.getMinutes();
 
-  // Punto della linea che corrisponde a adesso, interpolato fra i centri delle righe.
   const ready = centers.length === timed.length && centers.every((c) => c !== undefined);
-  let fillTo = ready ? centers[0] : 0;
-  if (ready) {
-    for (let i = 0; i < timed.length; i++) {
-      if (nowMin < starts[i]) break;
-      const next = starts[i + 1];
-      fillTo = next === undefined || nowMin >= next
-        ? centers[i + 1] ?? centers[i]
-        : centers[i] + ((centers[i + 1] - centers[i]) * (nowMin - starts[i])) / (next - starts[i]);
+  // Riga dell'impegno in corso: sulla linea, al posto dell'orario, la pillola "Ora" che scende col tempo (dec. 195).
+  const liveIdx = timed.findIndex((it, i) => nowMin >= starts[i] && nowMin < minutes(it.end!));
+  const liveP = liveIdx >= 0 ? Math.max(0, Math.min(1, (nowMin - starts[liveIdx]) / (minutes(timed[liveIdx].end!) - starts[liveIdx]))) : 0;
+  const liveTop = liveIdx >= 0 ? centers[liveIdx] - (heights[liveIdx] ?? 0) / 2 : 0;
+  const nowPillTop = liveP * ((heights[liveIdx] ?? PILL_H) - PILL_H);
+  // Ciò che sta sulla linea in ogni riga (pillola dell'orario o "Ora"): centro e momento che rappresenta.
+  const railAt = (i: number) => (i === liveIdx ? { y: liveTop + nowPillTop + PILL_H / 2, min: nowMin } : { y: centers[i], min: starts[i] });
+  const gapDots: { y: number; on: boolean }[] = [];
+  const addGap = (top: number, bottom: number, from: number, to: number) => {
+    for (let k = 1; k <= GAP_DOTS; k++) {
+      const f = k / (GAP_DOTS + 1);
+      // Ogni pallino è un momento fra i due orari: verde quando è passato, grigio prima (dec. 206).
+      gapDots.push({ y: top + (bottom - top) * f, on: nowMin >= from + (to - from) * f });
     }
+  };
+  if (ready) {
+    for (let i = 0; i < timed.length - 1; i++) {
+      const a = railAt(i);
+      const b = railAt(i + 1);
+      addGap(a.y + PILL_HALF, b.y - PILL_HALF, a.min, b.min);
+    }
+    // Alba in cima e tramonto in fondo (dec. 208): 4 pallini anche fra loro e il primo e l'ultimo orario, come inizio e fine giornata.
+    const a = railAt(0);
+    addGap(EDGE_ICON + 6, a.y - PILL_HALF, 0, a.min);
+    const last = timed.length - 1;
+    const z = railAt(last);
+    addGap(z.y + PILL_HALF, z.y + PILL_HALF + EDGE_GAP, z.min, 24 * 60);
   }
-  const first = centers[0] ?? 0;
-  const last = centers[timed.length - 1] ?? 0;
+  // Il tramonto sta sempre alla stessa distanza dall'ultimo orario, anche se l'ultima card è bassa.
+  const lastI = timed.length - 1;
+  const sunsetTop = ready ? railAt(lastI).y + PILL_HALF + EDGE_GAP + 6 : 0;
+  const lastBottom = ready ? centers[lastI] + (heights[lastI] ?? 0) / 2 : 0;
 
   return (
-    <View style={{ gap: spacing.md }}>
-      {ready && timed.length > 1 && (
+    <View style={{ gap: spacing.md, paddingTop: EDGE, paddingBottom: ready ? Math.max(0, sunsetTop + EDGE_ICON - lastBottom) : EDGE }}>
+      {ready && (
         <>
-          <View style={{ position: 'absolute', left: RAIL / 2 - 1, top: first, height: last - first, width: 2, backgroundColor: colors.border }} />
-          <View style={{ position: 'absolute', left: RAIL / 2 - 1, top: first, height: fillTo - first, width: 2, backgroundColor: colors.accent }} />
+          <View style={{ position: 'absolute', top: 0, left: RAIL / 2 - EDGE_ICON / 2 }} accessible={false}>
+            <Icon name="sunrise" size={EDGE_ICON} color={colors.warningIcon} />
+          </View>
+          <View style={{ position: 'absolute', top: sunsetTop, left: RAIL / 2 - EDGE_ICON / 2 }} accessible={false}>
+            <Icon name="sunset" size={EDGE_ICON} color={colors.dangerIcon} />
+          </View>
         </>
       )}
+      {gapDots.map(({ y, on }, k) => (
+        <View
+          key={k}
+          style={{ position: 'absolute', left: RAIL / 2 - DOT / 2, top: y - DOT / 2, width: DOT, height: DOT, borderRadius: DOT / 2, backgroundColor: on ? NOW_GREEN : colors.textDisabled }}
+        />
+      ))}
       {timed.map((item, i) => {
         const reached = nowMin >= starts[i];
         // Impegno in corso: al posto dell'orario la colonna di pallini verdi con "Ora" (dec. 195).
@@ -199,7 +254,7 @@ export function DayTimeline<T extends DemoAgendaItem>({ items, day, onOpen }: { 
             }}
           >
             {live && heights[i] ? (
-              <NowRail height={heights[i]} progress={(nowMin - starts[i]) / (endMin - starts[i])} />
+              <NowRail height={heights[i]} pillTop={nowPillTop} />
             ) : (
             <View style={{ width: RAIL, alignItems: 'center' }}>
               <View
@@ -208,11 +263,11 @@ export function DayTimeline<T extends DemoAgendaItem>({ items, day, onOpen }: { 
                   paddingVertical: spacing.xxs,
                   borderRadius: radius.pill,
                   borderWidth: 2,
-                  borderColor: reached ? colors.accent : colors.border,
-                  backgroundColor: reached ? colors.accent : colors.bg,
+                  borderColor: reached ? NOW_GREEN : colors.border,
+                  backgroundColor: reached ? NOW_GREEN : colors.bg,
                 }}
               >
-                <Text style={[typography.time, { color: reached ? colors.onAccent : colors.textSecondary }]} numberOfLines={1}>{item.start}</Text>
+                <Text style={[typography.time, { color: reached ? '#fff' : colors.textSecondary }]} numberOfLines={1}>{item.start}</Text>
               </View>
             </View>
             )}
@@ -224,36 +279,24 @@ export function DayTimeline<T extends DemoAgendaItem>({ items, day, onOpen }: { 
   );
 }
 
-const NOW_GREEN = '#16A34A';
+/** Verde acceso di sistema (iOS systemGreen), come lo screen di riferimento (dec. 206). */
+const NOW_GREEN = '#34C759';
+const GAP_DOTS = 4;
+/** Icone di alba e tramonto a capo e in fondo alla linea, e lo spazio che lasciano sopra e sotto le righe. */
+const EDGE_ICON = 26;
+const EDGE = 52;
+/** Spazio dei 4 pallini fra l'ultimo orario e il tramonto. */
+const EDGE_GAP = 56;
+/** Metà altezza della pillola dell'orario (riga 20 + padding 2×2 + bordo 2×2), più un po' d'aria. */
+const PILL_HALF = 14 + 4;
 const DOT = 6;
-const DOT_STEP = 11;
 const PILL_H = 24;
 
-/**
- * Impegno in corso (dec. 195): nella colonna dell'orario, una fila di pallini verdi lunga quanto la card e la
- * pillola "Ora" che scende col passare del tempo. I pallini sopra (tempo passato) si spengono, quelli sotto
- * (tempo che resta) diminuiscono fino alla fine dell'impegno.
- */
-function NowRail({ height, progress }: { height: number; progress: number }) {
-  const { typography, radius, colors } = useTheme();
-  const p = Math.max(0, Math.min(1, progress));
-  const pillTop = p * (height - PILL_H);
-  const n = Math.max(2, Math.floor((height - DOT) / DOT_STEP) + 1);
-  const step = n > 1 ? (height - DOT) / (n - 1) : 0;
+/** Impegno in corso (dec. 195, 206): nella colonna dell'orario la pillola "Ora", che scende col tempo; i pallini attorno li disegna DayTimeline. */
+function NowRail({ height, pillTop }: { height: number; pillTop: number }) {
+  const { typography, radius } = useTheme();
   return (
     <View style={{ width: RAIL, height, alignItems: 'center' }} accessible accessibilityLabel={t.agenda.now}>
-      {Array.from({ length: n }, (_, k) => {
-        const y = k * step;
-        // Sotto la pillola non si disegna niente.
-        if (y + DOT > pillTop - 2 && y < pillTop + PILL_H + 2) return null;
-        const passed = y < pillTop;
-        return (
-          <View
-            key={k}
-            style={{ position: 'absolute', top: y, width: DOT, height: DOT, borderRadius: DOT / 2, backgroundColor: passed ? colors.border : NOW_GREEN }}
-          />
-        );
-      })}
       <View style={{ position: 'absolute', top: pillTop, height: PILL_H, paddingHorizontal: 12, borderRadius: radius.pill, justifyContent: 'center', backgroundColor: NOW_GREEN }}>
         <Text style={[typography.caption, { color: '#fff', fontWeight: '700' }]}>{t.agenda.now}</Text>
       </View>

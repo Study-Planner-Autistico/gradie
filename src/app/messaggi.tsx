@@ -1,164 +1,180 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import Animated, { LinearTransition, SlideInDown, SlideOutDown, ZoomIn, ZoomOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ActionSheet } from '../components/ActionSheet';
+import { ActionSheet, type SheetAction } from '../components/ActionSheet';
 import { nameOf, PersonAvatar, shortWhen, Ticks } from '../components/chat';
+import { confirm } from '../components/dialogs';
 import { tap } from '../components/haptics';
-import { Icon } from '../components/icons';
-import { Segmented } from '../components/onboarding';
+import { Icon, type IconName } from '../components/icons';
+import { NativeMenu } from '../components/NativeMenu';
+import type { NativeMenuItem } from '../components/NativeMenu.types';
 import { EmptyState } from '../components/ui';
 import { t } from '../i18n';
-import { friendsOf, useFriends } from '../state/friends';
-import { ASSISTANT, lastOf, markRead, markUnread, threadFor, toggleArchived, toggleImportant, toggleMuted, useThreads, type Thread } from '../state/messages';
+import { ASSISTANT, deleteThread, lastOf, markRead, markUnread, threadFor, toggleArchived, toggleImportant, toggleMuted, useThreads, type Thread } from '../state/messages';
 import { useTheme } from '../theme';
-
-type Filter = 'all' | 'important' | 'requests';
 
 /**
  * Messaggi (dec. 189), dall'aereo in alto a destra della Home, come i Direct di Instagram.
- * In alto tutti i contatti (un tocco apre la chat), poi i filtri Tutti / Importanti / Richieste e le conversazioni.
+ * Un solo elenco di chat (richieste e importanti comprese) su un foglio bianco col titolo Chat (dec. 211).
  */
 export default function Messaggi() {
   const { colors, typography, spacing, radius, layout } = useTheme();
   const insets = useSafeAreaInsets();
   const T = t.messages;
   const threads = useThreads();
-  const friends = friendsOf(useFriends());
-  const [filter, setFilter] = useState<Filter>('all');
-  const [searching, setSearching] = useState(false);
   const [query, setQuery] = useState('');
   // Archiviati (dec. 190): bottone accanto alla ricerca; le chat archiviate escono dall'elenco.
   const [archived, setArchived] = useState(false);
   const [menu, setMenu] = useState<Thread | null>(null);
+  const [more, setMore] = useState(false);
+  // Seleziona (dec. 213): null = elenco normale; altrimenti gli id delle chat scelte.
+  const [selected, setSelected] = useState<string[] | null>(null);
 
-  const requests = threads.filter((x) => x.request && !x.archived);
   const archivedCount = threads.filter((x) => x.archived).length;
-  const labels: Record<Filter, string> = {
-    all: T.filters.all,
-    important: T.filters.important,
-    requests: requests.length ? `${T.filters.requests} (${requests.length})` : T.filters.requests,
-  };
-  const order: Filter[] = ['all', 'important', 'requests'];
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
     return threads
-      .filter((x) => (archived ? x.archived : !x.archived && (filter === 'requests' ? x.request : !x.request && (filter === 'all' || x.important))))
+      .filter((x) => !!x.archived === archived)
       .filter((x) => x.messages.length > 0 || x.personId === ASSISTANT)
       .filter((x) => !q || nameOf(x.personId).toLowerCase().includes(q) || x.messages.some((m) => m.text?.toLowerCase().includes(q)))
       .sort((a, b) => (lastOf(b)?.at ?? 0) - (lastOf(a)?.at ?? 0));
-  }, [threads, filter, query, archived]);
+  }, [threads, query, archived]);
 
   const open = (personId: string) => {
     tap();
     router.push({ pathname: '/chat/[id]', params: { id: threadFor(personId) } });
   };
+  const done = () => setSelected(null);
+  const pick = (id: string) => setSelected((s) => (s ? (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]) : s));
+  const n = selected?.length ?? 0;
+  const bulk = (fn: (id: string) => void) => {
+    tap();
+    selected?.forEach(fn);
+    done();
+  };
+
+  // Voci dei tre puntini: menu a tendina nativo su iOS, foglio dal basso altrove (dec. 213).
+  const items: (NativeMenuItem & { icon: IconName })[] = [
+    { label: T.select, systemImage: 'checkmark.circle', icon: 'checkmark-circle', onPress: () => setSelected([]) },
+    ...(!archived
+      ? [{ label: archivedCount ? `${T.archivedTitle} (${archivedCount})` : T.archivedTitle, systemImage: 'archivebox' as const, icon: 'archive' as const, onPress: () => (setArchived(true), setQuery('')) }]
+      : []),
+    ...(threads.some((x) => x.unread > 0) ? [{ label: T.markAllRead, systemImage: 'envelope.open' as const, icon: 'mail-open-outline' as const, onPress: () => threads.forEach((x) => x.unread > 0 && markRead(x.id)) }] : []),
+  ];
+
   const iconBtn = ({ pressed }: { pressed: boolean }) => ({ width: layout.iconButton, height: layout.iconButton, alignItems: 'center' as const, justifyContent: 'center' as const, opacity: pressed ? 0.6 : 1 });
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top }}>
+    <View style={{ flex: 1, backgroundColor: colors.surface, paddingTop: insets.top }}>
       {/* Sotto la Dynamic Island e la barra di stato, su iPhone e iPad (dec. 190). */}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md, minHeight: 52, marginTop: spacing.xs }}>
-        <Pressable onPress={() => (archived ? setArchived(false) : router.back())} accessibilityRole="button" accessibilityLabel={T.back} style={iconBtn}>
-          <Icon name="chevron-back" size={26} color={colors.text} />
-        </Pressable>
-        {/* Spazio uguale ai due bottoni a destra: il titolo resta al centro. */}
-        <View style={{ width: archived ? 0 : layout.iconButton }} />
-        <Text accessibilityRole="header" style={[typography.headline, { flex: 1, textAlign: 'center', color: colors.text }]}>
-          {archived ? T.archivedTitle : T.title}
+        {selected ? (
+          <Pressable onPress={done} accessibilityRole="button" accessibilityLabel={T.endSelect} style={iconBtn}>
+            <Icon name="close" size={26} color={colors.text} />
+          </Pressable>
+        ) : (
+          <Pressable onPress={() => (archived ? setArchived(false) : router.back())} accessibilityRole="button" accessibilityLabel={T.back} style={iconBtn}>
+            <Icon name="chevron-back" size={26} color={colors.text} />
+          </Pressable>
+        )}
+        <Text accessible={!!selected || archived} accessibilityRole="header" style={[typography.headline, { flex: 1, textAlign: 'center', color: colors.text }]}>
+          {/* Niente "Messaggi" in alto: il titolo è Chat (dec. 216). */}
+          {selected ? T.selectedCount(n) : archived ? T.archivedTitle : ''}
         </Text>
-        {!archived && (
+        {selected ? (
+          <View style={{ width: layout.iconButton }} />
+        ) : Platform.OS === 'ios' ? (
+          <NativeMenu
+            label={T.more}
+            items={items}
+            icon={
+              <View style={{ width: layout.iconButton, height: layout.iconButton, alignItems: 'center', justifyContent: 'center' }}>
+                <Icon name="ellipsis-horizontal" size={24} color={colors.text} />
+              </View>
+            }
+          />
+        ) : (
           <Pressable
             onPress={() => {
               tap();
-              setArchived(true);
-              setSearching(false);
-              setQuery('');
+              setMore(true);
             }}
             accessibilityRole="button"
-            accessibilityLabel={archivedCount ? `${T.archivedTitle}, ${archivedCount}` : T.archivedTitle}
+            accessibilityLabel={T.more}
             style={iconBtn}
           >
-            <View>
-              <Icon name="archive" size={24} color={colors.text} />
-              {archivedCount > 0 && (
-                <View style={{ position: 'absolute', top: -5, right: -8, minWidth: 16, height: 16, paddingHorizontal: 3, borderRadius: 8, backgroundColor: colors.textTertiary, alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '700' }}>{archivedCount}</Text>
-                </View>
-              )}
-            </View>
+            <Icon name="ellipsis-horizontal" size={24} color={colors.text} />
           </Pressable>
         )}
-        <Pressable
-          onPress={() => {
-            tap();
-            setSearching((v) => !v);
-            setQuery('');
-          }}
-          accessibilityRole="button"
-          accessibilityLabel={T.search}
-          accessibilityState={{ expanded: searching }}
-          style={iconBtn}
-        >
-          <Icon name={searching ? 'close' : 'search-outline'} size={24} color={colors.text} />
-        </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.xl, paddingBottom: insets.bottom + spacing.giant, gap: spacing.lg }} keyboardShouldPersistTaps="handled">
-        {searching && (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, height: 44, paddingHorizontal: spacing.md, borderRadius: radius.lg, backgroundColor: colors.surfaceMuted }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.xl, gap: spacing.md }} keyboardShouldPersistTaps="handled">
+        <Text accessibilityRole="header" style={[typography.title1, { color: colors.text, paddingTop: spacing.sm }]}>
+          {T.chats}
+        </Text>
+        {/* Ricerca sotto Chat, sempre visibile (dec. 216). */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, height: 44, paddingHorizontal: spacing.md, borderRadius: radius.lg, backgroundColor: colors.surfaceMuted }}>
             <Icon name="search-outline" size={18} color={colors.textTertiary} />
             <TextInput
               value={query}
               onChangeText={setQuery}
-              autoFocus
               placeholder={T.search}
               placeholderTextColor={colors.textTertiary}
               accessibilityLabel={T.search}
-              style={[typography.body, { flex: 1, color: colors.text, padding: 0 }]}
+              // lineHeight 24 del body spinge il testo sotto la lente su iOS (dec. 213).
+              style={[typography.body, { flex: 1, height: '100%', lineHeight: 20, color: colors.text, padding: 0 }]}
             />
           </View>
-        )}
 
-        {!archived && (
-          <>
-        <Text accessibilityRole="header" style={[typography.title1, { color: colors.text, marginTop: spacing.sm }]}>
-          {T.contacts}
-        </Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -spacing.xl }} contentContainerStyle={{ paddingHorizontal: spacing.xl, gap: spacing.lg }}>
-          {[ASSISTANT, ...friends.map((f) => f.id)].map((id) => (
-            <Pressable key={id} onPress={() => open(id)} accessibilityRole="button" accessibilityLabel={T.openChat(nameOf(id))} style={({ pressed }) => ({ alignItems: 'center', gap: spacing.xs, width: 60, opacity: pressed ? 0.6 : 1 })}>
-              <PersonAvatar personId={id} size={56} dot />
-              <Text style={[typography.caption, { color: colors.textSecondary }]} numberOfLines={1}>
-                {nameOf(id)}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-
-        <Segmented options={order.map((f) => labels[f])} value={labels[filter]} onChange={(v) => setFilter(order[order.map((f) => labels[f]).indexOf(v)] ?? 'all')} />
-          </>
-        )}
-
-        {shown.length === 0 ? (
-          <EmptyState icon={archived ? 'archive' : 'chatbubbles-outline'} message={query ? T.noResults : archived ? T.emptyArchived : T.empty[filter]} />
-        ) : (
-          <View style={{ gap: spacing.sm }}>
-            {shown.map((th) => (
+        <View style={{ marginHorizontal: -spacing.xl, paddingBottom: insets.bottom + spacing.giant }}>
+          {shown.length === 0 ? (
+            <View style={{ paddingHorizontal: spacing.xl }}>
+              <EmptyState icon={archived ? 'archive' : 'chatbubbles-outline'} message={query ? T.noResults : archived ? T.emptyArchived : T.empty} />
+            </View>
+          ) : (
+            shown.map((th) => (
               <ThreadCard
                 key={th.id}
                 thread={th}
-                onPress={() => open(th.personId)}
+                selected={selected ? selected.includes(th.id) : undefined}
+                onPress={() => (selected ? pick(th.id) : open(th.personId))}
                 onLongPress={() => {
                   tap();
-                  setMenu(th);
+                  if (!selected) setMenu(th);
                 }}
               />
-            ))}
-          </View>
-        )}
+            ))
+          )}
+        </View>
       </ScrollView>
+
+      {/* Azioni sulle chat scelte (dec. 213). */}
+      {selected && (
+        <Animated.View entering={SlideInDown.duration(220)} exiting={SlideOutDown.duration(180)} style={{ flexDirection: 'row', justifyContent: 'space-around', paddingTop: spacing.sm, paddingBottom: insets.bottom + spacing.sm, borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.surface }}>
+          {(
+            [
+              { icon: 'mail-open-outline', label: T.markReadMany, onPress: () => bulk(markRead) },
+              { icon: 'archive', label: archived ? T.unarchive : T.archive, onPress: () => bulk(toggleArchived) },
+              { icon: 'trash-outline', label: T.delete, danger: true, onPress: () => confirm(T.deleteManyTitle(n), T.delete, () => bulk(deleteThread), T.deleteBody) },
+            ] as const
+          ).map((a) => (
+            <Pressable
+              key={a.label}
+              onPress={a.onPress}
+              disabled={!n}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: !n }}
+              style={({ pressed }) => ({ alignItems: 'center', gap: spacing.xxs, minWidth: 88, paddingVertical: spacing.xs, opacity: !n ? 0.35 : pressed ? 0.6 : 1 })}
+            >
+              <Icon name={a.icon} size={24} color={'danger' in a ? colors.dangerIcon : colors.text} />
+              <Text style={[typography.caption, { color: 'danger' in a ? colors.danger : colors.text }]}>{a.label}</Text>
+            </Pressable>
+          ))}
+        </Animated.View>
+      )}
 
       {/* Tenendo premuta una chat (dec. 190). */}
       <ActionSheet
@@ -185,12 +201,15 @@ export default function Messaggi() {
             : []
         }
       />
+
+      {/* Tre puntini fuori da iOS (dec. 212, 213). */}
+      <ActionSheet visible={more} onClose={() => setMore(false)} actions={items.map((it): SheetAction => ({ icon: it.icon, label: it.label, onPress: it.onPress }))} />
     </View>
   );
 }
 
-function ThreadCard({ thread, onPress, onLongPress }: { thread: Thread; onPress: () => void; onLongPress: () => void }) {
-  const { colors, typography, spacing, radius } = useTheme();
+function ThreadCard({ thread, selected, onPress, onLongPress }: { thread: Thread; selected?: boolean; onPress: () => void; onLongPress: () => void }) {
+  const { colors, typography, spacing } = useTheme();
   const T = t.messages;
   const last = lastOf(thread);
   const name = nameOf(thread.personId);
@@ -215,7 +234,8 @@ function ThreadCard({ thread, onPress, onLongPress }: { thread: Thread; onPress:
       onLongPress={onLongPress}
       delayLongPress={350}
       accessibilityRole="button"
-      accessibilityHint={T.longPressHint}
+      accessibilityHint={selected === undefined ? T.longPressHint : undefined}
+      accessibilityState={selected === undefined ? undefined : { selected }}
       accessibilityActions={[{ name: 'longpress', label: T.more }]}
       onAccessibilityAction={(e) => e.nativeEvent.actionName === 'longpress' && onLongPress()}
       accessibilityLabel={[name, role, thread.muted && T.mutedLabel, preview, unread && T.unreadA11y(thread.unread)].filter(Boolean).join(', ')}
@@ -223,15 +243,21 @@ function ThreadCard({ thread, onPress, onLongPress }: { thread: Thread; onPress:
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.md,
-        padding: spacing.md,
-        borderRadius: radius.xl,
-        backgroundColor: pressed ? colors.surfaceMuted : colors.surface,
-        borderWidth: 1,
-        borderColor: colors.border,
+        paddingHorizontal: spacing.xl,
+        paddingVertical: spacing.md,
+        backgroundColor: pressed ? colors.surfaceMuted : 'transparent',
       })}
     >
-      <PersonAvatar personId={thread.personId} size={48} dot />
-      <View style={{ flex: 1, gap: 2 }}>
+      {/* Entrando in Seleziona il cerchio cresce e la riga scivola a destra (dec. 215); con Riduci movimento Reanimated salta l'animazione. */}
+      {selected !== undefined && (
+        <Animated.View entering={ZoomIn.duration(200)} exiting={ZoomOut.duration(150)}>
+          {selected ? <Icon name="checkmark-circle" size={26} color={colors.accent} /> : <View style={{ width: 24, height: 24, margin: 1, borderRadius: 12, borderWidth: 2, borderColor: colors.border }} />}
+        </Animated.View>
+      )}
+      <Animated.View layout={LinearTransition.duration(200)}>
+        <PersonAvatar personId={thread.personId} size={56} dot />
+      </Animated.View>
+      <Animated.View layout={LinearTransition.duration(200)} style={{ flex: 1, gap: 2 }}>
         <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm }}>
           <Text style={[typography.headline, { color: colors.text }]} numberOfLines={1}>
             {name}
@@ -239,7 +265,6 @@ function ThreadCard({ thread, onPress, onLongPress }: { thread: Thread; onPress:
           <Text style={[typography.caption, { color: colors.textTertiary }]}>{role}</Text>
           {thread.important && <Icon name="star" size={14} color={colors.gold} />}
           {thread.muted && <Icon name="bell-off" size={14} color={colors.textTertiary} />}
-          <Text style={[typography.caption, { marginLeft: 'auto', color: unread ? colors.accent : colors.textTertiary }]}>{last ? shortWhen(last.at) : ''}</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
           {last?.from === 'me' && thread.personId !== ASSISTANT && <Ticks status={last.status} />}
@@ -247,12 +272,16 @@ function ThreadCard({ thread, onPress, onLongPress }: { thread: Thread; onPress:
             {last?.from === 'me' ? T.you : ''}
             {preview}
           </Text>
-          {unread && (
-            <View style={{ minWidth: 22, height: 22, paddingHorizontal: 6, borderRadius: 11, backgroundColor: thread.muted ? colors.textTertiary : colors.accent, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={[typography.caption, { color: colors.onAccent, fontWeight: '700' }]}>{thread.unread}</Text>
-            </View>
-          )}
         </View>
+      </Animated.View>
+      {/* A destra: non letti sopra, data sotto (dec. 209). */}
+      <View style={{ alignItems: 'flex-end', gap: spacing.xs }}>
+        {unread && (
+          <View style={{ minWidth: 22, height: 22, paddingHorizontal: 6, borderRadius: 11, backgroundColor: thread.muted ? colors.textTertiary : colors.accent, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={[typography.caption, { color: colors.onAccent, fontWeight: '700' }]}>{thread.unread}</Text>
+          </View>
+        )}
+        <Text style={[typography.caption, { color: unread ? colors.accent : colors.textTertiary }]}>{last ? shortWhen(last.at) : ''}</Text>
       </View>
     </Pressable>
   );

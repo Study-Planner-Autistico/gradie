@@ -6,6 +6,7 @@ import { Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Te
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ActionSheet, type SheetAction } from '../../components/ActionSheet';
 import { AudioBubble, clock, dayLabel, FileBubble, isOnline, nameOf, NoteBubble, NotePicker, PersonAvatar, RecorderBar, sameDay, Ticks, VideoBubble } from '../../components/chat';
+import { confirm } from '../../components/dialogs';
 import { success, tap } from '../../components/haptics';
 import { Icon } from '../../components/icons';
 import { t } from '../../i18n';
@@ -202,11 +203,11 @@ export default function Chat() {
           <Text style={[typography.headline, { color: colors.text, textAlign: 'center' }]}>{T.requestTitle(name)}</Text>
           <Text style={[typography.callout, { color: colors.textSecondary, textAlign: 'center' }]}>{T.requestBody}</Text>
           <View style={{ flexDirection: 'row', gap: spacing.md }}>
+            {/* Elimina chiede conferma con un avviso, come Elimina dopo Seleziona (dec. 214). */}
             <Pressable
               onPress={() => {
                 tap();
-                router.back();
-                deleteThread(thread.id);
+                confirm(T.deleteRequest(name), T.delete, () => (router.back(), deleteThread(thread.id)));
               }}
               accessibilityRole="button"
               style={({ pressed }) => ({ flex: 1, height: layout.button, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? colors.neutralPressed : colors.surfaceMuted })}
