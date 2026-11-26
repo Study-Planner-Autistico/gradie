@@ -309,9 +309,11 @@ function Deadlines({ items }: { items: DemoAgendaItem[] }) {
       {items.length === 0 ? (
         <Text style={[typography.body, { color: colors.textSecondary }]}>{t.home.emptyDeadlines}</Text>
       ) : (
-        <View>
-          {items.map((d) => (
+        // Prova storybook: riquadro con bordo 2 px e divisori 2 px (sul ramo principale niente card né divisori, dec. 131).
+        <View style={{ borderRadius: radius.xl, borderWidth: 2, borderColor: colors.border, overflow: 'hidden' }}>
+          {items.map((d, i) => (
             <Fragment key={d.id}>
+              {i > 0 && <View style={{ height: 2, backgroundColor: colors.border }} />}
               <Pressable
                 onPress={() => {
                   tap();
@@ -319,7 +321,7 @@ function Deadlines({ items }: { items: DemoAgendaItem[] }) {
                 }}
                 accessibilityRole="button"
                 accessibilityLabel={`${d.title}, ${d.meta ?? ''}, ${t.home.inDays(d.dayOffset)}`}
-                style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, opacity: pressed ? 0.6 : 1 })}
+                style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, paddingHorizontal: spacing.lg, backgroundColor: pressed ? colors.surfaceMuted : 'transparent' })}
               >
                 <View style={{ width: 36, height: 36, borderRadius: radius.md, backgroundColor: tint.bg, alignItems: 'center', justifyContent: 'center' }}>
                   <Icon name={d.meta === 'Verifica' ? 'document-text-outline' : 'checkbox-outline'} size={18} color={tint.fg} />
