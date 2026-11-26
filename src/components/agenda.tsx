@@ -280,7 +280,7 @@ export function DayTimeline<T extends DemoAgendaItem>({ items, day, onOpen }: { 
 }
 
 /** Verde acceso di sistema (iOS systemGreen), come lo screen di riferimento (dec. 206). */
-const NOW_GREEN = '#58CC02';
+const NOW_GREEN = '#34C759';
 const GAP_DOTS = 4;
 /** Icone di alba e tramonto a capo e in fondo alla linea, e lo spazio che lasciano sopra e sotto le righe. */
 const EDGE_ICON = 26;
@@ -571,7 +571,7 @@ export function CalendarSheet({
     <>
       {/* Il numero del giorno al centro, come il giorno della Home (dec. 150). */}
       <View style={{ alignItems: 'center', gap: spacing.xs }}>
-        <Text accessibilityRole="header" style={{ fontFamily: fonts.heading, fontSize: 52, lineHeight: 60, paddingHorizontal: spacing.xs, color: sameDay(day, today) ? colors.accent : colors.text }}>
+        <Text accessibilityRole="header" style={{ fontFamily: fonts.heading, fontSize: 52, lineHeight: 60, paddingHorizontal: spacing.xs, color: sameDay(day, today) ? colors.heading : colors.text }}>
           {day.getDate()}
         </Text>
         <Text style={[typography.body, { fontSize: 18, color: colors.textSecondary }]}>

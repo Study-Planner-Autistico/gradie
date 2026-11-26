@@ -34,7 +34,7 @@ export default function Amici() {
       keyboardShouldPersistTaps="handled"
     >
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Text accessibilityRole="header" style={[typography.title1, { flex: 1, color: colors.accent }]}>
+        <Text accessibilityRole="header" style={[typography.title1, { flex: 1, color: colors.heading }]}>
           {t.profile.friends}
         </Text>
         <Pressable

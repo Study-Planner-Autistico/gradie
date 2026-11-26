@@ -90,7 +90,7 @@ export const sameDay = (a: number, b: number) => dayDiff(a) === dayDiff(b);
 export const mmss = (s: number) => `${Math.floor(s / 60)}:${pad(Math.floor(s % 60))}`;
 
 /** Blu delle spunte "visualizzato" (dec. 190). */
-export const READ_BLUE = '#1CB0F6';
+export const READ_BLUE = '#1D9BF0';
 
 /** Spunte (dec. 190): una grigia = inviato, non ancora arrivato; due grigie = arrivato; due blu = visualizzato. */
 export function Ticks({ status = 'sent' }: { status?: Message['status'] }) {

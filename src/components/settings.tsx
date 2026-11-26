@@ -16,7 +16,7 @@ export function SheetPage({ title, children }: { title: string; children: ReactN
       contentContainerStyle={{ paddingBottom: spacing.giant }}
       keyboardShouldPersistTaps="handled"
     >
-      <Text accessibilityRole="header" style={[typography.display, { color: colors.accent, paddingHorizontal: spacing.xxl, paddingTop: spacing.xxxl, paddingBottom: spacing.xxl }]}>
+      <Text accessibilityRole="header" style={[typography.display, { color: colors.heading, paddingHorizontal: spacing.xxl, paddingTop: spacing.xxxl, paddingBottom: spacing.xxl }]}>
         {title}
       </Text>
       {children}

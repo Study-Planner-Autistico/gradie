@@ -109,7 +109,7 @@ function AgendaScreen() {
     >
       {/* Centrato e con gli stessi margini del giorno della Home, ma più piccolo (40 invece di 52) sulla stessa riga di 60. */}
       <View style={{ alignItems: 'center', marginTop: spacing.xl, marginBottom: spacing.lg }}>
-        <Text style={[typography.hero, { lineHeight: 60, color: colors.accent }]} accessibilityRole="header">
+        <Text style={[typography.hero, { lineHeight: 60, color: colors.heading }]} accessibilityRole="header">
           {t.agenda.title}
         </Text>
       </View>

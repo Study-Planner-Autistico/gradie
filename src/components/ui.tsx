@@ -96,7 +96,7 @@ export function ScreenHeader({
       <View style={{ flex: 1 }}>
         {title && (
           <Text
-            style={[compact ? typography.headline : typography.title1, { color: compact ? colors.text : colors.accent }]}
+            style={[compact ? typography.headline : typography.title1, { color: compact ? colors.text : colors.heading }]}
             accessibilityRole="header"
             numberOfLines={compact ? 1 : undefined}
           >
@@ -245,21 +245,24 @@ export function Button({
   accessibilityLabel?: string;
 }) {
   const { colors, radius, typography, layout, spacing } = useTheme();
-  const palette: Record<ButtonAppearance, { bg: string; pressed: string; fg: string }> = {
-    primary: { bg: colors.accent, pressed: colors.accentPressed, fg: colors.onAccent },
-    ink: { bg: colors.ink, pressed: colors.textSecondary, fg: colors.onInk },
-    /** Bottone secondario a contorno: bordo grigio 2 px, testo blu (prova storybook). */
-    default: { bg: 'transparent', pressed: colors.surfaceMuted, fg: colors.link },
+  // Prova storybook: pulsanti tridimensionali. `edge` è il bordo inferiore più scuro; premendo, il pulsante ci scende sopra.
+  const palette: Record<ButtonAppearance, { bg: string; pressed: string; fg: string; edge?: string }> = {
+    primary: { bg: colors.accent, pressed: colors.accent, fg: colors.onAccent, edge: colors.accentPressed },
+    ink: { bg: colors.ink, pressed: colors.ink, fg: colors.onInk, edge: colors.textSecondary },
+    /** Bottone secondario a contorno: bordo grigio 2 px, testo blu. */
+    default: { bg: colors.surface, pressed: colors.surface, fg: colors.link, edge: colors.borderBold },
     subtle: { bg: 'transparent', pressed: colors.surfaceMuted, fg: colors.textSecondary },
-    danger: { bg: colors.dangerIcon, pressed: colors.danger, fg: '#FFFFFF' },
-    warning: { bg: '#FBC828', pressed: '#F5B000', fg: '#292A2E' },
-    discovery: { bg: colors.discovery, pressed: colors.discovery, fg: '#FFFFFF' },
-    /** Sul gradiente di brand: bianco pieno con testo viola, o trasparente con testo bianco. */
-    inverse: { bg: '#FFFFFF', pressed: '#D7FFB8', fg: '#46A302' },
+    danger: { bg: colors.dangerIcon, pressed: colors.dangerIcon, fg: '#FFFFFF', edge: colors.danger },
+    warning: { bg: '#FBC828', pressed: '#FBC828', fg: '#292A2E', edge: '#D9A400' },
+    discovery: { bg: colors.discovery, pressed: colors.discovery, fg: '#FFFFFF', edge: '#7E3FC2' },
+    /** Sul colore pieno del brand: bianco con testo viola, o trasparente con testo bianco. */
+    inverse: { bg: '#FFFFFF', pressed: '#FFFFFF', fg: colors.accentPressed, edge: '#D5D1FF' },
     inverseSubtle: { bg: 'transparent', pressed: 'rgba(255,255,255,0.16)', fg: '#FFFFFF' },
   };
   const p = palette[appearance];
   const isOff = disabled || loading;
+  const outline = appearance === 'default' ? 2 : 0;
+  const depth = p.edge && !disabled ? (outline ? 2 : 4) : 0;
   return (
     <Pressable
       onPress={() => {
@@ -271,18 +274,20 @@ export function Button({
       accessibilityLabel={accessibilityLabel ?? title}
       accessibilityState={{ disabled: !!isOff, busy: !!loading }}
       style={({ pressed }) => ({
-        height: layout.button,
+        // Premuto: il bordo inferiore sparisce e il pulsante scende; altezza + margine restano uguali, niente salti.
+        height: pressed ? layout.button - depth : layout.button,
+        marginTop: pressed ? depth : 0,
         paddingHorizontal: spacing.xl,
         borderRadius: radius.lg,
-        borderWidth: appearance === 'default' ? 2 : 0,
-        borderColor: colors.borderBold,
+        borderWidth: outline,
+        borderBottomWidth: outline + (pressed ? 0 : depth),
+        borderColor: p.edge ?? 'transparent',
         backgroundColor: disabled ? colors.surfaceMuted : pressed ? p.pressed : p.bg,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: spacing.sm,
         alignSelf: fullWidth ? 'stretch' : 'flex-start',
-        transform: [{ scale: pressed ? 0.98 : 1 }],
       })}
     >
       {loading ? (
@@ -337,7 +342,11 @@ export function IconButton({
         borderRadius: size / 2,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: primary ? (pressed ? colors.neutralHovered : colors.accent) : 'transparent',
+        backgroundColor: primary ? colors.accent : 'transparent',
+        // Primario tridimensionale: bordo inferiore scuro che sparisce premendo.
+        borderBottomWidth: primary && !pressed ? 3 : 0,
+        borderBottomColor: colors.accentPressed,
+        transform: [{ translateY: primary && pressed ? 3 : 0 }],
         opacity: pressed && !primary ? 0.5 : 1,
       })}
     >
@@ -366,9 +375,10 @@ export function Fab({ icon, label, onPress, bottom }: { icon: IconName; label: s
         borderRadius: 28,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: pressed ? colors.accentPressed : colors.accent,
-        boxShadow: colors.shadowOverlay,
-        transform: [{ scale: pressed ? 0.95 : 1 }],
+        backgroundColor: colors.accent,
+        borderBottomWidth: pressed ? 0 : 4,
+        borderBottomColor: colors.accentPressed,
+        transform: [{ translateY: pressed ? 4 : 0 }],
       })}
     >
       <Icon name={icon} size={24} color={colors.onAccent} />

@@ -25,7 +25,7 @@ export default function ModificaProfilo() {
       contentContainerStyle={{ padding: spacing.lg, paddingTop: spacing.xxl, gap: spacing.xl }}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={[typography.title1, { color: colors.accent }]}>{t.profile.editProfile}</Text>
+      <Text style={[typography.title1, { color: colors.heading }]}>{t.profile.editProfile}</Text>
 
       <TextField
         label={t.profile.bio}

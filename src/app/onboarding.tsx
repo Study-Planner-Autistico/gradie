@@ -304,7 +304,7 @@ function StepLayout({
         {art && <View style={{ alignItems: 'center' }}>{art}</View>}
         <FadeUp>
           <View style={{ gap: spacing.sm }}>
-            <Text style={[typography.title1, { color: colors.accent }]} accessibilityRole="header">
+            <Text style={[typography.title1, { color: colors.heading }]} accessibilityRole="header">
               {title}
             </Text>
             {subtitle && <Text style={[typography.body, { color: colors.textSecondary }]}>{subtitle}</Text>}
@@ -483,7 +483,7 @@ function Blocked({ ctx }: { ctx: Ctx }) {
       </View>
       <FadeUp>
         <View style={{ gap: spacing.sm }}>
-          <Text style={[typography.title1, { color: colors.accent, textAlign: 'center' }]} accessibilityRole="header">
+          <Text style={[typography.title1, { color: colors.heading, textAlign: 'center' }]} accessibilityRole="header">
             {t.onb.blocked.title}
           </Text>
           <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>{t.onb.blocked.body}</Text>
@@ -1054,7 +1054,7 @@ function Done({ ctx }: { ctx: Ctx }) {
       </View>
       <FadeUp delay={150}>
         <View style={{ gap: spacing.sm }}>
-          <Text style={[typography.display, { color: colors.accent, textAlign: 'center' }]} accessibilityRole="header">
+          <Text style={[typography.display, { color: colors.heading, textAlign: 'center' }]} accessibilityRole="header">
             {t.onb.done.title(ctx.a.firstName || 'Giulia')}
           </Text>
           <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>{t.onb.done.body}</Text>

@@ -22,7 +22,7 @@ const darkTints: typeof lightTints = {
   study: { bg: '#2B2541', fg: '#B8ACF6' },
 };
 
-// Prova "storybook" (ramo di prova, non è una decisione): carta bianca, verde saturo per titoli e progresso,
+// Prova "storybook" (ramo di prova, non è una decisione): carta bianca, viola Gradie per titoli e progresso,
 // blu per link e azioni secondarie, grigi caldi per il testo, bordi pieni 2 px, niente ombre, sfumature o vetro.
 export const lightColors = {
   /** Carta bianca: schermo e card sono dello stesso bianco, le card si staccano col bordo. */
@@ -35,23 +35,26 @@ export const lightColors = {
   border: '#E5E5E5',
   borderBold: '#AFAFAF',
   borderInput: '#AFAFAF',
-  borderFocused: '#1CB0F6',
+  borderFocused: '#5D55D7',
   text: '#4B4B4B',
   textSecondary: '#777777',
   textTertiary: '#777777',
   textDisabled: '#AFAFAF',
   ink: '#4B4B4B',
   onInk: '#FFFFFF',
-  /** Verde: titoli, progresso, bottone principale. */
-  accent: '#58CC02',
-  accentHovered: '#61E002',
-  accentPressed: '#46A302',
+  /** Viola Gradie: bottone principale, progresso, selezione. Bianco sopra 5.6:1. */
+  accent: '#5D55D7',
+  accentHovered: '#5149C9',
+  /** Bordo inferiore dei pulsanti tridimensionali e stato premuto. */
+  accentPressed: '#463FB5',
+  /** Titoli grandi delle pagine. */
+  heading: '#5D55D7',
   onAccent: '#FFFFFF',
   switchThumb: '#FFFFFF',
   /** Blu: link e azioni secondarie. */
-  link: '#1CB0F6',
-  selected: '#D7FFB8',
-  selectedText: '#3F8F00',
+  link: '#1A73C9',
+  selected: '#EEECFF',
+  selectedText: '#4A42C2',
   gold: '#FFC800',
   success: '#58A700',
   successBg: '#D7FFB8',
@@ -71,13 +74,13 @@ export const lightColors = {
   shadowRaised: '0px 0px 0px 2px #E5E5E5',
   shadowOverlay: '0px 0px 0px 2px #E5E5E5',
   glassFallback: '#FFFFFF',
-  glassBlue: '#1CB0F6',
+  glassBlue: '#1A73C9',
   glassBorder: '#E5E5E5',
   /** Niente sfumature: tinte piatte. */
   heroGradient: ['#FFFFFF', '#FFFFFF'] as readonly [string, string, ...string[]],
   heroGradientOverlay: ['rgba(255,255,255,0)', 'rgba(255,255,255,0)'] as readonly [string, string, ...string[]],
-  brandGradient: ['#58CC02', '#58CC02'] as readonly [string, string, ...string[]],
-  feature: '#58CC02',
+  brandGradient: ['#5D55D7', '#5D55D7'] as readonly [string, string, ...string[]],
+  feature: '#5D55D7',
   onFeature: '#FFFFFF',
   tints: lightTints,
 };
@@ -94,21 +97,22 @@ export const darkColors: ColorTokens = {
   border: '#37464F',
   borderBold: '#52656D',
   borderInput: '#52656D',
-  borderFocused: '#1CB0F6',
+  borderFocused: '#A9A2FF',
   text: '#F1F7FB',
   textSecondary: '#A9B8C0',
   textTertiary: '#A9B8C0',
   textDisabled: '#52656D',
   ink: '#F1F7FB',
   onInk: '#131F24',
-  accent: '#58CC02',
-  accentHovered: '#79D634',
-  accentPressed: '#46A302',
+  accent: '#5D55D7',
+  accentHovered: '#6F67E8',
+  accentPressed: '#3D37A8',
+  heading: '#A9A2FF',
   onAccent: '#FFFFFF',
   switchThumb: '#FFFFFF',
-  link: '#49C0F8',
-  selected: '#1F3A12',
-  selectedText: '#93D333',
+  link: '#6FB0F5',
+  selected: '#29254F',
+  selectedText: '#B3ACFF',
   gold: '#FFC800',
   success: '#93D333',
   successBg: '#1F3A12',
@@ -127,12 +131,12 @@ export const darkColors: ColorTokens = {
   shadowRaised: '0px 0px 0px 2px #37464F',
   shadowOverlay: '0px 0px 0px 2px #37464F',
   glassFallback: '#131F24',
-  glassBlue: '#1CB0F6',
+  glassBlue: '#6FB0F5',
   glassBorder: '#37464F',
   heroGradient: ['#131F24', '#131F24'] as readonly [string, string, ...string[]],
   heroGradientOverlay: ['rgba(19,31,36,0)', 'rgba(19,31,36,0)'] as readonly [string, string, ...string[]],
-  brandGradient: ['#58CC02', '#58CC02'] as readonly [string, string, ...string[]],
-  feature: '#58CC02',
+  brandGradient: ['#5D55D7', '#5D55D7'] as readonly [string, string, ...string[]],
+  feature: '#4A42C2',
   onFeature: '#FFFFFF',
   tints: darkTints,
 };
@@ -179,35 +183,35 @@ export const spacing = { xxs: 2, xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, 
 /** Prova storybook: 12 px su bottoni, card, pillole e campi. */
 export const radius = { xs: 2, sm: 8, md: 12, lg: 12, xl: 12, xxl: 16, pill: 999 } as const;
 
-/** Font caricati in src/app/_layout.tsx: Nunito (tondo) per i titoli, Nunito Sans per il testo. */
+/** Font caricati in src/app/_layout.tsx: Fredoka (tondo) per i titoli, Rubik per il testo. */
 export const fonts = {
-  heading: 'Nunito_900Black',
-  title: 'Nunito_800ExtraBold',
-  body: 'NunitoSans_500Medium',
-  semibold: 'NunitoSans_600SemiBold',
-  bold: 'NunitoSans_700Bold',
-  extrabold: 'NunitoSans_800ExtraBold',
+  heading: 'Fredoka_700Bold',
+  title: 'Fredoka_600SemiBold',
+  body: 'Rubik_400Regular',
+  semibold: 'Rubik_500Medium',
+  bold: 'Rubik_600SemiBold',
+  extrabold: 'Rubik_700Bold',
 } as const;
 
 export const typography = {
-  hero: { fontSize: 48, lineHeight: 56, fontFamily: fonts.heading, fontWeight: '900', letterSpacing: -1 },
-  display: { fontSize: 40, lineHeight: 48, fontFamily: fonts.heading, fontWeight: '900', letterSpacing: -0.8 },
+  hero: { fontSize: 48, lineHeight: 56, fontFamily: fonts.heading, fontWeight: '700', letterSpacing: -1 },
+  display: { fontSize: 40, lineHeight: 48, fontFamily: fonts.heading, fontWeight: '700', letterSpacing: -0.8 },
   /** Titolo della schermata */
-  title1: { fontSize: 32, lineHeight: 38, fontFamily: fonts.heading, fontWeight: '900', letterSpacing: -0.6 },
+  title1: { fontSize: 32, lineHeight: 38, fontFamily: fonts.heading, fontWeight: '700', letterSpacing: -0.6 },
   /** Titolo della card */
-  title2: { fontSize: 20, lineHeight: 26, fontFamily: fonts.title, fontWeight: '800' },
-  stat: { fontSize: 24, lineHeight: 28, fontFamily: fonts.title, fontWeight: '800', fontVariant: ['tabular-nums'] },
+  title2: { fontSize: 20, lineHeight: 26, fontFamily: fonts.title, fontWeight: '600' },
+  stat: { fontSize: 24, lineHeight: 28, fontFamily: fonts.title, fontWeight: '600', fontVariant: ['tabular-nums'] },
   /** Maiuscolo spaziato, come le etichette di navigazione della reference. */
-  label: { fontSize: 15, lineHeight: 20, fontFamily: fonts.bold, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' },
-  headline: { fontSize: 17, lineHeight: 22, fontFamily: fonts.bold, fontWeight: '700' },
-  body: { fontSize: 17, lineHeight: 24, fontFamily: fonts.body, fontWeight: '500' },
+  label: { fontSize: 15, lineHeight: 20, fontFamily: fonts.bold, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase' },
+  headline: { fontSize: 17, lineHeight: 22, fontFamily: fonts.bold, fontWeight: '600' },
+  body: { fontSize: 17, lineHeight: 24, fontFamily: fonts.body, fontWeight: '400' },
   /** Testo dei campi su una riga: senza lineHeight, così iOS lo centra nel campo. */
-  input: { fontSize: 17, fontFamily: fonts.body, fontWeight: '500' },
-  callout: { fontSize: 15, lineHeight: 20, fontFamily: fonts.semibold, fontWeight: '600' },
-  caption: { fontSize: 13, lineHeight: 17, fontFamily: fonts.body, fontWeight: '500' },
-  overline: { fontSize: 13, lineHeight: 16, fontFamily: fonts.extrabold, fontWeight: '800', letterSpacing: 0.7, textTransform: 'uppercase' },
-  metric: { fontSize: 32, lineHeight: 36, fontFamily: fonts.heading, fontWeight: '900', fontVariant: ['tabular-nums'] },
-  time: { fontSize: 15, lineHeight: 20, fontFamily: fonts.semibold, fontWeight: '600', fontVariant: ['tabular-nums'] },
+  input: { fontSize: 17, fontFamily: fonts.body, fontWeight: '400' },
+  callout: { fontSize: 15, lineHeight: 20, fontFamily: fonts.semibold, fontWeight: '500' },
+  caption: { fontSize: 13, lineHeight: 17, fontFamily: fonts.body, fontWeight: '400' },
+  overline: { fontSize: 13, lineHeight: 16, fontFamily: fonts.extrabold, fontWeight: '700', letterSpacing: 0.7, textTransform: 'uppercase' },
+  metric: { fontSize: 32, lineHeight: 36, fontFamily: fonts.heading, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  time: { fontSize: 15, lineHeight: 20, fontFamily: fonts.semibold, fontWeight: '500', fontVariant: ['tabular-nums'] },
 } satisfies Record<string, TextStyle>;
 
 export const layout = {

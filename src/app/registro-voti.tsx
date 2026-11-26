@@ -13,9 +13,9 @@ import { useTheme } from '../theme';
 
 const CHART_H = 140;
 const COL_W = 30;
-const GREEN = '#58CC02';
-const GREEN_DARK = '#46A302';
-const GREEN_SOFT = '#D7FFB8';
+const GREEN = '#22C55E';
+const GREEN_DARK = '#15803D';
+const GREEN_SOFT = '#BBF7D0';
 
 /** Etichetta corta sotto la colonna: "Pro", "Geo"; "Ana I", "Ing B2" se la seconda parola è corta; altrimenti le iniziali ("SM"). */
 const short = (name: string) => {

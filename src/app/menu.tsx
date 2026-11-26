@@ -21,7 +21,7 @@ export default function Menu() {
       style={{ backgroundColor: Platform.OS === 'ios' ? 'transparent' : colors.bg }}
       contentContainerStyle={{ padding: spacing.lg, paddingTop: spacing.xxl, gap: spacing.lg }}
     >
-      <Text style={[typography.title1, { color: colors.accent }]}>{t.menu.title}</Text>
+      <Text style={[typography.title1, { color: colors.heading }]}>{t.menu.title}</Text>
       <ListGroup>
         {ITEMS.map((item) => (
           <ListRow key={item.label} icon={item.icon} label={item.label} trailing={<Chip variant="muted" label={t.menu.inDesign} />} />

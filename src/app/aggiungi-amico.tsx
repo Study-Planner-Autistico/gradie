@@ -53,7 +53,7 @@ export default function AggiungiAmico() {
       contentContainerStyle={{ padding: spacing.xxl, paddingTop: spacing.xxxl, gap: spacing.xl, paddingBottom: spacing.giant }}
       keyboardShouldPersistTaps="handled"
     >
-      <Text accessibilityRole="header" style={[typography.title1, { color: colors.accent, textAlign: 'center' }]}>
+      <Text accessibilityRole="header" style={[typography.title1, { color: colors.heading, textAlign: 'center' }]}>
         {T.add}
       </Text>
       <View style={{ flexDirection: 'row', gap: spacing.md }}>

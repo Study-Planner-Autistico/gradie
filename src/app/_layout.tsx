@@ -1,5 +1,5 @@
-import { Nunito_800ExtraBold, Nunito_900Black, useFonts } from '@expo-google-fonts/nunito';
-import { NunitoSans_500Medium, NunitoSans_600SemiBold, NunitoSans_700Bold, NunitoSans_800ExtraBold } from '@expo-google-fonts/nunito-sans';
+import { Fredoka_600SemiBold, Fredoka_700Bold, useFonts } from '@expo-google-fonts/fredoka';
+import { Rubik_400Regular, Rubik_500Medium, Rubik_600SemiBold, Rubik_700Bold } from '@expo-google-fonts/rubik';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -13,7 +13,7 @@ export default function RootLayout() {
   const { colors } = useTheme();
   // Si aspettano i font (sono nel pacchetto, si caricano subito): senza attesa la Home veniva disegnata
   // col font di sistema e restava così, perché non si ridisegna quando il font arriva.
-  const [fontsReady] = useFonts({ Nunito_800ExtraBold, Nunito_900Black, NunitoSans_500Medium, NunitoSans_600SemiBold, NunitoSans_700Bold, NunitoSans_800ExtraBold });
+  const [fontsReady] = useFonts({ Fredoka_600SemiBold, Fredoka_700Bold, Rubik_400Regular, Rubik_500Medium, Rubik_600SemiBold, Rubik_700Bold });
   if (!fontsReady) return null;
   return (
     // Serve a Gesture Handler (Pencil sulla lavagna, dec. 166).
