@@ -53,7 +53,7 @@ export default function Amici() {
 
       {current === 0 ? (
         <>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, height: 44, paddingHorizontal: spacing.md, borderRadius: radius.lg, backgroundColor: colors.surfaceMuted }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, height: 44, paddingHorizontal: spacing.md, borderRadius: radius.lg, backgroundColor: colors.surfaceMuted, borderWidth: 2, borderColor: colors.border }}>
             <Icon name="search-outline" size={18} color={colors.textTertiary} />
             <TextInput
               value={query}

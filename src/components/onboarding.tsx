@@ -17,7 +17,7 @@ function useReducedMotion() {
 
 const bezier = (b: readonly [number, number, number, number]) => Easing.bezier(b[0], b[1], b[2], b[3]);
 
-/** Progress bar Atlassian: alta 6, raggio pieno, brand (DESIGN.md §5.12). */
+/** Progress bar della prova storybook: alta 16, raggio pieno, riempimento brand con riflesso chiaro sopra. */
 export function ProgressBar({ value }: { value: number }) {
   const { colors, motion } = useTheme();
   const w = useRef(new Animated.Value(value)).current;
@@ -28,16 +28,19 @@ export function ProgressBar({ value }: { value: number }) {
     <View
       accessibilityRole="progressbar"
       accessibilityValue={{ min: 0, max: 100, now: Math.round(value * 100) }}
-      style={{ height: 6, borderRadius: 3, backgroundColor: colors.surfaceMuted, overflow: 'hidden', flex: 1 }}
+      style={{ height: 16, borderRadius: 8, backgroundColor: colors.border, overflow: 'hidden', flex: 1 }}
     >
       <Animated.View
         style={{
-          height: 6,
-          borderRadius: 3,
+          height: 16,
+          borderRadius: 8,
           backgroundColor: colors.accent,
           width: w.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
         }}
-      />
+      >
+        {/* Riflesso: striscia chiara in alto, piatta, come le barre dell'app per le lingue. */}
+        <View style={{ position: 'absolute', top: 4, left: 8, right: 8, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
+      </Animated.View>
     </View>
   );
 }

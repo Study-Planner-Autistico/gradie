@@ -4,22 +4,23 @@
 import type { TextStyle } from 'react-native';
 
 /** Tinte per tipo di elemento (DESIGN.md §2.3): color.background.accent.*.subtlest + color.text.accent.*. */
+// Prova storybook: tinte vivaci tipo app per le lingue (azzurro, rosa, arancio, verde, grigio, viola), testo ≥ 4.5:1.
 const lightTints = {
-  lesson: { bg: '#E9F2FE', fg: '#1558BC' }, // blue
-  appointment: { bg: '#FFECF8', fg: '#943D73' }, // magenta
-  activity: { bg: '#FFF5DB', fg: '#9E4C00' }, // orange
-  official: { bg: '#DCFFF1', fg: '#216E4E' }, // green
-  holiday: { bg: '#F0F1F2', fg: '#505258' }, // gray
-  study: { bg: '#F3F0FF', fg: '#5E4DB2' }, // purple (dec. 186)
+  lesson: { bg: '#DDF4FF', fg: '#1270A8' }, // blue
+  appointment: { bg: '#FFE3F3', fg: '#B0307A' }, // magenta
+  activity: { bg: '#FFF0DB', fg: '#B35C00' }, // orange
+  official: { bg: '#E5FFD1', fg: '#3F7F00' }, // green
+  holiday: { bg: '#F2F2F2', fg: '#5E5E5E' }, // gray
+  study: { bg: '#F6E8FF', fg: '#8A3FC2' }, // purple (dec. 186)
 };
 
 const darkTints: typeof lightTints = {
-  lesson: { bg: '#1C2B42', fg: '#8FB8F6' },
-  appointment: { bg: '#3D2232', fg: '#F797D2' },
-  activity: { bg: '#3A2C1F', fg: '#FBC828' },
-  official: { bg: '#1C3329', fg: '#7EE2B8' },
-  holiday: { bg: '#303134', fg: '#A9ABAF' },
-  study: { bg: '#2B2541', fg: '#B8ACF6' },
+  lesson: { bg: '#14324A', fg: '#7DD3FC' },
+  appointment: { bg: '#3F1F35', fg: '#FF9FD8' },
+  activity: { bg: '#3D2A12', fg: '#FFB54D' },
+  official: { bg: '#1F3A12', fg: '#93D333' },
+  holiday: { bg: '#2A363C', fg: '#A9B8C0' },
+  study: { bg: '#33244A', fg: '#D7A6FF' },
 };
 
 // Prova "storybook" (ramo di prova, non è una decisione): carta bianca, viola Gradie per titoli e progresso,
@@ -71,7 +72,8 @@ export const lightColors = {
   discoveryBg: '#F6E8FF',
   blanket: '#00000066',
   /** Niente ombre: un'ombra piena da 2 px senza sfocatura disegna il bordo "adesivo" su tutte le superfici. */
-  shadowRaised: '0px 0px 0px 2px #E5E5E5',
+  /** Card tridimensionali: bordo 2 px e 4 px sotto (due ombre piene senza sfocatura). */
+  shadowRaised: '0px 0px 0px 2px #E5E5E5, 0px 2px 0px 2px #E5E5E5',
   shadowOverlay: '0px 0px 0px 2px #E5E5E5',
   glassFallback: '#FFFFFF',
   glassBlue: '#1A73C9',
@@ -128,7 +130,7 @@ export const darkColors: ColorTokens = {
   discovery: '#CE82FF',
   discoveryBg: '#33244A',
   blanket: '#000000A0',
-  shadowRaised: '0px 0px 0px 2px #37464F',
+  shadowRaised: '0px 0px 0px 2px #37464F, 0px 2px 0px 2px #37464F',
   shadowOverlay: '0px 0px 0px 2px #37464F',
   glassFallback: '#131F24',
   glassBlue: '#6FB0F5',

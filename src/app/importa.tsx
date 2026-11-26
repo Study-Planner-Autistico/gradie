@@ -127,7 +127,7 @@ export default function Importa() {
             autoCorrect={false}
             keyboardType="url"
             returnKeyType="go"
-            style={[typography.body, { color: colors.text, height: 48, paddingHorizontal: spacing.lg, borderRadius: radius.xl, backgroundColor: colors.surfaceMuted }]}
+            style={[typography.body, { color: colors.text, height: 48, paddingHorizontal: spacing.lg, borderRadius: radius.xl, backgroundColor: colors.surfaceMuted, borderWidth: 2, borderColor: colors.border }]}
           />
           {buttons({ title: t.importer.close, onPress: () => setStep({ k: 'choose' }) }, { title: t.importer.linkGo, onPress: () => checkLink(step.url) })}
         </>

@@ -419,7 +419,8 @@ export function TextField({
 }: TextInputProps & { label: string; helper?: string; error?: string; ref?: Ref<TextInputRef> }) {
   const { colors, typography, radius, spacing, layout } = useTheme();
   const [focused, setFocused] = useState(false);
-  const borderColor = error ? colors.dangerIcon : focused ? colors.borderFocused : colors.borderInput;
+  // Prova storybook: campo grigio chiaro con bordo pieno 2 px, colorato solo a fuoco o con errore.
+  const borderColor = error ? colors.dangerIcon : focused ? colors.borderFocused : colors.border;
   return (
     <View style={{ gap: spacing.xs }}>
       <Text style={[typography.overline, { color: colors.textSecondary }]}>{label}</Text>
@@ -446,7 +447,7 @@ export function TextField({
             borderRadius: radius.md,
             borderWidth: 2,
             borderColor,
-            backgroundColor: colors.surface,
+            backgroundColor: focused ? colors.surface : colors.surfaceMuted,
             color: colors.text,
           },
           // Sul web niente contorno del browser: il focus è il bordo di 2 px.
