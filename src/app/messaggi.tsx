@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import Animated, { LinearTransition, SlideInDown, SlideOutDown, ZoomIn, ZoomOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AnimatedStar } from '../components/AnimatedStar';
 import { ActionSheet, type SheetAction } from '../components/ActionSheet';
 import { nameOf, PersonAvatar, shortWhen, Ticks } from '../components/chat';
 import { confirm } from '../components/dialogs';
@@ -259,11 +260,12 @@ function ThreadCard({ thread, selected, onPress, onLongPress }: { thread: Thread
       </Animated.View>
       <Animated.View layout={LinearTransition.duration(200)} style={{ flex: 1, gap: 2 }}>
         <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm }}>
+          {/* Importante: stella piena a sinistra del nome (dec. 222). */}
+          {thread.important && <AnimatedStar active size={14} color={colors.gold} />}
           <Text style={[typography.headline, { color: colors.text }]} numberOfLines={1}>
             {name}
           </Text>
           <Text style={[typography.caption, { color: colors.textTertiary }]}>{role}</Text>
-          {thread.important && <Icon name="star" size={14} color={colors.gold} />}
           {thread.muted && <Icon name="bell-off" size={14} color={colors.textTertiary} />}
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>

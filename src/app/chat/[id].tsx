@@ -2,8 +2,10 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Fragment, useEffect, useRef, useState, type ComponentRef } from 'react';
-import { Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Keyboard, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AnimatedStar } from '../../components/AnimatedStar';
 import { ActionSheet, type SheetAction } from '../../components/ActionSheet';
 import { AudioBubble, clock, dayLabel, FileBubble, isOnline, nameOf, NoteBubble, NotePicker, PersonAvatar, RecorderBar, sameDay, Ticks, VideoBubble } from '../../components/chat';
 import { confirm } from '../../components/dialogs';
@@ -27,6 +29,12 @@ export default function Chat() {
   const typing = useTyping(id);
   const [text, setText] = useState('');
   const [recording, setRecording] = useState(false);
+  // La barra segue la tastiera fotogramma per fotogramma, incollata ai tasti (dec. 217, 218). Solo iOS: Android ridimensiona da solo.
+  // shortcut: useAnimatedKeyboard è deprecato in Reanimated 4; passare a react-native-keyboard-controller se sparisce.
+  const keyboard = useAnimatedKeyboard();
+  // Trascinando il dito in giù sulla barra si chiude la tastiera (dec. 219).
+  const touchY = useRef(0);
+  const kbStyle = useAnimatedStyle(() => ({ paddingBottom: Platform.OS === 'ios' ? Math.max(keyboard.height.value - insets.bottom, 0) : 0 }));
   const [sheet, setSheet] = useState<'attach' | 'notes' | 'more' | null>(null);
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
 
@@ -108,7 +116,7 @@ export default function Chat() {
   const iconBtn = ({ pressed }: { pressed: boolean }) => ({ width: layout.iconButton, height: layout.iconButton, alignItems: 'center' as const, justifyContent: 'center' as const, opacity: pressed ? 0.6 : 1 });
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: colors.bg }}>
+    <Animated.View style={[{ flex: 1, backgroundColor: colors.bg }, kbStyle]}>
       {/* Intestazione: indietro, avatar, nome e stato; stella e altre azioni. */}
       {/* Sotto la Dynamic Island e la barra di stato, su iPhone e iPad (dec. 190). */}
       <View style={{ paddingTop: insets.top + spacing.xs, paddingHorizontal: spacing.md, paddingBottom: spacing.sm, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border }}>
@@ -140,7 +148,7 @@ export default function Chat() {
           accessibilityState={{ selected: thread.important }}
           style={iconBtn}
         >
-          <Icon name="star" size={22} color={thread.important ? colors.gold : colors.textTertiary} />
+          <AnimatedStar active={!!thread.important} size={22} color={thread.important ? colors.gold : colors.textTertiary} />
         </Pressable>
         <Pressable onPress={more} accessibilityRole="button" accessibilityLabel={T.more} style={iconBtn}>
           <Icon name="ellipsis-horizontal" size={24} color={colors.text} />
@@ -152,6 +160,8 @@ export default function Chat() {
         style={{ flex: 1 }}
         contentContainerStyle={{ padding: spacing.lg, gap: spacing.xs }}
         keyboardShouldPersistTaps="handled"
+        // Scorrendo i messaggi in giù la tastiera scende col dito, come WhatsApp (dec. 220).
+        keyboardDismissMode="interactive"
         onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: false })}
       >
         {msgs.map((m, i) => {
@@ -237,7 +247,11 @@ export default function Chat() {
           />
         </View>
       ) : (
-        <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: insets.bottom + spacing.sm }}>
+        <View
+          onTouchStart={(e) => (touchY.current = e.nativeEvent.pageY)}
+          onTouchEnd={(e) => e.nativeEvent.pageY - touchY.current > 20 && Keyboard.dismiss()}
+          style={{ flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: insets.bottom + spacing.sm }}
+        >
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-end', minHeight: 48, paddingLeft: spacing.lg, paddingRight: spacing.xs, borderRadius: 24, backgroundColor: colors.surfaceMuted }}>
             <TextInput
               value={text}
@@ -285,7 +299,7 @@ export default function Chat() {
           }}
         />
       </ActionSheet>
-    </KeyboardAvoidingView>
+    </Animated.View>
   );
 }
 
