@@ -89,31 +89,50 @@ export const demoClasses: Record<string, DemoClass> = {
   },
 };
 
-/** Documenti condivisi nella classe da compagni e docente (dec. 226). `by` = id di un amico o del docente. */
-export type DemoClassDoc = { id: string; name: string; by: string; daysAgo: number };
+/** Documenti condivisi nella classe da compagni e docente (dec. 226), ognuno in una materia (dec. 227). `by` = id di un amico o del docente. */
+export type DemoClassDoc = { id: string; name: string; by: string; daysAgo: number; subject: string };
 export const demoClassDocs: Record<string, DemoClassDoc[]> = {
   'c-4b': [
-    { id: 'd1', name: 'Programma di Fisica.pdf', by: 't1', daysAgo: 6 },
-    { id: 'd2', name: 'Appunti Promessi Sposi cap. 8.docx', by: 'f2', daysAgo: 2 },
-    { id: 'd3', name: 'Ricerca di Storia - gruppo 3.pptx', by: 'f1', daysAgo: 1 },
+    { id: 'd1', name: 'Programma di Fisica.pdf', by: 't1', daysAgo: 6, subject: 'Fisica' },
+    { id: 'd2', name: 'Appunti Promessi Sposi cap. 8.docx', by: 'f2', daysAgo: 2, subject: 'Italiano' },
+    { id: 'd3', name: 'Ricerca di Storia - gruppo 3.pptx', by: 'f1', daysAgo: 1, subject: 'Storia' },
   ],
   'c-ing1': [
-    { id: 'd1', name: 'Regole del progetto.pdf', by: 't2', daysAgo: 8 },
-    { id: 'd2', name: 'Esercizi svolti di Analisi I.pdf', by: 'f3', daysAgo: 3 },
-    { id: 'd3', name: 'Schema di Fisica I.docx', by: 'f2', daysAgo: 1 },
+    { id: 'd1', name: 'Regole del progetto.pdf', by: 't2', daysAgo: 8, subject: 'Programmazione' },
+    { id: 'd2', name: 'Esercizi svolti di Analisi I.pdf', by: 'f3', daysAgo: 3, subject: 'Analisi I' },
+    { id: 'd3', name: 'Schema di Fisica I.docx', by: 'f2', daysAgo: 1, subject: 'Fisica I' },
   ],
 };
 
 /** Lavori da consegnare al docente (dec. 226). `dueOffset` = giorni da oggi (negativo = scaduto). */
-export type DemoAssignment = { id: string; title: string; detail: string; dueOffset: number };
+export type DemoAssignment = { id: string; title: string; detail: string; dueOffset: number; subject: string };
 export const demoAssignments: Record<string, DemoAssignment[]> = {
   'c-4b': [
-    { id: 'w1', title: 'Relazione di laboratorio', detail: 'Esperienza sul moto rettilineo, massimo 3 pagine.', dueOffset: 3 },
-    { id: 'w2', title: 'Tema di Italiano', detail: 'Traccia B: analisi di un testo argomentativo.', dueOffset: 6 },
+    { id: 'w1', title: 'Relazione di laboratorio', detail: 'Esperienza sul moto rettilineo, massimo 3 pagine.', dueOffset: 3, subject: 'Fisica' },
+    { id: 'w2', title: 'Tema di Italiano', detail: 'Traccia B: analisi di un testo argomentativo.', dueOffset: 6, subject: 'Italiano' },
   ],
   'c-ing1': [
-    { id: 'w1', title: 'Progetto di Programmazione', detail: 'Codice e relazione in un unico PDF.', dueOffset: 5 },
-    { id: 'w2', title: 'Esercitazione 3 di Geometria', detail: 'Esercizi 1-8 del foglio 3.', dueOffset: 2 },
+    { id: 'w1', title: 'Progetto di Programmazione', detail: 'Codice e relazione in un unico PDF.', dueOffset: 5, subject: 'Programmazione' },
+    { id: 'w2', title: 'Esercitazione 3 di Geometria', detail: 'Esercizi 1-8 del foglio 3.', dueOffset: 2, subject: 'Geometria' },
+  ],
+};
+
+/** Chat di gruppo di una materia della classe (dec. 227), chiave `classe/materia`. `minutesAgo` = minuti fa. */
+export type DemoClassMessage = { id: string; from: string; text: string; minutesAgo: number };
+export const demoClassChat: Record<string, DemoClassMessage[]> = {
+  'c-ing1/Programmazione': [
+    { id: 'm1', from: 't2', text: 'Ho caricato le regole del progetto: leggetele prima di venerdì.', minutesAgo: 60 * 26 },
+    { id: 'm2', from: 'f1', text: 'Si può fare in coppia?', minutesAgo: 60 * 25 },
+    { id: 'm3', from: 't2', text: 'Sì, massimo due persone per gruppo.', minutesAgo: 60 * 24 },
+    { id: 'm4', from: 'f3', text: 'Chi è senza gruppo? Io ci sono 🙋', minutesAgo: 35 },
+  ],
+  'c-ing1/Analisi I': [
+    { id: 'm1', from: 'f3', text: 'Ho messo gli esercizi svolti del capitolo 4.', minutesAgo: 60 * 3 },
+    { id: 'm2', from: 'f2', text: 'Grazie! Il 7 non mi tornava proprio.', minutesAgo: 60 * 2 },
+  ],
+  'c-4b/Fisica': [
+    { id: 'm1', from: 't1', text: 'Per la relazione basta una foto chiara dei grafici.', minutesAgo: 60 * 5 },
+    { id: 'm2', from: 'f4', text: 'Va bene anche scritta a mano?', minutesAgo: 60 * 4 },
   ],
 };
 

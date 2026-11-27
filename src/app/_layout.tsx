@@ -48,7 +48,8 @@ export default function RootLayout() {
         <Stack.Screen name="bandiera" options={{ presentation: 'formSheet', sheetAllowedDetents: [0.7, 1], sheetGrabberVisible: true }} />
         <Stack.Screen name="notifiche" options={{ presentation: 'formSheet', sheetAllowedDetents: [0.7, 1], sheetGrabberVisible: true }} />
         {/* Pagina della classe a tutto schermo, in stile Classroom (dec. 226). */}
-        <Stack.Screen name="classe/[id]" />
+        <Stack.Screen name="classe/[id]/index" />
+        <Stack.Screen name="classe/[id]/[materia]" />
         <Stack.Screen name="amici" options={{ presentation: 'formSheet', sheetAllowedDetents: [0.92], sheetGrabberVisible: true }} />
         <Stack.Screen name="aggiungi-amico" options={{ presentation: 'formSheet', sheetAllowedDetents: [0.8, 1], sheetGrabberVisible: true }} />
         <Stack.Screen name="amico/[id]" options={{ presentation: 'formSheet', sheetAllowedDetents: [0.6, 1], sheetGrabberVisible: true }} />
