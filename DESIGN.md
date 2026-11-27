@@ -188,7 +188,7 @@ Un'unica route con una macchina a passi: header fisso (indietro + progress bar),
 ## 9b. Niente vetro
 | Elemento | Aspetto |
 |---|---|
-| Tab bar | `FloatingTabBar` anche su iOS e Android (dec. 223): pillola piatta `surface` con bordo 2, **solo icone**; voce attiva su fondo `selected` con icona `accent`. Col menu della Home aperto si sposta e si scurisce con la Home |
+| Tab bar | iOS/Android: **tab bar nativa** (`NativeTabs`), su iOS 26 in **Liquid Glass**, solo icone, tinta `accent` (dec. 225, unica eccezione al "niente vetro"). Web: `FloatingTabBar`, pillola piatta `surface` con bordo 2; voce attiva su fondo `selected` con icona `accent` |
 | `Glass` | superficie piatta `surface` con bordo 2 (o tinta piena se ha `tint`) |
 | Form sheet e menu nativi | restano di sistema (iOS) |
 
