@@ -7,7 +7,7 @@ import { IconButton } from '../../components/ui';
 import { Canvas, type Brush, type EraserMode, type SelectMode, type ShapeStyle, type Tool } from '../../components/whiteboard/Canvas';
 import { CM, type Ruler } from '../../components/whiteboard/geometry';
 import { AddPanel, AudioPanel, RecordPanel, type Picked } from '../../components/whiteboard/Sheets';
-import { isStrokeTool, Toolbar, type Dock, type Panel } from '../../components/whiteboard/Toolbar';
+import { isStrokeTool, Toolbar, type Panel } from '../../components/whiteboard/Toolbar';
 import { demoNotes } from '../../data/demo';
 import { t } from '../../i18n';
 import {
@@ -64,7 +64,6 @@ export default function Lavagna() {
     highlighter: initialBrush('highlighter', isDark),
   }));
   const [panel, setPanel] = useState<Panel>('none');
-  const [dock, setDock] = useState<Dock>('bottom');
   const [sheet, setSheet] = useState<Sheet>({ kind: 'none' });
   const insets = useSafeAreaInsets();
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -173,19 +172,12 @@ export default function Lavagna() {
         onRevert={(g) => revertGroup(boardId, g)}
       />
 
-      {/* Con un pannello aperto sopra la lavagna, il primo tocco la chiude soltanto, senza scrivere (dec. 177).
-          Le opzioni nella barra restano aperte: scegliendo la penna si scrive subito (dec. 185). */}
-      {(panel === 'colors' || panel === 'style' || (tool === 'shapes' && panel !== 'none')) && (
-        <View style={StyleSheet.absoluteFill} onStartShouldSetResponder={() => true} onResponderGrant={() => setPanel('options')} />
-      )}
+      {/* Con un pannello dello strumento aperto, il primo tocco sulla lavagna lo chiude soltanto, senza scrivere (dec. 177). */}
+      {panel !== 'none' && <View style={StyleSheet.absoluteFill} onStartShouldSetResponder={() => true} onResponderGrant={() => setPanel('none')} />}
 
-      {/* Annulla e ripeti, a destra a metà altezza (dec. 116); a sinistra se la barra è a destra (dec. 185). */}
-      <SafeAreaView
-        edges={[dock === 'right' ? 'left' : 'right']}
-        pointerEvents="box-none"
-        style={[{ position: 'absolute', top: 0, bottom: 0, justifyContent: 'center' }, dock === 'right' ? { left: 0 } : { right: 0 }]}
-      >
-        <Glass style={{ borderRadius: 22, padding: 4, gap: 2, marginHorizontal: spacing.sm }}>
+      {/* Annulla e ripeti, a destra a metà altezza (dec. 116). */}
+      <SafeAreaView edges={['right']} pointerEvents="box-none" style={{ position: 'absolute', top: 0, bottom: 0, right: 0, justifyContent: 'center' }}>
+        <Glass style={{ borderRadius: 22, padding: 4, gap: 2, marginRight: spacing.sm }}>
           <HistoryButton icon="undo" label={t.whiteboard.undo} disabled={!canUndo} onPress={undo} />
           <HistoryButton icon="redo" label={t.whiteboard.redo} disabled={!canRedo} onPress={redo} />
         </Glass>
@@ -200,78 +192,78 @@ export default function Lavagna() {
         </View>
       </SafeAreaView>
 
-      {/* Barra degli strumenti attaccata a un bordo; si sposta trascinando la maniglia (dec. 185). */}
-      <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, top: headerH, bottom: 0 }}>
-        <Toolbar
-          key={dock}
-          dock={dock}
-          onDock={setDock}
-          extra={
-            <>
-              {sheet.kind === 'add' && (
-                <AddPanel
-                  onClose={() => setSheet({ kind: 'none' })}
-                  onImage={addImage}
-                  onSticker={(emoji) => add({ kind: 'sticker', id: newId('st'), ...center(58, 58), emoji, size: 48 })}
-                  onNote={() => {
-                    const nid = newId('n');
-                    add({ kind: 'note', id: nid, ...center(170, 136), w: 170, text: '' });
-                    setEditingId(nid);
-                  }}
-                />
-              )}
-              {sheet.kind === 'record' && (
-                <RecordPanel
-                  onClose={() => setSheet({ kind: 'none' })}
-                  onDone={(uri, seconds) => {
-                    // Appena registrata resta aperta: si riascolta, si sposta trascinandola o si elimina con la x (dec. 178).
-                    const aid = newId('au');
-                    add({ kind: 'audio', id: aid, ...center(44, 44), uri, seconds, comment: '' });
-                    setSheet({ kind: 'audio', id: aid, fresh: true });
-                  }}
-                />
-              )}
-              {audio?.kind === 'audio' && (
-                <AudioPanel
-                  key={audio.id}
-                  uri={audio.uri}
-                  seconds={audio.seconds}
-                  comment={audio.comment}
-                  autoPlay={!(sheet.kind === 'audio' && sheet.fresh)}
-                  onComment={(c) => update((prev) => prev.map((i) => (i.id === audio.id && i.kind === 'audio' ? { ...i, comment: c } : i)))}
-                  onClose={() => setSheet({ kind: 'none' })}
-                />
-              )}
-            </>
-          }
-          tool={tool}
-          onTool={chooseTool}
-          sheet={sheet.kind === 'add' ? 'add' : sheet.kind === 'record' ? 'audio' : null}
-          onAdd={() => {
-            setPanel('none');
-            setSelected([]);
-            setSheet(sheet.kind === 'add' ? { kind: 'none' } : { kind: 'add' });
-          }}
-          onAudio={() => {
-            setPanel('none');
-            setSelected([]);
-            setSheet(sheet.kind === 'record' ? { kind: 'none' } : { kind: 'record' });
-          }}
-          brush={brush}
-          setBrush={(b) => isStrokeTool(tool) && setBrushes((prev) => ({ ...prev, [tool]: { ...prev[tool], ...b } }))}
-          panel={panel}
-          setPanel={setPanel}
-          rulerOn={ruler !== null}
-          onRuler={toggleRuler}
-          selectMode={selectMode}
-          setSelectMode={setSelectMode}
-          eraserMode={eraserMode}
-          setEraserMode={setEraserMode}
-          shapeStyle={shapeStyle}
-          setShapeStyle={(st) => setShapeStyle((prev) => ({ ...prev, ...st }))}
-          inkDark={isDark}
-        />
-      </View>
+      <SafeAreaView edges={['bottom', 'left', 'right']} pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}>
+        <View pointerEvents="box-none" style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.md, gap: spacing.sm, alignItems: 'center' }}>
+          {sheet.kind === 'add' && (
+            <AddPanel
+              onClose={() => setSheet({ kind: 'none' })}
+              onImage={addImage}
+              onSticker={(emoji) => add({ kind: 'sticker', id: newId('st'), ...center(58, 58), emoji, size: 48 })}
+              onNote={() => {
+                const nid = newId('n');
+                add({ kind: 'note', id: nid, ...center(170, 136), w: 170, text: '' });
+                setEditingId(nid);
+              }}
+            />
+          )}
+          {sheet.kind === 'record' && (
+            <RecordPanel
+              onClose={() => setSheet({ kind: 'none' })}
+              onDone={(uri, seconds) => {
+                // Appena registrata resta aperta: si riascolta, si sposta trascinandola o si elimina con la x (dec. 178).
+                const aid = newId('au');
+                add({ kind: 'audio', id: aid, ...center(44, 44), uri, seconds, comment: '' });
+                setSheet({ kind: 'audio', id: aid, fresh: true });
+              }}
+            />
+          )}
+          {audio?.kind === 'audio' && (
+            <AudioPanel
+              key={audio.id}
+              uri={audio.uri}
+              seconds={audio.seconds}
+              comment={audio.comment}
+              autoPlay={!(sheet.kind === 'audio' && sheet.fresh)}
+              onComment={(c) => update((prev) => prev.map((i) => (i.id === audio.id && i.kind === 'audio' ? { ...i, comment: c } : i)))}
+              onClose={() => setSheet({ kind: 'none' })}
+            />
+          )}
+          <Toolbar
+            tool={tool}
+            onTool={chooseTool}
+            sheet={sheet.kind === 'add' ? 'add' : sheet.kind === 'record' ? 'audio' : null}
+            onAdd={() => {
+              setPanel('none');
+              setSelected([]);
+              setSheet(sheet.kind === 'add' ? { kind: 'none' } : { kind: 'add' });
+            }}
+            onAudio={() => {
+              setPanel('none');
+              setSelected([]);
+              setSheet(sheet.kind === 'record' ? { kind: 'none' } : { kind: 'record' });
+            }}
+            brush={brush}
+            setBrush={(b) => isStrokeTool(tool) && setBrushes((prev) => ({ ...prev, [tool]: { ...prev[tool], ...b } }))}
+            panel={panel}
+            setPanel={setPanel}
+            rulerOn={ruler !== null}
+            onRuler={toggleRuler}
+            selectMode={selectMode}
+            setSelectMode={(m) => {
+              setSelectMode(m);
+              setPanel('none');
+            }}
+            eraserMode={eraserMode}
+            setEraserMode={(m) => {
+              setEraserMode(m);
+              setPanel('none');
+            }}
+            shapeStyle={shapeStyle}
+            setShapeStyle={(st) => setShapeStyle((prev) => ({ ...prev, ...st }))}
+            inkDark={isDark}
+          />
+        </View>
+      </SafeAreaView>
     </View>
   );
 }
