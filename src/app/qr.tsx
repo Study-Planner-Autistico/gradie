@@ -57,7 +57,7 @@ export default function QrModal() {
           />
         </View>
 
-        <Text style={[typography.title1, { color: colors.accent }]}>{t.appName}</Text>
+        <Text style={[typography.title1, { color: colors.heading }]}>{t.appName}</Text>
 
         <View style={{ flexDirection: 'row', gap: spacing.xxl }}>
           <Action

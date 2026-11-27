@@ -113,7 +113,7 @@ export default function RegistroVoti() {
                       <Defs>
                         <LinearGradient id={id} x1="0" y1="0" x2="0" y2="1">
                           <Stop offset="0" stopColor={on ? GREEN : GREEN_SOFT} />
-                          <Stop offset="1" stopColor={on ? GREEN_DARK : GREEN_SOFT} stopOpacity={on ? 1 : 0.45} />
+                          <Stop offset="1" stopColor={on ? GREEN : GREEN_SOFT} />
                         </LinearGradient>
                       </Defs>
                       <Rect x={0} y={0} width={COL_W} height={h} rx={8} fill={`url(#${id})`} />

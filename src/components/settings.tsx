@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import type { ReactNode } from 'react';
+import { Children, Fragment, type ReactNode } from 'react';
 import { Platform, Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import { resetProfile } from '../state/profile';
 import { resetAccountSettings } from '../state/settings';
@@ -16,7 +16,7 @@ export function SheetPage({ title, children }: { title: string; children: ReactN
       contentContainerStyle={{ paddingBottom: spacing.giant }}
       keyboardShouldPersistTaps="handled"
     >
-      <Text accessibilityRole="header" style={[typography.display, { color: colors.text, paddingHorizontal: spacing.xxl, paddingTop: spacing.xxxl, paddingBottom: spacing.xxl }]}>
+      <Text accessibilityRole="header" style={[typography.display, { color: colors.heading, paddingHorizontal: spacing.xxl, paddingTop: spacing.xxxl, paddingBottom: spacing.xxl }]}>
         {title}
       </Text>
       {children}
@@ -26,15 +26,24 @@ export function SheetPage({ title, children }: { title: string; children: ReactN
 
 /** Gruppo di voci con il suo titolo (dec. 139): righe sullo sfondo della pagina, come nel menu laterale. */
 export function Section({ title, children, first }: { title?: string; children: ReactNode; first?: boolean }) {
-  const { colors, typography, spacing } = useTheme();
+  const { colors, typography, spacing, radius } = useTheme();
+  const items = Children.toArray(children);
   return (
-    <View style={{ marginTop: first ? 0 : spacing.xxxl, paddingHorizontal: spacing.lg }}>
+    <View style={{ marginTop: first ? 0 : spacing.xxl, paddingHorizontal: spacing.lg }}>
       {title && (
-        <Text accessibilityRole="header" style={[typography.title2, { color: colors.text, paddingHorizontal: spacing.sm, paddingBottom: spacing.sm }]}>
+        <Text accessibilityRole="header" style={[typography.label, { color: colors.textSecondary, paddingHorizontal: spacing.xs, paddingBottom: spacing.sm }]}>
           {title}
         </Text>
       )}
-      {children}
+      {/* Voci in un riquadro con bordo pieno 2 px e divisori 2 px a tutta larghezza. */}
+      <View style={{ borderRadius: radius.xl, borderWidth: 2, borderColor: colors.border, overflow: 'hidden' }}>
+        {items.map((child, i) => (
+          <Fragment key={i}>
+            {i > 0 && <View style={{ height: 2, backgroundColor: colors.border }} />}
+            {child}
+          </Fragment>
+        ))}
+      </View>
     </View>
   );
 }
@@ -70,7 +79,7 @@ export function Row({
     <>
       <Icon name={icon} size={22} color={fg} />
       <View style={{ flex: 1 }}>
-        <Text style={[typography.body, { fontSize: 17, color: fg }]}>{label}</Text>
+        <Text style={[typography.headline, { color: fg }]}>{label}</Text>
         {detail && <Text style={[typography.caption, { color: colors.textTertiary }]}>{detail}</Text>}
       </View>
       {toggle ? (
@@ -90,7 +99,7 @@ export function Row({
         (!danger && !!onPress && (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
             {value && <Text style={[typography.body, { color: colors.textTertiary }]}>{value}</Text>}
-            <Icon name="chevron" size={20} color={colors.textTertiary} />
+            <Icon name="chevron" size={20} color={colors.borderBold} />
           </View>
         ))
       )}
@@ -101,9 +110,8 @@ export function Row({
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     gap: spacing.md,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    borderRadius: radius.lg,
   };
   if (toggle || !onPress) return <View style={rowStyle}>{content}</View>;
   return (
@@ -114,7 +122,7 @@ export function Row({
       }}
       accessibilityRole="button"
       accessibilityLabel={value ? `${label}: ${value}` : label}
-      style={({ pressed }) => [rowStyle, { backgroundColor: pressed ? colors.neutralPressed : 'transparent' }]}
+      style={({ pressed }) => [rowStyle, { backgroundColor: pressed ? colors.surfaceMuted : 'transparent' }]}
     >
       {content}
     </Pressable>

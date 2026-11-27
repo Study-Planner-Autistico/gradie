@@ -113,11 +113,11 @@ export default function Messaggi() {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.xl, gap: spacing.md }} keyboardShouldPersistTaps="handled">
-        <Text accessibilityRole="header" style={[typography.title1, { color: colors.text, paddingTop: spacing.sm }]}>
+        <Text accessibilityRole="header" style={[typography.title1, { color: colors.heading, paddingTop: spacing.sm }]}>
           {T.chats}
         </Text>
         {/* Ricerca sotto Chat, sempre visibile (dec. 216). */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, height: 44, paddingHorizontal: spacing.md, borderRadius: radius.lg, backgroundColor: colors.surfaceMuted }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, height: 44, paddingHorizontal: spacing.md, borderRadius: radius.lg, backgroundColor: colors.surfaceMuted, borderWidth: 2, borderColor: colors.border }}>
             <Icon name="search-outline" size={18} color={colors.textTertiary} />
             <TextInput
               value={query}

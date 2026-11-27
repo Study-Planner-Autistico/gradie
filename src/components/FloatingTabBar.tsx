@@ -23,7 +23,7 @@ export function FloatingTabBar({ state, emitter, navigateToTab }: BottomTabBarPr
   const dim = menuProgress.interpolate({ inputRange: [0, 1], outputRange: [0, 0.55] });
   return (
     <Animated.View pointerEvents={menuOpen ? 'none' : 'box-none'} style={[styles.wrap, { bottom: Math.max(insets.bottom, 12), transform: [{ translateX: shift }] }]}>
-      <Glass style={[styles.bar, { borderRadius: radius.pill, boxShadow: colors.shadowOverlay }]}>
+      <Glass style={[styles.bar, { borderRadius: radius.pill }]}>
         {state.routes.map((route, i) => {
           const cfg = TABS.find((x) => x.name === route.name);
           if (!cfg) return null;
@@ -40,7 +40,7 @@ export function FloatingTabBar({ state, emitter, navigateToTab }: BottomTabBarPr
               accessibilityRole="tab"
               accessibilityState={{ selected: focused }}
               accessibilityLabel={cfg.label}
-              style={[styles.item, { borderRadius: radius.pill, backgroundColor: focused ? colors.surface : 'transparent' }]}
+              style={[styles.item, { borderRadius: radius.pill, backgroundColor: focused ? colors.selected : 'transparent' }]}
             >
               <Icon name={focused ? cfg.iconActive : cfg.icon} size={24} color={fg} strokeWidth={focused ? 2.5 : 2} />
             </Pressable>
@@ -58,9 +58,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 6,
     gap: 2,
-    shadowOpacity: 1,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 6 },
   },
   item: { width: 60, height: 48, alignItems: 'center', justifyContent: 'center' },
 });

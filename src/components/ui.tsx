@@ -96,7 +96,7 @@ export function ScreenHeader({
       <View style={{ flex: 1 }}>
         {title && (
           <Text
-            style={[compact ? typography.headline : typography.title1, { color: colors.text }]}
+            style={[compact ? typography.headline : typography.title1, { color: compact ? colors.text : colors.heading }]}
             accessibilityRole="header"
             numberOfLines={compact ? 1 : undefined}
           >
@@ -191,10 +191,10 @@ export function Chip({
           gap: spacing.xs,
           paddingHorizontal: spacing.sm,
           height: 24,
-          borderRadius: radius.sm,
+          borderRadius: radius.md,
           backgroundColor: bg,
           alignSelf: 'flex-start',
-          borderWidth: variant === 'glass' ? 1 : 0,
+          borderWidth: variant === 'glass' ? 2 : 0,
           borderColor: colors.border,
         },
       ]}
@@ -245,20 +245,24 @@ export function Button({
   accessibilityLabel?: string;
 }) {
   const { colors, radius, typography, layout, spacing } = useTheme();
-  const palette: Record<ButtonAppearance, { bg: string; pressed: string; fg: string }> = {
-    primary: { bg: colors.accent, pressed: colors.accentPressed, fg: colors.onAccent },
-    ink: { bg: colors.ink, pressed: colors.textSecondary, fg: colors.onInk },
-    default: { bg: colors.surfaceMuted, pressed: colors.neutralPressed, fg: colors.textSecondary },
+  // Pulsanti tridimensionali (dec. 223). `edge` è il bordo inferiore più scuro; premendo, il pulsante ci scende sopra.
+  const palette: Record<ButtonAppearance, { bg: string; pressed: string; fg: string; edge?: string }> = {
+    primary: { bg: colors.accent, pressed: colors.accent, fg: colors.onAccent, edge: colors.accentPressed },
+    ink: { bg: colors.ink, pressed: colors.ink, fg: colors.onInk, edge: colors.textSecondary },
+    /** Bottone secondario a contorno: bordo grigio 2 px, testo blu. */
+    default: { bg: colors.surface, pressed: colors.surface, fg: colors.link, edge: colors.borderBold },
     subtle: { bg: 'transparent', pressed: colors.surfaceMuted, fg: colors.textSecondary },
-    danger: { bg: colors.dangerIcon, pressed: colors.danger, fg: '#FFFFFF' },
-    warning: { bg: '#FBC828', pressed: '#F5B000', fg: '#292A2E' },
-    discovery: { bg: colors.discovery, pressed: colors.discovery, fg: '#FFFFFF' },
-    /** Sul gradiente di brand: bianco pieno con testo viola, o trasparente con testo bianco. */
-    inverse: { bg: '#FFFFFF', pressed: '#EEECFF', fg: '#463FB5' },
+    danger: { bg: colors.dangerIcon, pressed: colors.dangerIcon, fg: '#FFFFFF', edge: colors.danger },
+    warning: { bg: '#FBC828', pressed: '#FBC828', fg: '#292A2E', edge: '#D9A400' },
+    discovery: { bg: colors.discovery, pressed: colors.discovery, fg: '#FFFFFF', edge: '#7E3FC2' },
+    /** Sul colore pieno del brand: bianco con testo viola, o trasparente con testo bianco. */
+    inverse: { bg: '#FFFFFF', pressed: '#FFFFFF', fg: colors.accentPressed, edge: '#D5D1FF' },
     inverseSubtle: { bg: 'transparent', pressed: 'rgba(255,255,255,0.16)', fg: '#FFFFFF' },
   };
   const p = palette[appearance];
   const isOff = disabled || loading;
+  const outline = appearance === 'default' ? 2 : 0;
+  const depth = p.edge && !disabled ? (outline ? 2 : 4) : 0;
   return (
     <Pressable
       onPress={() => {
@@ -270,16 +274,20 @@ export function Button({
       accessibilityLabel={accessibilityLabel ?? title}
       accessibilityState={{ disabled: !!isOff, busy: !!loading }}
       style={({ pressed }) => ({
-        height: layout.button,
+        // Premuto: il bordo inferiore sparisce e il pulsante scende; altezza + margine restano uguali, niente salti.
+        height: pressed ? layout.button - depth : layout.button,
+        marginTop: pressed ? depth : 0,
         paddingHorizontal: spacing.xl,
         borderRadius: radius.lg,
+        borderWidth: outline,
+        borderBottomWidth: outline + (pressed ? 0 : depth),
+        borderColor: p.edge ?? 'transparent',
         backgroundColor: disabled ? colors.surfaceMuted : pressed ? p.pressed : p.bg,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: spacing.sm,
         alignSelf: fullWidth ? 'stretch' : 'flex-start',
-        transform: [{ scale: pressed ? 0.98 : 1 }],
       })}
     >
       {loading ? (
@@ -287,7 +295,7 @@ export function Button({
       ) : (
         <>
           {iconBefore && <Icon name={iconBefore} size={18} color={disabled ? colors.textDisabled : p.fg} />}
-          <Text style={[typography.headline, { color: disabled ? colors.textDisabled : p.fg }]}>{title}</Text>
+          <Text style={[typography.headline, styles.buttonText, { color: disabled ? colors.textDisabled : p.fg }]}>{title}</Text>
           {iconAfter && <Icon name={iconAfter} size={18} color={disabled ? colors.textDisabled : p.fg} />}
         </>
       )}
@@ -334,7 +342,11 @@ export function IconButton({
         borderRadius: size / 2,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: primary ? (pressed ? colors.neutralHovered : colors.accent) : 'transparent',
+        backgroundColor: primary ? colors.accent : 'transparent',
+        // Primario tridimensionale: bordo inferiore scuro che sparisce premendo.
+        borderBottomWidth: primary && !pressed ? 3 : 0,
+        borderBottomColor: colors.accentPressed,
+        transform: [{ translateY: primary && pressed ? 3 : 0 }],
         opacity: pressed && !primary ? 0.5 : 1,
       })}
     >
@@ -363,9 +375,10 @@ export function Fab({ icon, label, onPress, bottom }: { icon: IconName; label: s
         borderRadius: 28,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: pressed ? colors.accentPressed : colors.accent,
-        boxShadow: colors.shadowOverlay,
-        transform: [{ scale: pressed ? 0.95 : 1 }],
+        backgroundColor: colors.accent,
+        borderBottomWidth: pressed ? 0 : 4,
+        borderBottomColor: colors.accentPressed,
+        transform: [{ translateY: pressed ? 4 : 0 }],
       })}
     >
       <Icon name={icon} size={24} color={colors.onAccent} />
@@ -406,7 +419,8 @@ export function TextField({
 }: TextInputProps & { label: string; helper?: string; error?: string; ref?: Ref<TextInputRef> }) {
   const { colors, typography, radius, spacing, layout } = useTheme();
   const [focused, setFocused] = useState(false);
-  const borderColor = error ? colors.dangerIcon : focused ? colors.borderFocused : colors.borderInput;
+  // Campo grigio chiaro con bordo pieno 2 px, colorato solo a fuoco o con errore.
+  const borderColor = error ? colors.dangerIcon : focused ? colors.borderFocused : colors.border;
   return (
     <View style={{ gap: spacing.xs }}>
       <Text style={[typography.overline, { color: colors.textSecondary }]}>{label}</Text>
@@ -431,9 +445,9 @@ export function TextField({
             ...(props.multiline ? null : { paddingVertical: 0, textAlignVertical: 'center' as const, includeFontPadding: false }),
             paddingHorizontal: spacing.md,
             borderRadius: radius.md,
-            borderWidth: focused || error ? 2 : 1,
+            borderWidth: 2,
             borderColor,
-            backgroundColor: colors.surface,
+            backgroundColor: focused ? colors.surface : colors.surfaceMuted,
             color: colors.text,
           },
           // Sul web niente contorno del browser: il focus è il bordo di 2 px.
@@ -537,4 +551,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
   box40: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   box56: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center' },
+  /** Etichette dei bottoni in maiuscolo spaziato (dec. 223). */
+  buttonText: { fontSize: 15, letterSpacing: 0.8, textTransform: 'uppercase' },
 });

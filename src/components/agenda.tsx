@@ -571,7 +571,7 @@ export function CalendarSheet({
     <>
       {/* Il numero del giorno al centro, come il giorno della Home (dec. 150). */}
       <View style={{ alignItems: 'center', gap: spacing.xs }}>
-        <Text accessibilityRole="header" style={{ fontFamily: fonts.heading, fontSize: 52, lineHeight: 60, paddingHorizontal: spacing.xs, color: sameDay(day, today) ? colors.accent : colors.text }}>
+        <Text accessibilityRole="header" style={{ fontFamily: fonts.heading, fontSize: 52, lineHeight: 60, paddingHorizontal: spacing.xs, color: sameDay(day, today) ? colors.heading : colors.text }}>
           {day.getDate()}
         </Text>
         <Text style={[typography.body, { fontSize: 18, color: colors.textSecondary }]}>

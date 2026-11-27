@@ -5,7 +5,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { tap } from '../../components/haptics';
 import { Mascot } from '../../components/Mascot';
 import { PushDrawer } from '../../components/SideMenu';
-import { Screen } from '../../components/ui';
+import { Button, Screen } from '../../components/ui';
 import { CoverCard, NotebookCover } from '../../components/notebooks';
 import { COVER_RATIO } from '../../components/coverArt';
 import { demoAgenda, demoClasses, demoNotes, type DemoAgendaItem, type DemoClass } from '../../data/demo';
@@ -80,6 +80,8 @@ function HomeScreen() {
         <Deadlines items={deadlines} />
         <RecentBooks />
         {klass && <ClassTile klass={klass} />}
+        {/* Solo per i test: l'onboarding è disattivato all'avvio (dec. 130), da qui si riapre. Da togliere. */}
+        <Button title={t.home.testOnboarding} iconBefore="play" onPress={() => router.push('/onboarding')} />
       </Screen>
     </PushDrawer>
   );
@@ -161,7 +163,7 @@ function DayTitle({ date }: { date: Date }) {
         accessibilityRole="header"
         numberOfLines={1}
         adjustsFontSizeToFit
-        style={{ fontFamily: fonts.heading, fontSize: 52, lineHeight: 60, letterSpacing: -0.5, paddingHorizontal: spacing.xs, color: colors.text }}
+        style={{ fontFamily: fonts.heading, fontSize: 52, lineHeight: 60, letterSpacing: -0.5, paddingHorizontal: spacing.xs, color: colors.heading }}
       >
         {weekday}
       </Text>
@@ -303,15 +305,17 @@ function Deadlines({ items }: { items: DemoAgendaItem[] }) {
   const tint = colors.tints.activity;
   return (
     <View style={{ gap: spacing.sm, marginTop: spacing.xl }}>
-      <Text accessibilityRole="header" style={[typography.title1, { color: colors.text }]}>
+      <Text accessibilityRole="header" style={[typography.title1, { color: colors.heading }]}>
         {t.home.deadlines}
       </Text>
       {items.length === 0 ? (
         <Text style={[typography.body, { color: colors.textSecondary }]}>{t.home.emptyDeadlines}</Text>
       ) : (
-        <View>
-          {items.map((d) => (
+        // Riquadro con bordo 2 px e divisori 2 px (dec. 223, cambia dec. 131).
+        <View style={{ borderRadius: radius.xl, borderWidth: 2, borderColor: colors.border, overflow: 'hidden' }}>
+          {items.map((d, i) => (
             <Fragment key={d.id}>
+              {i > 0 && <View style={{ height: 2, backgroundColor: colors.border }} />}
               <Pressable
                 onPress={() => {
                   tap();
@@ -319,7 +323,7 @@ function Deadlines({ items }: { items: DemoAgendaItem[] }) {
                 }}
                 accessibilityRole="button"
                 accessibilityLabel={`${d.title}, ${d.meta ?? ''}, ${t.home.inDays(d.dayOffset)}`}
-                style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, opacity: pressed ? 0.6 : 1 })}
+                style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, paddingHorizontal: spacing.lg, backgroundColor: pressed ? colors.surfaceMuted : 'transparent' })}
               >
                 <View style={{ width: 36, height: 36, borderRadius: radius.md, backgroundColor: tint.bg, alignItems: 'center', justifyContent: 'center' }}>
                   <Icon name={d.meta === 'Verifica' ? 'document-text-outline' : 'checkbox-outline'} size={18} color={tint.fg} />
@@ -363,7 +367,7 @@ function RecentBooks() {
   return (
     <View style={{ gap: spacing.md, marginTop: spacing.xl }}>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Text accessibilityRole="header" style={[typography.title1, { color: colors.text, flex: 1 }]}>
+        <Text accessibilityRole="header" style={[typography.title1, { color: colors.heading, flex: 1 }]}>
           {t.home.notes}
         </Text>
         <Pressable onPress={() => router.navigate('/attivita')} accessibilityRole="link" hitSlop={8} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
@@ -401,7 +405,7 @@ function ClassTile({ klass }: { klass: DemoClass }) {
   const rows = [klass.members.slice(0, 4), klass.members.slice(4, 8)];
   return (
     <View style={{ gap: spacing.md, marginTop: spacing.xl }}>
-      <Text accessibilityRole="header" style={[typography.title1, { color: colors.text }]}>
+      <Text accessibilityRole="header" style={[typography.title1, { color: colors.heading }]}>
         {t.home.yourClass}
       </Text>
       <Pressable

@@ -252,7 +252,7 @@ export default function Chat() {
           onTouchEnd={(e) => e.nativeEvent.pageY - touchY.current > 20 && Keyboard.dismiss()}
           style={{ flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: insets.bottom + spacing.sm }}
         >
-          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-end', minHeight: 48, paddingLeft: spacing.lg, paddingRight: spacing.xs, borderRadius: 24, backgroundColor: colors.surfaceMuted }}>
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-end', minHeight: 48, paddingLeft: spacing.lg, paddingRight: spacing.xs, borderRadius: 24, backgroundColor: colors.surfaceMuted, borderWidth: 2, borderColor: colors.border }}>
             <TextInput
               value={text}
               onChangeText={setText}

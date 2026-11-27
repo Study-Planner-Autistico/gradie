@@ -34,7 +34,7 @@ export default function Amici() {
       keyboardShouldPersistTaps="handled"
     >
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Text accessibilityRole="header" style={[typography.title1, { flex: 1, color: colors.text }]}>
+        <Text accessibilityRole="header" style={[typography.title1, { flex: 1, color: colors.heading }]}>
           {t.profile.friends}
         </Text>
         <Pressable
@@ -53,7 +53,7 @@ export default function Amici() {
 
       {current === 0 ? (
         <>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, height: 44, paddingHorizontal: spacing.md, borderRadius: radius.lg, backgroundColor: colors.surfaceMuted }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, height: 44, paddingHorizontal: spacing.md, borderRadius: radius.lg, backgroundColor: colors.surfaceMuted, borderWidth: 2, borderColor: colors.border }}>
             <Icon name="search-outline" size={18} color={colors.textTertiary} />
             <TextInput
               value={query}

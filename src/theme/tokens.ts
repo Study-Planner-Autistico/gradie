@@ -1,93 +1,86 @@
-// Design tokens — fonte di verità: DESIGN.md (v3).
-// Brand Gradie (viola del logo) sopra la base Atlassian (@atlaskit/tokens 20.14):
-// neutri, semantici e tinte per tipo restano Atlassian. Non usare valori hardcoded.
+// Design tokens — fonte di verità: DESIGN.md (v4, stile "storybook", dec. 223).
+// Brand Gradie (viola del logo), carta bianca, bordi pieni 2 px, niente ombre sfumate. Non usare valori hardcoded.
 import type { TextStyle } from 'react-native';
 
 /** Tinte per tipo di elemento (DESIGN.md §2.3): color.background.accent.*.subtlest + color.text.accent.*. */
+// Tinte vivaci (dec. 223) (azzurro, rosa, arancio, verde, grigio, viola), testo ≥ 4.5:1.
 const lightTints = {
-  lesson: { bg: '#E9F2FE', fg: '#1558BC' }, // blue
-  appointment: { bg: '#FFECF8', fg: '#943D73' }, // magenta
-  activity: { bg: '#FFF5DB', fg: '#9E4C00' }, // orange
-  official: { bg: '#DCFFF1', fg: '#216E4E' }, // green
-  holiday: { bg: '#F0F1F2', fg: '#505258' }, // gray
-  study: { bg: '#F3F0FF', fg: '#5E4DB2' }, // purple (dec. 186)
+  lesson: { bg: '#DDF4FF', fg: '#1270A8' }, // blue
+  appointment: { bg: '#FFE3F3', fg: '#B0307A' }, // magenta
+  activity: { bg: '#FFF0DB', fg: '#B35C00' }, // orange
+  official: { bg: '#E5FFD1', fg: '#3F7F00' }, // green
+  holiday: { bg: '#F2F2F2', fg: '#5E5E5E' }, // gray
+  study: { bg: '#F6E8FF', fg: '#8A3FC2' }, // purple (dec. 186)
 };
 
 const darkTints: typeof lightTints = {
-  lesson: { bg: '#1C2B42', fg: '#8FB8F6' },
-  appointment: { bg: '#3D2232', fg: '#F797D2' },
-  activity: { bg: '#3A2C1F', fg: '#FBC828' },
-  official: { bg: '#1C3329', fg: '#7EE2B8' },
-  holiday: { bg: '#303134', fg: '#A9ABAF' },
-  study: { bg: '#2B2541', fg: '#B8ACF6' },
+  lesson: { bg: '#14324A', fg: '#7DD3FC' },
+  appointment: { bg: '#3F1F35', fg: '#FF9FD8' },
+  activity: { bg: '#3D2A12', fg: '#FFB54D' },
+  official: { bg: '#1F3A12', fg: '#93D333' },
+  holiday: { bg: '#2A363C', fg: '#A9B8C0' },
+  study: { bg: '#33244A', fg: '#D7A6FF' },
 };
 
+// Stile "storybook" (dec. 223, DESIGN.md v4): carta bianca, viola Gradie per titoli e progresso,
+// blu per link e azioni secondarie, grigi caldi per il testo, bordi pieni 2 px, niente ombre, sfumature o vetro.
 export const lightColors = {
-  /** elevation.surface.sunken — sfondo dello schermo, le card stanno sopra. */
-  bg: '#F8F8F8',
-  /** elevation.surface.raised */
+  /** Carta bianca: schermo e card sono dello stesso bianco, le card si staccano col bordo. */
+  bg: '#FFFFFF',
   surface: '#FFFFFF',
-  /** elevation.surface.overlay — sheet, menu */
   surfaceOverlay: '#FFFFFF',
-  /** color.background.neutral */
-  surfaceMuted: '#0515240F',
-  neutralHovered: '#0B120E24',
-  neutralPressed: '#080F214A',
-  /** color.border */
-  border: '#0B120E24',
-  borderBold: '#7D818A',
-  borderInput: '#8C8F97',
-  borderFocused: '#7A70F0',
-  /** color.text / .subtle / .subtlest */
-  text: '#292A2E',
-  textSecondary: '#505258',
-  textTertiary: '#6B6E76',
-  textDisabled: '#080F214A',
-  /** color.background.neutral.bold — bottone "ink" */
-  ink: '#292A2E',
+  surfaceMuted: '#F7F7F7',
+  neutralHovered: '#E5E5E5',
+  neutralPressed: '#D5D5D5',
+  border: '#E5E5E5',
+  borderBold: '#AFAFAF',
+  borderInput: '#AFAFAF',
+  borderFocused: '#5D55D7',
+  text: '#4B4B4B',
+  textSecondary: '#777777',
+  textTertiary: '#777777',
+  textDisabled: '#AFAFAF',
+  ink: '#4B4B4B',
   onInk: '#FFFFFF',
-  /** Brand Gradie (viola del logo): primario, selezione, link. Bianco sopra: contrasto 5.6:1. */
+  /** Viola Gradie: bottone principale, progresso, selezione. Bianco sopra 5.6:1. */
   accent: '#5D55D7',
   accentHovered: '#5149C9',
+  /** Bordo inferiore dei pulsanti tridimensionali e stato premuto. */
   accentPressed: '#463FB5',
+  /** Titoli grandi delle pagine. */
+  heading: '#5D55D7',
   onAccent: '#FFFFFF',
-  /** Pallino degli interruttori: bianco in entrambi i temi, come quello nativo di iOS. */
   switchThumb: '#FFFFFF',
-  link: '#5149C9',
-  /** Brand tenue: selezione, opzioni scelte */
+  /** Blu: link e azioni secondarie. */
+  link: '#1A73C9',
   selected: '#EEECFF',
   selectedText: '#4A42C2',
-  /** Oro della nappa e della stella: solo accenti decorativi, mai testo su bianco. */
-  gold: '#F7C55A',
-  success: '#4C6B1F',
-  successBg: '#EFFFD6',
-  successIcon: '#6A9A23',
-  warning: '#9E4C00',
-  warningBg: '#FFF5DB',
-  warningIcon: '#E06C00',
-  danger: '#AE2E24',
-  dangerBg: '#FFECEB',
-  dangerIcon: '#C9372C',
-  information: '#1558BC',
-  informationBg: '#E9F2FE',
-  discovery: '#803FA5',
-  discoveryBg: '#F8EEFE',
-  /** color.blanket — velo dietro sheet e dialoghi */
-  blanket: '#050C1F75',
-  /** elevation.shadow.raised / overlay (CSS box-shadow, supportato da RN ≥ 0.76) */
-  shadowRaised: '0px 1px 1px #1E1F2140, 0px 0px 1px #1E1F214F',
-  shadowOverlay: '0px 8px 12px #1E1F2126, 0px 0px 1px #1E1F214F',
-  /** Fallback del Liquid Glass di sistema (solo tab bar web) */
-  glassFallback: 'rgba(255,255,255,0.78)',
-  /** Azzurro di sistema per il pulsante Nuovo in vetro (dec. 174), come i pulsanti principali di iOS. */
-  glassBlue: '#0A84FF',
-  glassBorder: '#0B120E24',
-  /** Gradiente del logo in versione tenue, per la card in evidenza (DESIGN.md §2.4). */
-  heroGradient: ['#ECE8FF', '#E4E9FF', '#FFFFFF'] as readonly [string, string, ...string[]],
-  heroGradientOverlay: ['rgba(255,255,255,0)', 'rgba(160,150,255,0.35)'] as readonly [string, string, ...string[]],
-  /** Gradiente pieno del logo (viola → blu), scurito per reggere testo bianco ≥ 5:1. Solo momenti di brand. */
-  brandGradient: ['#6F52EC', '#5547D2', '#4560D8'] as readonly [string, string, ...string[]],
-  /** Riquadro in evidenza della Home: viola pieno del brand, testo bianco (5.6:1). */
+  gold: '#FFC800',
+  success: '#58A700',
+  successBg: '#D7FFB8',
+  successIcon: '#58CC02',
+  warning: '#CD7900',
+  warningBg: '#FFF4D6',
+  warningIcon: '#FF9600',
+  danger: '#EA2B2B',
+  dangerBg: '#FFDFE0',
+  dangerIcon: '#FF4B4B',
+  information: '#1899D6',
+  informationBg: '#DDF4FF',
+  discovery: '#A560E8',
+  discoveryBg: '#F6E8FF',
+  blanket: '#00000066',
+  /** Niente ombre: un'ombra piena da 2 px senza sfocatura disegna il bordo "adesivo" su tutte le superfici. */
+  /** Card tridimensionali: bordo 2 px e 4 px sotto (due ombre piene senza sfocatura). */
+  shadowRaised: '0px 0px 0px 2px #E5E5E5, 0px 2px 0px 2px #E5E5E5',
+  shadowOverlay: '0px 0px 0px 2px #E5E5E5',
+  glassFallback: '#FFFFFF',
+  glassBlue: '#1A73C9',
+  glassBorder: '#E5E5E5',
+  /** Niente sfumature: tinte piatte. */
+  heroGradient: ['#FFFFFF', '#FFFFFF'] as readonly [string, string, ...string[]],
+  heroGradientOverlay: ['rgba(255,255,255,0)', 'rgba(255,255,255,0)'] as readonly [string, string, ...string[]],
+  brandGradient: ['#5D55D7', '#5D55D7'] as readonly [string, string, ...string[]],
   feature: '#5D55D7',
   onFeature: '#FFFFFF',
   tints: lightTints,
@@ -96,53 +89,54 @@ export const lightColors = {
 export type ColorTokens = typeof lightColors;
 
 export const darkColors: ColorTokens = {
-  bg: '#18191A',
-  surface: '#242528',
-  surfaceOverlay: '#2B2C2F',
-  surfaceMuted: '#CECED912',
-  neutralHovered: '#E3E4F21F',
-  neutralPressed: '#E5E9F640',
-  border: '#E3E4F21F',
-  borderBold: '#7E8188',
-  borderInput: '#7E8188',
-  borderFocused: '#9B93FF',
-  text: '#CECFD2',
-  textSecondary: '#A9ABAF',
-  textTertiary: '#96999E',
-  textDisabled: '#E5E9F640',
-  ink: '#CECFD2',
-  onInk: '#1F1F21',
-  accent: '#9B93FF',
-  accentHovered: '#B0A9FF',
-  accentPressed: '#C4BEFF',
-  onAccent: '#1F1F21',
+  bg: '#131F24',
+  surface: '#131F24',
+  surfaceOverlay: '#202F36',
+  surfaceMuted: '#202F36',
+  neutralHovered: '#37464F',
+  neutralPressed: '#4A5B65',
+  border: '#37464F',
+  borderBold: '#52656D',
+  borderInput: '#52656D',
+  borderFocused: '#A9A2FF',
+  text: '#F1F7FB',
+  textSecondary: '#A9B8C0',
+  textTertiary: '#A9B8C0',
+  textDisabled: '#52656D',
+  ink: '#F1F7FB',
+  onInk: '#131F24',
+  accent: '#5D55D7',
+  accentHovered: '#6F67E8',
+  accentPressed: '#3D37A8',
+  heading: '#A9A2FF',
+  onAccent: '#FFFFFF',
   switchThumb: '#FFFFFF',
-  link: '#A9A2FF',
+  link: '#6FB0F5',
   selected: '#29254F',
   selectedText: '#B3ACFF',
-  gold: '#F7C55A',
-  success: '#B3DF72',
-  successBg: '#28311B',
-  successIcon: '#82B536',
-  warning: '#FBC828',
-  warningBg: '#3A2C1F',
-  warningIcon: '#FBC828',
-  danger: '#FD9891',
-  dangerBg: '#42221F',
-  dangerIcon: '#F15B50',
-  information: '#8FB8F6',
-  informationBg: '#1C2B42',
-  discovery: '#D8A0F7',
-  discoveryBg: '#35243F',
-  blanket: '#10121499',
-  shadowRaised: '0px 0px 0px 1px #00000000, 0px 1px 1px #01040480, 0px 0px 1px #01040480',
-  shadowOverlay: '0px 0px 0px 1px #BDBDBD1F, 0px 8px 12px #0104045C, 0px 0px 1px 1px #01040480',
-  glassFallback: 'rgba(36,37,40,0.78)',
-  glassBlue: '#0A84FF',
-  glassBorder: '#E3E4F21F',
-  heroGradient: ['#29254F', '#1F2A4F', '#242528'] as readonly [string, string, ...string[]],
-  heroGradientOverlay: ['rgba(36,37,40,0)', 'rgba(120,110,255,0.25)'] as readonly [string, string, ...string[]],
-  brandGradient: ['#4A3A9E', '#3B348F', '#2C3F8F'] as readonly [string, string, ...string[]],
+  gold: '#FFC800',
+  success: '#93D333',
+  successBg: '#1F3A12',
+  successIcon: '#58CC02',
+  warning: '#FFC800',
+  warningBg: '#3A2E10',
+  warningIcon: '#FF9600',
+  danger: '#FF7878',
+  dangerBg: '#3F1F22',
+  dangerIcon: '#FF4B4B',
+  information: '#49C0F8',
+  informationBg: '#14324A',
+  discovery: '#CE82FF',
+  discoveryBg: '#33244A',
+  blanket: '#000000A0',
+  shadowRaised: '0px 0px 0px 2px #37464F, 0px 2px 0px 2px #37464F',
+  shadowOverlay: '0px 0px 0px 2px #37464F',
+  glassFallback: '#131F24',
+  glassBlue: '#6FB0F5',
+  glassBorder: '#37464F',
+  heroGradient: ['#131F24', '#131F24'] as readonly [string, string, ...string[]],
+  heroGradientOverlay: ['rgba(19,31,36,0)', 'rgba(19,31,36,0)'] as readonly [string, string, ...string[]],
+  brandGradient: ['#5D55D7', '#5D55D7'] as readonly [string, string, ...string[]],
   feature: '#4A42C2',
   onFeature: '#FFFFFF',
   tints: darkTints,
@@ -187,45 +181,38 @@ export type TintName = keyof typeof lightTints;
 /** space.050 … space.1000 (base 8). */
 export const spacing = { xxs: 2, xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, xxxl: 32, huge: 40, giant: 48 } as const;
 
-/** radius.small 4 · medium 6 · large 8 · xlarge 12 · xxlarge 16 · full. */
-export const radius = { xs: 2, sm: 4, md: 6, lg: 8, xl: 12, xxl: 16, pill: 999 } as const;
+/** 12 px su bottoni, card, pillole e campi. */
+export const radius = { xs: 2, sm: 8, md: 12, lg: 12, xl: 12, xxl: 16, pill: 999 } as const;
 
-/** font.heading.* / font.body.* / font.metric.* — peso bold Atlassian = 653 → '700' su iOS. */
-/** Font caricato in src/app/_layout.tsx: Dela Gothic One per i titoli e il giorno in Home (dec. 148, 150), un solo peso (400). */
-export const fonts = { heading: 'DelaGothicOne_400Regular' } as const;
+/** Font caricati in src/app/_layout.tsx: Fredoka (tondo) per i titoli, Rubik per il testo. */
+export const fonts = {
+  heading: 'Fredoka_700Bold',
+  title: 'Fredoka_600SemiBold',
+  body: 'Rubik_400Regular',
+  semibold: 'Rubik_500Medium',
+  bold: 'Rubik_600SemiBold',
+  extrabold: 'Rubik_700Bold',
+} as const;
 
 export const typography = {
-  /** Estensione mobile: numero grande in evidenza (giorno, media). */
-  hero: { fontSize: 40, lineHeight: 44, fontFamily: fonts.heading, fontWeight: '400', letterSpacing: -0.5 },
-  /** font.heading.xxlarge */
-  display: { fontSize: 32, lineHeight: 36, fontFamily: fonts.heading, fontWeight: '400' },
-  /** font.heading.xlarge — titolo della schermata */
-  title1: { fontSize: 28, lineHeight: 32, fontFamily: fonts.heading, fontWeight: '400' },
-  /** font.heading.medium — titolo della card */
-  title2: { fontSize: 20, lineHeight: 24, fontFamily: fonts.heading, fontWeight: '400' },
-  /** font.heading.large — numeri dei profili (seguiti, follower) */
-  stat: { fontSize: 24, lineHeight: 28, fontWeight: '700', fontVariant: ['tabular-nums'] },
-  /** font.heading.xsmall in maiuscolo spaziato — etichette di sezione del Profilo */
-  label: { fontSize: 14, lineHeight: 20, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' },
-  /** font.heading.small */
-  headline: { fontSize: 16, lineHeight: 20, fontWeight: '700' },
-  /** font.body.large — testo su mobile */
-  body: { fontSize: 16, lineHeight: 24, fontWeight: '400' },
-  /**
-   * Testo dei campi su una riga: come body ma senza lineHeight. Su iOS un lineHeight più alto del font
-   * spinge il testo sotto il centro del campo; senza, il sistema lo centra da solo.
-   */
-  input: { fontSize: 16, fontWeight: '400' },
-  /** font.body + medium — bottoni, link, etichette */
-  callout: { fontSize: 14, lineHeight: 20, fontWeight: '500' },
-  /** font.body.small */
-  caption: { fontSize: 12, lineHeight: 16, fontWeight: '400' },
-  /** font.heading.xxsmall — etichette di sezione */
-  overline: { fontSize: 12, lineHeight: 16, fontWeight: '700' },
-  /** font.metric.large */
-  metric: { fontSize: 28, lineHeight: 32, fontWeight: '700', fontVariant: ['tabular-nums'] },
-  /** Orari: cifre a larghezza fissa. */
-  time: { fontSize: 14, lineHeight: 20, fontWeight: '500', fontVariant: ['tabular-nums'] },
+  hero: { fontSize: 48, lineHeight: 56, fontFamily: fonts.heading, fontWeight: '700', letterSpacing: -1 },
+  display: { fontSize: 40, lineHeight: 48, fontFamily: fonts.heading, fontWeight: '700', letterSpacing: -0.8 },
+  /** Titolo della schermata */
+  title1: { fontSize: 32, lineHeight: 38, fontFamily: fonts.heading, fontWeight: '700', letterSpacing: -0.6 },
+  /** Titolo della card */
+  title2: { fontSize: 20, lineHeight: 26, fontFamily: fonts.title, fontWeight: '600' },
+  stat: { fontSize: 24, lineHeight: 28, fontFamily: fonts.title, fontWeight: '600', fontVariant: ['tabular-nums'] },
+  /** Maiuscolo spaziato, come le etichette di navigazione della reference. */
+  label: { fontSize: 15, lineHeight: 20, fontFamily: fonts.bold, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase' },
+  headline: { fontSize: 17, lineHeight: 22, fontFamily: fonts.bold, fontWeight: '600' },
+  body: { fontSize: 17, lineHeight: 24, fontFamily: fonts.body, fontWeight: '400' },
+  /** Testo dei campi su una riga: senza lineHeight, così iOS lo centra nel campo. */
+  input: { fontSize: 17, fontFamily: fonts.body, fontWeight: '400' },
+  callout: { fontSize: 15, lineHeight: 20, fontFamily: fonts.semibold, fontWeight: '500' },
+  caption: { fontSize: 13, lineHeight: 17, fontFamily: fonts.body, fontWeight: '400' },
+  overline: { fontSize: 13, lineHeight: 16, fontFamily: fonts.extrabold, fontWeight: '700', letterSpacing: 0.7, textTransform: 'uppercase' },
+  metric: { fontSize: 32, lineHeight: 36, fontFamily: fonts.heading, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  time: { fontSize: 15, lineHeight: 20, fontFamily: fonts.semibold, fontWeight: '500', fontVariant: ['tabular-nums'] },
 } satisfies Record<string, TextStyle>;
 
 export const layout = {

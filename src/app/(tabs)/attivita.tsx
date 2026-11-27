@@ -127,7 +127,7 @@ function AttivitaScreen() {
       >
         {/* Titolo grande e centrato, identico ad Agenda (dec. 174). */}
         <View style={{ alignItems: 'center', marginTop: spacing.xl, marginBottom: spacing.lg }}>
-          <Text style={[typography.hero, { lineHeight: 60, color: colors.text }]} accessibilityRole="header">
+          <Text style={[typography.hero, { lineHeight: 60, color: colors.heading }]} accessibilityRole="header">
             {t.tabs.activities}
           </Text>
         </View>
@@ -225,7 +225,7 @@ function NewButton({ onPress }: { onPress: () => void }) {
       accessibilityLabel={t.activitiesHub.newBook}
       style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
     >
-      <Glass interactive tint={colors.glassBlue} style={{ height: 40, borderRadius: radius.pill, paddingHorizontal: spacing.lg, flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: colors.glassBlue }}>
+      <Glass interactive tint={colors.accent} style={{ height: 40, borderRadius: radius.xl, paddingHorizontal: spacing.lg, flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: colors.accent, borderBottomWidth: 4, borderBottomColor: colors.accentPressed }}>
         <Icon name="book-add" size={20} color="#FFFFFF" />
         <Text style={[typography.callout, { color: '#FFFFFF', fontWeight: '600' }]}>{t.activitiesHub.newShort}</Text>
       </Glass>
@@ -280,15 +280,18 @@ function ActionButton({ icon, label, onPress }: { icon: IconName; label: string;
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.sm,
-        height: 40,
         paddingHorizontal: spacing.lg,
         borderRadius: radius.xl,
-        backgroundColor: colors.surfaceMuted,
-        opacity: pressed ? 0.6 : 1,
+        borderWidth: 2,
+        // Tridimensionale: bordo inferiore più spesso che si abbassa premendo.
+        borderBottomWidth: pressed ? 2 : 4,
+        marginTop: pressed ? 2 : 0,
+        height: pressed ? 38 : 40,
+        borderColor: colors.borderBold,
       })}
     >
-      <Icon name={icon} size={18} color={colors.text} />
-      <Text style={[typography.callout, { color: colors.text }]}>{label}</Text>
+      <Icon name={icon} size={18} color={colors.link} />
+      <Text style={[typography.callout, { color: colors.link }]}>{label}</Text>
     </Pressable>
   );
 }

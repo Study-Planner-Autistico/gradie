@@ -10,12 +10,13 @@ export function ListGroup({ children, title }: { children: ReactNode; title?: st
   const items = Children.toArray(children);
   return (
     <View style={{ gap: spacing.sm }}>
-      {title && <Text style={[typography.overline, { color: colors.textTertiary, marginLeft: spacing.xs }]}>{title}</Text>}
-      <View style={{ backgroundColor: colors.surface, borderRadius: radius.xl, paddingHorizontal: spacing.lg, boxShadow: colors.shadowRaised }}>
+      {title && <Text style={[typography.label, { color: colors.textSecondary, marginLeft: spacing.xs }]}>{title}</Text>}
+      {/* Riquadro con bordo pieno 2 px e divisori 2 px a tutta larghezza. */}
+      <View style={{ backgroundColor: colors.surface, borderRadius: radius.xl, borderWidth: 2, borderColor: colors.border, overflow: 'hidden' }}>
         {items.map((child, i) => (
           <Fragment key={i}>
-            {i > 0 && <View style={{ height: 1, backgroundColor: colors.border, marginLeft: 48 }} />}
-            {child}
+            {i > 0 && <View style={{ height: 2, backgroundColor: colors.border }} />}
+            <View style={{ paddingHorizontal: spacing.lg }}>{child}</View>
           </Fragment>
         ))}
       </View>
@@ -57,16 +58,12 @@ export function ListRow({
         opacity: pressed ? 0.7 : 1,
       })}
     >
-      {leading ?? (
-        <View style={{ width: 32, height: 32, borderRadius: radius.lg, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
-          {icon && <Icon name={icon} size={18} color={colors.textSecondary} />}
-        </View>
-      )}
+      {leading ?? (icon && <Icon name={icon} size={24} color={colors.textSecondary} />)}
       <View style={{ flex: 1 }}>
-        <Text style={[typography.callout, { color: colors.text }]}>{label}</Text>
+        <Text style={[typography.headline, { color: colors.text }]}>{label}</Text>
         {detail && <Text style={[typography.caption, { color: colors.textTertiary }]}>{detail}</Text>}
       </View>
-      {trailing ?? <Icon name="chevron-forward" size={18} color={colors.textTertiary} />}
+      {trailing ?? <Icon name="chevron-forward" size={20} color={colors.borderBold} />}
     </Pressable>
   );
 }
