@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Animated, Easing, PanResponder, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { demoEnvironments } from '../data/demo';
+import { demoClasses, demoEnvironments } from '../data/demo';
 import { t } from '../i18n';
 import { useEnvironment } from '../state/environment';
 import { drawerWidth, menuProgress, setMenuOpen, useMenuOpen } from '../state/menu';
@@ -13,11 +13,12 @@ import { Chip } from './ui';
 import { Icon, type IconName } from './icons';
 
 /** Pagine del menu: moduli ancora da progettare (dec. 124), si definiranno più avanti. Impostazioni stanno in fondo (dec. 128). */
-const ITEMS: { label: string; icon: IconName; href?: '/registro-voti' | '/impostazioni' }[] = [
+const ITEMS: { label: string; icon: IconName; href?: '/registro-voti' | '/impostazioni' | 'class' }[] = [
   { get label() { return t.menu.materials; }, icon: 'folder' },
   // Registro voti (dec. 195): la prima voce già pronta.
   { get label() { return t.menu.grades; }, icon: 'chart', href: '/registro-voti' },
-  { get label() { return t.menu.groups; }, icon: 'users' },
+  // Classi e gruppi (dec. 226): apre la pagina della classe dell'ambiente attivo.
+  { get label() { return t.menu.groups; }, icon: 'users', href: 'class' },
 ];
 
 /** Apertura rapida (dec. 127): 200 ms, nessun rimbalzo, così non si aspetta. Animazione nativa, fluida. */
@@ -128,15 +129,18 @@ function MenuPanel({ open }: { open: boolean }) {
 }
 
 /** Voce del menu: icona a tratto arrotondato senza sfondo, testo leggero (dec. 128). */
-function MenuItem({ label, icon, href }: { label: string; icon: IconName; href?: '/registro-voti' | '/impostazioni' }) {
+function MenuItem({ label, icon, href }: { label: string; icon: IconName; href?: '/registro-voti' | '/impostazioni' | 'class' }) {
   const { colors, typography, spacing, radius } = useTheme();
+  const { active } = useEnvironment();
+  const klass = demoClasses[active.id];
   return (
     <Pressable
       onPress={() => {
         tap();
         if (!href) return;
         setMenuOpen(false);
-        router.push(href);
+        if (href !== 'class') router.push(href);
+        else if (klass) router.push(`/classe/${klass.id}`);
       }}
       accessibilityRole="button"
       accessibilityHint={href ? undefined : t.menu.soon}

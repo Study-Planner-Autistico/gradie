@@ -65,11 +65,56 @@ export const demoAgenda: DemoAgendaItem[] = [
 ];
 
 /** Classe (superiori) o corso (università) dell'ambiente, per il riquadro in fondo alla Home (dec. 124). */
-export type DemoClass = { id: string; name: string; detail: string; students: number; teachers: number; news: number; members: string[] };
+export type DemoTeacher = { id: string; name: string; initials: string; color: string };
+export type DemoClass = {
+  id: string;
+  name: string;
+  detail: string;
+  students: number;
+  teachers: number;
+  news: number;
+  members: string[];
+  /** Docente della classe, mostrato nella pagina della classe con una cornice diversa (dec. 226). */
+  teacher: DemoTeacher;
+};
 
 export const demoClasses: Record<string, DemoClass> = {
-  'env-1': { id: 'c-4b', name: '4ª B', detail: 'Liceo Scientifico G. Galilei', students: 24, teachers: 9, news: 2, members: ['MR', 'LB', 'AF', 'GC', 'SP', 'EV', 'TM', 'NC'] },
-  'env-2': { id: 'c-ing1', name: 'Ingegneria Informatica', detail: 'Università di Bologna · 1° anno', students: 186, teachers: 14, news: 1, members: ['DG', 'FR', 'CL', 'MB', 'AV', 'PS', 'IR', 'GT'] },
+  'env-1': {
+    id: 'c-4b', name: '4ª B', detail: 'Liceo Scientifico G. Galilei', students: 24, teachers: 9, news: 2, members: ['MR', 'LB', 'AF', 'GC', 'SP', 'EV', 'TM', 'NC'],
+    teacher: { id: 't1', name: 'Prof.ssa Bianchi', initials: 'EB', color: '#5D55D7' },
+  },
+  'env-2': {
+    id: 'c-ing1', name: 'Ingegneria Informatica', detail: 'Università di Bologna · 1° anno', students: 186, teachers: 14, news: 1, members: ['DG', 'FR', 'CL', 'MB', 'AV', 'PS', 'IR', 'GT'],
+    teacher: { id: 't2', name: 'Prof. Rossi', initials: 'GR', color: '#5D55D7' },
+  },
+};
+
+/** Documenti condivisi nella classe da compagni e docente (dec. 226). `by` = id di un amico o del docente. */
+export type DemoClassDoc = { id: string; name: string; by: string; daysAgo: number };
+export const demoClassDocs: Record<string, DemoClassDoc[]> = {
+  'c-4b': [
+    { id: 'd1', name: 'Programma di Fisica.pdf', by: 't1', daysAgo: 6 },
+    { id: 'd2', name: 'Appunti Promessi Sposi cap. 8.docx', by: 'f2', daysAgo: 2 },
+    { id: 'd3', name: 'Ricerca di Storia - gruppo 3.pptx', by: 'f1', daysAgo: 1 },
+  ],
+  'c-ing1': [
+    { id: 'd1', name: 'Regole del progetto.pdf', by: 't2', daysAgo: 8 },
+    { id: 'd2', name: 'Esercizi svolti di Analisi I.pdf', by: 'f3', daysAgo: 3 },
+    { id: 'd3', name: 'Schema di Fisica I.docx', by: 'f2', daysAgo: 1 },
+  ],
+};
+
+/** Lavori da consegnare al docente (dec. 226). `dueOffset` = giorni da oggi (negativo = scaduto). */
+export type DemoAssignment = { id: string; title: string; detail: string; dueOffset: number };
+export const demoAssignments: Record<string, DemoAssignment[]> = {
+  'c-4b': [
+    { id: 'w1', title: 'Relazione di laboratorio', detail: 'Esperienza sul moto rettilineo, massimo 3 pagine.', dueOffset: 3 },
+    { id: 'w2', title: 'Tema di Italiano', detail: 'Traccia B: analisi di un testo argomentativo.', dueOffset: 6 },
+  ],
+  'c-ing1': [
+    { id: 'w1', title: 'Progetto di Programmazione', detail: 'Codice e relazione in un unico PDF.', dueOffset: 5 },
+    { id: 'w2', title: 'Esercitazione 3 di Geometria', detail: 'Esercizi 1-8 del foglio 3.', dueOffset: 2 },
+  ],
 };
 
 /** Profilo (dec. 133): iscrizione, amici (con iniziali finché non ci sono gli avatar). */
