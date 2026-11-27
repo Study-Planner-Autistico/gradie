@@ -1,8 +1,9 @@
+import * as Clipboard from 'expo-clipboard';
 import * as DocumentPicker from 'expo-document-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { useRef, useState, type ComponentRef } from 'react';
-import { Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Platform, Pressable, ScrollView, Share, Text, TextInput, View } from 'react-native';
 import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { confirm, notify } from '../../../components/dialogs';
@@ -15,6 +16,7 @@ import { avatarFor, PeopleCarousel, type CarouselPerson } from '../../../compone
 import { Button, Card, Chip, EmptyState, PlaceholderScreen } from '../../../components/ui';
 import { demoAssignments, demoClassChat, demoClassDocs, demoClasses, type DemoAssignment, type DemoClass } from '../../../data/demo';
 import { locale, t } from '../../../i18n';
+import { courseLink, useCourses, type Course } from '../../../state/courses';
 import { addClassDoc, removeClassDoc, roomKey, sendClassMessage, submitWork, unsubmitWork, useClassroom, type ClassFile, type ClassMessage } from '../../../state/classroom';
 import { findPerson, friendsOf, useFriends } from '../../../state/friends';
 import { useTheme } from '../../../theme';
@@ -60,29 +62,35 @@ async function openFile(f: ClassFile) {
 type Tab = 'docs' | 'work' | 'chat';
 
 /**
- * Pagina di una materia della classe, in stile Classroom (dec. 226-227): in alto il riquadro con classe e materia e
- * le carte dei compagni e del docente, che scorrono senza fine; sotto Documenti (file condivisi per lavorare insieme),
- * Consegne (lavori da inviare al docente) e Chat (di gruppo, con compagni e docente). Si apre dalla scelta della
- * materia (classe/[id]), raggiungibile dal menu laterale (Classi e gruppi) e dal riquadro "La tua classe" della Home.
+ * Pagina di un corso della classe, in stile Classroom (dec. 226-228): in alto il riquadro con il nome del corso, il
+ * codice e il link per invitare, e le carte dei compagni e del docente, che scorrono senza fine; sotto Documenti
+ * (file condivisi per lavorare insieme), Consegne (lavori da inviare al docente) e Chat (di gruppo). Si apre
+ * dall'elenco dei corsi (classe/[id]), raggiungibile dal menu laterale e dal riquadro "La tua classe" della Home.
  */
-export default function Classe() {
-  const { id, materia } = useLocalSearchParams<{
-    id: string;
-    materia: string;
-  }>();
+export default function Corso() {
+  const { id, corso, tab } = useLocalSearchParams<{ id: string; corso: string; tab?: string }>();
+  const courses = useCourses();
   const klass = Object.values(demoClasses).find((c) => c.id === id);
-  if (!klass || !materia) return <PlaceholderScreen title={t.menu.groups} icon="people-outline" />;
-  return <ClassPage klass={klass} subject={materia} />;
+  const course = courses.find((c) => c.code === corso && c.classId === id);
+  if (!klass || !course) return <PlaceholderScreen title={t.menu.groups} icon="people-outline" />;
+  return <ClassPage klass={klass} course={course} initialTab={tab === 'work' || tab === 'chat' ? tab : 'docs'} />;
 }
 
-function ClassPage({ klass, subject }: { klass: DemoClass; subject: string }) {
+/** Manda il link del corso a chi vuoi (dec. 228): aprendolo ci si iscrive. */
+function invite(course: Course) {
+  Share.share({ message: t.classroom.inviteMessage(course.name, course.code, courseLink(course.code)) }).catch(() => {});
+}
+
+function ClassPage({ klass, course, initialTab }: { klass: DemoClass; course: Course; initialTab: Tab }) {
   const { colors, typography, spacing, radius, layout } = useTheme();
   const insets = useSafeAreaInsets();
   const T = t.classroom;
   const friends = useFriends();
   const store = useClassroom();
-  const [tab, setTab] = useState<Tab>('docs');
-  const room = roomKey(klass.id, subject);
+  const [tab, setTab] = useState<Tab>(initialTab);
+  const subject = course.name;
+  const teacher = course.teacher;
+  const room = roomKey(klass.id, course.code);
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
   // La barra per scrivere sale con la tastiera (come nella chat dei Messaggi).
   const keyboard = useAnimatedKeyboard();
@@ -90,8 +98,9 @@ function ClassPage({ klass, subject }: { klass: DemoClass; subject: string }) {
     paddingBottom: Platform.OS === 'ios' ? Math.max(keyboard.height.value - insets.bottom, 0) : 0,
   }));
 
-  const people: CarouselPerson[] = [{ id: klass.teacher.id, name: klass.teacher.name, teacher: true }, ...friendsOf(friends).map((f) => ({ id: f.id, name: f.name }))];
-  const nameOf = (by: string) => (by === klass.teacher.id ? klass.teacher.name : (findPerson(by)?.name ?? ''));
+  // Nei corsi che hai creato non c'è ancora nessuno: al posto delle carte, l'invito (senza backend nessuno si iscrive davvero).
+  const people: CarouselPerson[] = teacher ? [{ id: teacher.id, name: teacher.name, teacher: true }, ...friendsOf(friends).map((f) => ({ id: f.id, name: f.name }))] : [];
+  const nameOf = (by: string) => (by === teacher?.id ? teacher.name : (findPerson(by)?.name ?? ''));
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top }}>
@@ -105,7 +114,8 @@ function ClassPage({ klass, subject }: { klass: DemoClass; subject: string }) {
         }}
       >
         <Pressable
-          onPress={() => router.back()}
+          // Aperto da un link d'invito non c'è una pagina prima: si torna ai corsi della classe.
+          onPress={() => (router.canGoBack() ? router.back() : router.replace({ pathname: '/classe/[id]', params: { id: klass.id } }))}
           accessibilityRole="button"
           accessibilityLabel={T.back}
           style={({ pressed }) => ({
@@ -154,21 +164,66 @@ function ClassPage({ klass, subject }: { klass: DemoClass; subject: string }) {
               <Text style={[typography.title1, { color: colors.heading }]} numberOfLines={2}>
                 {subject}
               </Text>
-              <Text style={[typography.callout, { color: colors.textSecondary }]}>{`${klass.name} · ${klass.detail}`}</Text>
+              <Text style={[typography.callout, { color: colors.textSecondary }]}>{teacher ? `${teacher.name} · ${klass.name}` : `${T.yourCourse} · ${klass.name}`}</Text>
             </View>
-            <PeopleCarousel people={people} onPress={(p) => !p.teacher && router.push(`/amico/${p.id}`)} />
-            <Text
-              style={[
-                typography.caption,
-                {
-                  color: colors.textSecondary,
-                  textAlign: 'center',
-                  paddingBottom: spacing.md,
-                },
-              ]}
-            >
-              {T.dragHint}
-            </Text>
+            {/* Codice del corso (un tocco lo copia) e invito con il link. */}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingTop: spacing.md }}>
+              <Pressable
+                onPress={async () => {
+                  await Clipboard.setStringAsync(course.code);
+                  success();
+                  notify(T.codeCopied);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={`${T.codeLabel} ${course.code.split('').join(' ')}`}
+                accessibilityHint={T.copyCode}
+                style={({ pressed }) => ({
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: spacing.xs,
+                  paddingHorizontal: spacing.md,
+                  height: 40,
+                  borderRadius: radius.lg,
+                  borderWidth: 2,
+                  borderColor: colors.border,
+                  backgroundColor: colors.surface,
+                  opacity: pressed ? 0.7 : 1,
+                })}
+              >
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>{T.codeShort}</Text>
+                <Text style={[typography.headline, { color: colors.text, letterSpacing: 2 }]}>{course.code}</Text>
+                <Icon name="copy-outline" size={18} color={colors.textSecondary} />
+              </Pressable>
+              <View style={{ flex: 1 }} />
+              <Pressable
+                onPress={() => {
+                  tap();
+                  invite(course);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={T.invite}
+                style={({ pressed }) => ({
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: spacing.xs,
+                  paddingHorizontal: spacing.md,
+                  height: 40,
+                  borderRadius: radius.lg,
+                  backgroundColor: pressed ? colors.accentPressed : colors.accent,
+                })}
+              >
+                <Icon name="person-add-outline" size={18} color={colors.onAccent} />
+                <Text style={[typography.headline, { color: colors.onAccent }]}>{T.invite}</Text>
+              </Pressable>
+            </View>
+            {people.length ? (
+              <>
+                <PeopleCarousel people={people} onPress={(p) => !p.teacher && router.push(`/amico/${p.id}`)} />
+                <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', paddingBottom: spacing.md }]}>{T.dragHint}</Text>
+              </>
+            ) : (
+              <Text style={[typography.callout, { color: colors.textSecondary, padding: spacing.lg }]}>{T.inviteHint}</Text>
+            )}
           </View>
 
           {/* Documenti / Consegne / Chat. */}
@@ -213,9 +268,9 @@ function ClassPage({ klass, subject }: { klass: DemoClass; subject: string }) {
           {tab === 'docs' ? (
             <Docs klass={klass} room={room} subject={subject} mine={store.docs[room] ?? []} nameOf={nameOf} />
           ) : tab === 'work' ? (
-            <Work klass={klass} room={room} subject={subject} subs={store.submissions[room] ?? {}} />
+            <Work klass={klass} room={room} subject={subject} teacher={teacher?.name ?? ''} subs={store.submissions[room] ?? {}} />
           ) : (
-            <Chat room={room} teacherId={klass.teacher.id} mine={store.chat[room] ?? []} nameOf={nameOf} />
+            <Chat demoKey={roomKey(klass.id, subject)} teacherId={teacher?.id ?? ''} mine={store.chat[room] ?? []} nameOf={nameOf} />
           )}
         </ScrollView>
         {tab === 'chat' && <Composer room={room} />}
@@ -276,14 +331,14 @@ function Docs({ klass, room, subject, mine, nameOf }: { klass: DemoClass; room: 
 }
 
 /** Consegne: per ogni lavoro la scadenza, lo stato e il tuo file consegnato. */
-function Work({ klass, room, subject, subs }: { klass: DemoClass; room: string; subject: string; subs: Record<string, ClassFile> }) {
+function Work({ klass, room, subject, teacher, subs }: { klass: DemoClass; room: string; subject: string; teacher: string; subs: Record<string, ClassFile> }) {
   const { spacing } = useTheme();
   const list = (demoAssignments[klass.id] ?? []).filter((a) => a.subject === subject);
   if (!list.length) return <EmptyState icon="document-outline" message={t.classroom.noWork} />;
   return (
     <View style={{ gap: spacing.lg }}>
       {list.map((a) => (
-        <Assignment key={a.id} classId={room} teacher={klass.teacher.name} a={a} sub={subs[a.id]} />
+        <Assignment key={a.id} classId={room} teacher={teacher} a={a} sub={subs[a.id]} />
       ))}
     </View>
   );
@@ -346,13 +401,13 @@ function Assignment({ classId, teacher, a, sub }: { classId: string; teacher: st
   );
 }
 
-/** Chat di gruppo della materia: i messaggi di esempio di compagni e docente e i tuoi (dec. 227). */
-function Chat({ room, teacherId, mine, nameOf }: { room: string; teacherId: string; mine: ClassMessage[]; nameOf: (by: string) => string }) {
+/** Chat di gruppo del corso: i messaggi di esempio di compagni e docente e i tuoi (dec. 227). */
+function Chat({ demoKey, teacherId, mine, nameOf }: { demoKey: string; teacherId: string; mine: ClassMessage[]; nameOf: (by: string) => string }) {
   const { colors, typography, spacing, radius } = useTheme();
   const T = t.classroom;
   const [now] = useState(() => Date.now());
   const list = [
-    ...(demoClassChat[room] ?? []).map((m) => ({
+    ...(demoClassChat[demoKey] ?? []).map((m) => ({
       id: `d-${m.id}`,
       from: m.from,
       text: m.text,

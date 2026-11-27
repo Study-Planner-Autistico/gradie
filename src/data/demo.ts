@@ -117,6 +117,30 @@ export const demoAssignments: Record<string, DemoAssignment[]> = {
   ],
 };
 
+/**
+ * Corsi della classe (dec. 228), come in Classroom: ognuno con il suo docente e un codice di 6 lettere o cifre per
+ * iscriversi. `enrolled` = sei già iscritto; gli altri si trovano solo con il codice o il link.
+ */
+export type DemoCourse = {
+  code: string;
+  classId: string;
+  name: string;
+  teacher: { id: string; name: string };
+  look: { theme: 'stripes' | 'watercolor' | 'leopard' | 'plaid' | 'zebra' | 'spots' | 'polka' | 'stars'; color: 'blue' | 'red' | 'yellow' | 'teal' | 'lilac' | 'orange' | 'pink' | 'purple' };
+  enrolled: boolean;
+};
+export const demoCourses: DemoCourse[] = [
+  { code: 'PRG7K2', classId: 'c-ing1', name: 'Programmazione', teacher: { id: 't2', name: 'Prof. Rossi' }, look: { theme: 'leopard', color: 'pink' }, enrolled: true },
+  { code: 'AN1X7Q', classId: 'c-ing1', name: 'Analisi I', teacher: { id: 't3', name: 'Prof.ssa Conti' }, look: { theme: 'stripes', color: 'blue' }, enrolled: true },
+  { code: 'FIS1B9', classId: 'c-ing1', name: 'Fisica I', teacher: { id: 't4', name: 'Prof. Galli' }, look: { theme: 'watercolor', color: 'teal' }, enrolled: true },
+  { code: 'GEO4M3', classId: 'c-ing1', name: 'Geometria', teacher: { id: 't5', name: 'Prof.ssa Marino' }, look: { theme: 'plaid', color: 'red' }, enrolled: true },
+  { code: 'ENG2B4', classId: 'c-ing1', name: 'Inglese B2', teacher: { id: 't6', name: 'Prof.ssa Neri' }, look: { theme: 'zebra', color: 'lilac' }, enrolled: false },
+  { code: 'FIS4B1', classId: 'c-4b', name: 'Fisica', teacher: { id: 't1', name: 'Prof.ssa Bianchi' }, look: { theme: 'stars', color: 'purple' }, enrolled: true },
+  { code: 'ITA4B2', classId: 'c-4b', name: 'Italiano', teacher: { id: 't7', name: 'Prof. Ferri' }, look: { theme: 'polka', color: 'orange' }, enrolled: true },
+  { code: 'STO4B3', classId: 'c-4b', name: 'Storia', teacher: { id: 't8', name: 'Prof.ssa Greco' }, look: { theme: 'spots', color: 'yellow' }, enrolled: true },
+  { code: 'LAT4B4', classId: 'c-4b', name: 'Latino', teacher: { id: 't9', name: 'Prof. Moretti' }, look: { theme: 'stripes', color: 'red' }, enrolled: false },
+];
+
 /** Chat di gruppo di una materia della classe (dec. 227), chiave `classe/materia`. `minutesAgo` = minuti fa. */
 export type DemoClassMessage = { id: string; from: string; text: string; minutesAgo: number };
 export const demoClassChat: Record<string, DemoClassMessage[]> = {
