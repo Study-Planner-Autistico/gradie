@@ -8,8 +8,9 @@ import { SafeAreaInsetsContext, type EdgeInsets } from 'react-native-safe-area-c
  * dispositivi. Così intestazioni e bottoni stanno sotto l'isola come su iPhone e iPad. Fuori dai simulatori non fa nulla.
  */
 const INSETS: Record<string, EdgeInsets> = {
-  'sim-iphone': { top: 59, bottom: 34, left: 0, right: 0 },
-  'sim-iphone-land': { top: 0, bottom: 21, left: 59, right: 59 },
+  // iPhone 17 e iPad Pro 13".
+  'sim-iphone': { top: 62, bottom: 34, left: 0, right: 0 },
+  'sim-iphone-land': { top: 0, bottom: 20, left: 62, right: 62 },
   'sim-ipad': { top: 24, bottom: 20, left: 0, right: 0 },
   'sim-ipad-land': { top: 24, bottom: 20, left: 0, right: 0 },
 };

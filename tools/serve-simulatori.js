@@ -1,4 +1,4 @@
-// Serve tools/simulatori.html su http://localhost:8091 (dec. 184). L'app web deve girare su 8090 (npx expo start --web --port 8090).
+// Serve tools/simulatori.html su http://localhost:8091 (dec. 184). L'app web deve girare su 8082 (npx expo start --port 8082).
 // Uso: node tools/serve-simulatori.js
 const http = require('http');
 const fs = require('fs');

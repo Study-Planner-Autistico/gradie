@@ -11,7 +11,7 @@ import { Flag } from '../../components/Flag';
 import { Button, Chip } from '../../components/ui';
 import { demoCountries, demoMe } from '../../data/demo';
 import { formatAvg, useGradeBook } from '../../state/grades';
-import { friendsOf, useFriends } from '../../state/friends';
+import { followersOf, followingOf, friendsOf, useFriends } from '../../state/friends';
 import { locale, t } from '../../i18n';
 import { missingSteps, myTag, useProfile, type InterestId, type ProfileState } from '../../state/profile';
 import { avatarPalette, useTheme } from '../../theme';
@@ -141,8 +141,8 @@ function MetaAndStats({ country, isPrivate }: { country: string; isPrivate: bool
             {countryName(country)}
           </Text>
         </Pressable>
-        <Stat value={demoMe.following} label={t.profile.followingLabel} />
-        <Stat value={demoMe.followers} label={t.profile.followersLabel} />
+        <Stat kind="following" label={t.profile.followingLabel} />
+        <Stat kind="followers" label={t.profile.followersLabel} />
         <Pressable
           onPress={() => {
             tap();
@@ -166,13 +166,24 @@ function MetaAndStats({ country, isPrivate }: { country: string; isPrivate: bool
   );
 }
 
-function Stat({ value, label }: { value: number; label: string }) {
+/** Seguiti / Follower: il numero apre l'elenco con la ricerca (dec. 229). */
+function Stat({ kind, label }: { kind: 'following' | 'followers'; label: string }) {
   const { colors, typography, spacing } = useTheme();
+  const friends = useFriends();
+  const value = (kind === 'following' ? followingOf(friends) : followersOf(friends)).length;
   return (
-    <View style={{ flex: 1, gap: spacing.xxs }}>
+    <Pressable
+      onPress={() => {
+        tap();
+        router.push({ pathname: '/seguiti', params: { tipo: kind } });
+      }}
+      accessibilityRole="button"
+      accessibilityLabel={`${value} ${label}`}
+      style={({ pressed }) => ({ flex: 1, gap: spacing.xxs, opacity: pressed ? 0.6 : 1 })}
+    >
       <Text style={[typography.stat, { color: colors.text, height: 28 }]}>{value}</Text>
       <Text style={[typography.body, { color: colors.textTertiary }]}>{label}</Text>
-    </View>
+    </Pressable>
   );
 }
 

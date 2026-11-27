@@ -414,7 +414,7 @@ function ClassTile({ klass }: { klass: DemoClass }) {
           router.push(`/classe/${klass.id}`);
         }}
         accessibilityRole="button"
-        accessibilityLabel={`${klass.name}, ${t.home.classPeople(klass.students, klass.teachers)}`}
+        accessibilityLabel={`${t.home.yourClass}, ${t.home.classPeople(klass.students, klass.teachers)}`}
         style={({ pressed }) => ({
           borderRadius: radius.xxl,
           backgroundColor: colors.surface,
@@ -453,14 +453,10 @@ function ClassTile({ klass }: { klass: DemoClass }) {
           )}
         </LinearGradient>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg }}>
-          <View style={{ flex: 1, gap: 2 }}>
-            <Text style={[typography.title2, { color: colors.text }]} numberOfLines={1}>
-              {klass.name}
-            </Text>
-            <Text style={[typography.caption, { color: colors.textSecondary }]} numberOfLines={1}>
-              {klass.detail} · {t.home.classPeople(klass.students, klass.teachers)}
-            </Text>
-          </View>
+          {/* Senza il nome della classe (dec. 230): solo scuola e persone. */}
+          <Text style={[typography.callout, { flex: 1, color: colors.textSecondary }]} numberOfLines={2}>
+            {klass.detail} · {t.home.classPeople(klass.students, klass.teachers)}
+          </Text>
           <Icon name="chevron-forward" size={20} color={colors.textTertiary} />
         </View>
       </Pressable>

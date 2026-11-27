@@ -6,7 +6,7 @@
 <title>Simulatori Gradie</title>
 <!--
   Simulatori di iPhone e iPad per provare Gradie dal PC (dec. 184).
-  Mostrano la versione web dell'app (Expo Web, `npx expo start --web --port 8090`) dentro due cornici
+  Mostrano la versione web dell'app (Expo Web, `npx expo start --port 8082`) dentro due cornici
   alla misura vera dei dispositivi. Non sono il Simulatore di iOS (che su Windows non esiste):
   Pencil, menu nativi di iOS e vibrazione si provano sul dispositivo vero con Expo Go.
 -->
@@ -114,9 +114,9 @@
     position: absolute;
     top: 11px;
     left: 50%;
-    width: 120px;
-    height: 34px;
-    margin-left: -60px;
+    width: 124px;
+    height: 36px;
+    margin-left: -62px;
     border-radius: 20px;
     background: #000;
     pointer-events: none;
@@ -132,23 +132,23 @@
 <body>
 <header>
   <h1>Simulatori Gradie</h1>
-  <label>Indirizzo <input id="url" type="text" value="http://localhost:8090/home" spellcheck="false"></label>
+  <label>Indirizzo <input id="url" type="text" value="http://localhost:8082/home" spellcheck="false"></label>
   <button id="go">Apri in entrambi</button>
   <label><input id="show-phone" type="checkbox" checked> iPhone</label>
   <label><input id="show-pad" type="checkbox" checked> iPad</label>
 </header>
 <main id="stage">
   <section class="device" id="phone">
-    <div class="bar"><span class="name">iPhone 16</span><span class="size"></span>
+    <div class="bar"><span class="name">iPhone 17</span><span class="size"></span>
       <button data-rotate>Ruota</button><button data-reload>Ricarica</button></div>
-    <div class="slot"><div class="frame" style="--pad:12px; --outer:58px; --inner:47px">
+    <div class="slot"><div class="frame" style="--pad:12px; --outer:66px; --inner:55px">
       <div class="screen"><div class="island"></div><iframe name="sim-iphone" title="Gradie su iPhone"></iframe></div>
     </div></div>
   </section>
   <section class="device" id="pad">
-    <div class="bar"><span class="name">iPad Air 11"</span><span class="size"></span>
+    <div class="bar"><span class="name">iPad Pro 13"</span><span class="size"></span>
       <button data-rotate>Ruota</button><button data-reload>Ricarica</button></div>
-    <div class="slot"><div class="frame" style="--pad:18px; --outer:38px; --inner:20px">
+    <div class="slot"><div class="frame" style="--pad:20px; --outer:40px; --inner:20px">
       <div class="screen"><iframe name="sim-ipad" title="Gradie su iPad"></iframe></div>
     </div></div>
   </section>
@@ -156,8 +156,8 @@
 <script>
   // Misure in punti dei dispositivi veri, in verticale.
   const DEVICES = {
-    phone: { w: 393, h: 852, pad: 12, landscape: false },
-    pad: { w: 820, h: 1180, pad: 18, landscape: false },
+    phone: { w: 402, h: 874, pad: 12, landscape: false }, // iPhone 17
+    pad: { w: 1032, h: 1376, pad: 20, landscape: false }, // iPad Pro 13" (M5)
   };
   const stage = document.getElementById('stage');
   const urlInput = document.getElementById('url');

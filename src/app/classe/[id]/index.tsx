@@ -1,24 +1,34 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Share, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ActionSheet } from '../../../components/ActionSheet';
 import { Avatar } from '../../../components/avatar/Avatar';
-import { COVER_ART, COVER_RATIO, COVER_SWATCH } from '../../../components/coverArt';
+import { COVER_COLORS, COVER_SWATCH, type CoverColor } from '../../../components/coverArt';
 import { confirm } from '../../../components/dialogs';
 import { success, tap } from '../../../components/haptics';
 import { Icon, type IconName } from '../../../components/icons';
-import { NotebookEditor } from '../../../components/notebooks';
 import { avatarFor } from '../../../components/PeopleCarousel';
 import { Button, PlaceholderScreen, TextField } from '../../../components/ui';
 import { demoAssignments, demoClasses, type DemoAssignment, type DemoClass } from '../../../data/demo';
 import { locale, t } from '../../../i18n';
 import { roomKey, useClassroom } from '../../../state/classroom';
 import { CODE_LENGTH, courseLink, createCourse, findCourse, isValidCode, joinCourse, leaveCourse, normalizeCode, useCourses, type Course } from '../../../state/courses';
-import { useSettings } from '../../../state/settings';
 import { useTheme } from '../../../theme';
 
 const DAY = 86_400_000;
+
+/** Mescola un colore #RRGGBB con il bianco (amount > 0) o con il nero (amount < 0). */
+function shade(hex: string, amount: number) {
+  const n = parseInt(hex.slice(1), 16);
+  const to = amount > 0 ? 255 : 0;
+  const a = Math.abs(amount);
+  const ch = (v: number) => Math.round(v + (to - v) * a);
+  return `rgb(${ch((n >> 16) & 255)}, ${ch((n >> 8) & 255)}, ${ch(n & 255)})`;
+}
+/** Sfumatura del corso (dec. 228): dal colore schiarito al colore pieno, in diagonale. */
+const gradientOf = (c: CoverColor) => [shade(COVER_SWATCH[c], 0.4), COVER_SWATCH[c], shade(COVER_SWATCH[c], -0.2)] as const;
 
 const openCourse = (c: Course, tab?: 'work') => router.push({ pathname: '/classe/[id]/[corso]', params: { id: c.classId, corso: c.code, ...(tab ? { tab } : {}) } });
 
@@ -70,9 +80,7 @@ function Courses({ klass }: { klass: DemoClass }) {
         >
           <Icon name="chevron-back" size={28} color={colors.text} />
         </Pressable>
-        <Text accessibilityRole="header" style={[typography.headline, { flex: 1, textAlign: 'center', color: colors.text }]} numberOfLines={1}>
-          {klass.name}
-        </Text>
+        <View style={{ flex: 1 }} />
         <View style={{ width: layout.iconButton }} />
       </View>
 
@@ -125,16 +133,13 @@ function Courses({ klass }: { klass: DemoClass }) {
         ]}
       />
       {sheet === 'create' && (
-        <NotebookEditor
-          title={T.createCourse}
-          nameLabel={T.courseName}
+        <CourseEditor
           onClose={() => setSheet(null)}
-          onSave={(name, look) => {
-            const c = createCourse(klass.id, name, look);
+          onSave={(name, color) => {
+            const c = createCourse(klass.id, name, { theme: 'stripes', color });
             setSheet(null);
             success();
             openCourse(c);
-            return undefined;
           }}
         />
       )}
@@ -196,7 +201,6 @@ function DueRow({ a, course, now }: { a: DemoAssignment; course: Course; now: nu
 /** Carta del corso come in Classroom: in alto la copertina con il nome e il docente, sotto le scorciatoie. */
 function CourseCard({ course, width, onMore }: { course: Course; width: number; onMore: () => void }) {
   const { colors, typography, spacing, radius } = useTheme();
-  const { plainCovers } = useSettings();
   const T = t.classroom;
   const foot: { icon: IconName; label: string; onPress: () => void }[] = [
     { icon: 'folder-outline', label: T.docsTab, onPress: () => openCourse(course) },
@@ -214,15 +218,8 @@ function CourseCard({ course, width, onMore }: { course: Course; width: number; 
         accessibilityLabel={course.teacher ? `${course.name}, ${course.teacher.name}` : course.name}
         style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
       >
-        <View style={{ height: 104, overflow: 'hidden', backgroundColor: COVER_SWATCH[course.look.color] }}>
-          {!plainCovers && (
-            // Solo la fantasia della copertina: si taglia via il dorso a sinistra e l'etichetta in alto.
-            <Image
-              source={COVER_ART[course.look.theme][course.look.color]}
-              style={{ position: 'absolute', left: -0.14 * width, top: (-0.55 * 1.14 * width) / COVER_RATIO, width: 1.14 * width, height: (1.14 * width) / COVER_RATIO }}
-            />
-          )}
-          {/* Nome su un'etichetta bianca, come sui quaderni: si legge su ogni fantasia. */}
+        <LinearGradient colors={gradientOf(course.look.color)} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ height: 104 }}>
+          {/* Nome su un'etichetta bianca: si legge su ogni colore. */}
           <View style={{ position: 'absolute', left: spacing.sm, right: spacing.sm, top: spacing.sm }}>
             <View
               style={{
@@ -244,7 +241,7 @@ function CourseCard({ course, width, onMore }: { course: Course; width: number; 
               </Text>
             </View>
           </View>
-        </View>
+        </LinearGradient>
         {/* Avatar del docente a cavallo della copertina, come in Classroom. */}
         <View style={{ height: 40 }}>
           {course.teacher && (
@@ -339,6 +336,101 @@ function JoinDialog({ classId, onClose }: { classId: string; onClose: () => void
               </View>
             )}
             <Button title={found?.joined ? T.openCourse : T.join} appearance="primary" disabled={code.length !== CODE_LENGTH} onPress={join} />
+          </Pressable>
+        </Pressable>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+/** Crea un corso: nome e colore della sfumatura, con l'anteprima della carta. */
+function CourseEditor({ onClose, onSave }: { onClose: () => void; onSave: (name: string, color: CoverColor) => void }) {
+  const { colors, typography, spacing, radius } = useTheme();
+  const T = t.classroom;
+  const [name, setName] = useState('');
+  const [color, setColor] = useState<CoverColor>('blue');
+  const [err, setErr] = useState<string | undefined>();
+  const save = () => {
+    if (!name.trim()) return setErr(T.courseNameEmpty);
+    onSave(name, color);
+  };
+  return (
+    <Modal transparent animationType="fade" onRequestClose={onClose}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+        <Pressable onPress={onClose} accessibilityLabel={t.a11y.close} style={{ flex: 1, backgroundColor: colors.blanket, justifyContent: 'center', padding: spacing.lg }}>
+          <Pressable
+            style={{
+              alignSelf: 'center',
+              width: '100%',
+              maxWidth: 440,
+              borderRadius: radius.lg,
+              backgroundColor: colors.surface,
+              boxShadow: colors.shadowOverlay,
+              padding: spacing.lg,
+              gap: spacing.md,
+            }}
+          >
+            <Text accessibilityRole="header" style={[typography.title2, { color: colors.text }]}>
+              {T.createCourse}
+            </Text>
+            <LinearGradient
+              colors={gradientOf(color)}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{ height: 72, borderRadius: radius.lg, justifyContent: 'center', paddingHorizontal: spacing.md }}
+            >
+              <View
+                style={{
+                  alignSelf: 'flex-start',
+                  maxWidth: '100%',
+                  backgroundColor: colors.surface,
+                  borderRadius: radius.md,
+                  borderWidth: 2,
+                  borderColor: colors.border,
+                  paddingHorizontal: spacing.sm,
+                  paddingVertical: spacing.xxs,
+                }}
+              >
+                <Text style={[typography.headline, { color: colors.text }]} numberOfLines={1}>
+                  {name.trim() || T.courseName}
+                </Text>
+              </View>
+            </LinearGradient>
+            <TextField
+              label={T.courseName}
+              value={name}
+              onChangeText={(v) => {
+                setName(v);
+                setErr(undefined);
+              }}
+              onSubmitEditing={save}
+              returnKeyType="done"
+              autoFocus
+              maxLength={40}
+              error={err}
+            />
+            <Text style={[typography.overline, { color: colors.textSecondary }]}>{T.courseColor}</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+              {COVER_COLORS.map((c) => {
+                const on = c === color;
+                return (
+                  <Pressable
+                    key={c}
+                    onPress={() => {
+                      tap();
+                      setColor(c);
+                    }}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: on }}
+                    accessibilityLabel={t.activitiesHub.coverColors[c]}
+                    style={{ width: 44, height: 44, borderRadius: 22, padding: 3, borderWidth: 3, borderColor: on ? colors.borderFocused : 'transparent' }}
+                  >
+                    <LinearGradient colors={gradientOf(c)} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, borderRadius: 16 }} />
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Button title={T.createCourse} appearance="primary" onPress={save} />
           </Pressable>
         </Pressable>
       </KeyboardAvoidingView>

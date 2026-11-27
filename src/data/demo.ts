@@ -161,13 +161,28 @@ export const demoClassChat: Record<string, DemoClassMessage[]> = {
 };
 
 /** Profilo (dec. 133): iscrizione, amici (con iniziali finché non ci sono gli avatar). */
-export const demoMe = { joinedYear: 2026, following: 29, followers: 12 };
+export const demoMe = { joinedYear: 2026 };
 export const demoFriends = [
   { id: 'f1', name: 'Marco', initials: 'MR', color: '#2F5DA8' },
   { id: 'f2', name: 'Sofia', initials: 'SP', color: '#B23A48' },
   { id: 'f3', name: 'Luca', initials: 'LB', color: '#2E6B4F' },
   { id: 'f4', name: 'Chiara', initials: 'CF', color: '#C77A2E' },
 ];
+
+/** Altre persone di esempio per Seguiti e Follower (dec. 229), con il codice dopo #. */
+export const demoPeople = [
+  { id: 'n1', name: 'Alessandro', initials: 'AV', color: '#3B6FB6', code: '1188' },
+  { id: 'n2', name: 'Beatrice', initials: 'BC', color: '#9C3D7A', code: '1290' },
+  { id: 'n3', name: 'Federico', initials: 'FG', color: '#2F7D6D', code: '1377' },
+  { id: 'n4', name: 'Martina', initials: 'MB', color: '#B5602E', code: '1456' },
+  { id: 'n5', name: 'Riccardo', initials: 'RM', color: '#5A4FB0', code: '1539' },
+  { id: 'n6', name: 'Alice', initials: 'AT', color: '#A3473B', code: '1621' },
+  { id: 'n7', name: 'Tommaso', initials: 'TN', color: '#4D7A2E', code: '1704' },
+  { id: 'n8', name: 'Greta', initials: 'GS', color: '#2E6B8C', code: '1862' },
+];
+/** Chi segui e chi ti segue (id di demoFriends, delle persone di esempio in state/friends e di demoPeople). */
+export const demoFollowing = ['f1', 'f2', 'f3', 'f4', 'p3', 'p4', 'p5', 'n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7'];
+export const demoFollowers = ['f1', 'f2', 'f3', 'f4', 'p1', 'p2', 'p5', 'n2', 'n3', 'n5', 'n7', 'n8'];
 
 /** Paesi per la bandiera del profilo (codice ISO, nome IT/EN). */
 export const demoCountries: { code: string; it: string; en: string }[] = [

@@ -11,7 +11,7 @@ import { useTheme } from '../../theme';
 
 /**
  * Voti di una materia (dec. 196), toccando la sua finestra nel Registro voti: media e tutte le volte che hai
- * inserito un voto, dal più recente. Il "+" aggiunge un voto già su questa materia; il cestino lo toglie, con "Annulla".
+ * inserito un voto, dal più recente. Stile dell'app (dec. 229): titolo grande, card ed elenco con bordo. Il "+" aggiunge un voto già su questa materia; il cestino lo toglie, con "Annulla".
  */
 export default function VotiMateria() {
   const { colors, typography, spacing, radius, layout } = useTheme();
@@ -29,41 +29,49 @@ export default function VotiMateria() {
     <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md, minHeight: 52, marginTop: spacing.xs }}>
         <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel={T.back} style={iconBtn}>
-          <Icon name="chevron-back" size={26} color={colors.text} />
-        </Pressable>
-        <Text accessibilityRole="header" numberOfLines={1} style={[typography.headline, { flex: 1, textAlign: 'center', color: colors.text }]}>
-          {materia}
-        </Text>
-        <Pressable
-          onPress={() => {
-            tap();
-            router.push({ pathname: '/nuovo-voto', params: { subject: materia } });
-          }}
-          accessibilityRole="button"
-          accessibilityLabel={T.add}
-          style={iconBtn}
-        >
-          <Icon name="plus" size={26} color={colors.text} />
+          <Icon name="chevron-back" size={28} color={colors.text} />
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + spacing.xxl, gap: spacing.lg, maxWidth: 720, width: '100%', alignSelf: 'center' }}>
-        <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', padding: spacing.lg, borderRadius: radius.xl, backgroundColor: colors.surface }}>
+      <ScrollView contentContainerStyle={{ padding: spacing.xl, paddingTop: spacing.sm, paddingBottom: insets.bottom + spacing.giant, gap: spacing.xl, maxWidth: 720, width: '100%', alignSelf: 'center' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+          <Text accessibilityRole="header" numberOfLines={2} style={[typography.title1, { flex: 1, color: colors.heading }]}>
+            {materia}
+          </Text>
+          <Pressable
+            onPress={() => {
+              tap();
+              router.push({ pathname: '/nuovo-voto', params: { subject: materia } });
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={T.add}
+            style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.selected, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}
+          >
+            <Icon name="plus" size={22} color={colors.selectedText} />
+          </Pressable>
+        </View>
+
+        <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', padding: spacing.lg, borderRadius: radius.xl, borderWidth: 2, borderBottomWidth: 4, borderColor: colors.border, backgroundColor: colors.surface }}>
           <View style={{ gap: spacing.xxs }}>
-            <Text style={[typography.callout, { color: colors.textSecondary }]}>{T.subjectAverage}</Text>
-            <Text style={[typography.hero, { color: colors.text, fontVariant: ['tabular-nums'] }]}>{list.length ? formatAvg(avg) : '—'}</Text>
+            <Text style={[typography.overline, { color: colors.textSecondary }]}>{T.subjectAverage}</Text>
+            <Text style={[typography.hero, { color: colors.heading, fontVariant: ['tabular-nums'] }]}>
+              {list.length ? formatAvg(avg) : '—'}
+              <Text style={[typography.title2, { color: colors.textTertiary }]}>/30</Text>
+            </Text>
           </View>
-          <Text style={[typography.callout, { color: colors.textTertiary, marginBottom: spacing.sm }]}>{T.count(list.length)}</Text>
+          <View style={{ paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.pill, backgroundColor: colors.selected, marginBottom: spacing.sm }}>
+            <Text style={[typography.overline, { color: colors.selectedText }]}>{T.count(list.length)}</Text>
+          </View>
         </View>
 
         {list.length === 0 ? (
           <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xl }]}>{T.empty}</Text>
         ) : (
-          <View style={{ borderRadius: radius.xl, backgroundColor: colors.surface, overflow: 'hidden' }}>
+          <View style={{ borderRadius: radius.xl, borderWidth: 2, borderColor: colors.border, backgroundColor: colors.surface, overflow: 'hidden' }}>
             {list.map((g, i) => (
               <View
                 key={g.id}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, paddingLeft: spacing.md, paddingRight: spacing.xs, borderTopWidth: i ? 1 : 0, borderTopColor: colors.border }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, paddingLeft: spacing.md, paddingRight: spacing.xs, borderTopWidth: i ? 2 : 0, borderTopColor: colors.border }}
               >
                 <View style={{ minWidth: 56, height: 40, paddingHorizontal: spacing.sm, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.selected }}>
                   <Text style={[typography.headline, { color: colors.selectedText, fontVariant: ['tabular-nums'] }]}>{g.lode ? `${g.value}L` : g.value}</Text>

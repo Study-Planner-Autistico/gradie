@@ -270,14 +270,9 @@ export function NotebookEditor({
   initial,
   onClose,
   onSave,
-  title,
-  nameLabel,
 }: {
   initial?: { name: string; look: NotebookLook };
   onClose: () => void;
-  /** Titolo e nome del campo quando l'editor serve per altro (es. un corso, dec. 228). */
-  title?: string;
-  nameLabel?: string;
   onSave: (name: string, look: NotebookLook) => string | undefined;
 }) {
   const { colors, typography, radius, spacing } = useTheme();
@@ -300,7 +295,7 @@ export function NotebookEditor({
           <Pressable style={{ alignSelf: 'center', width: '100%', maxWidth: 440, maxHeight: '92%', borderRadius: radius.lg, backgroundColor: colors.surface, boxShadow: colors.shadowOverlay, overflow: 'hidden' }}>
             <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }} keyboardShouldPersistTaps="handled">
               <Text style={[typography.title2, { color: colors.text }]} accessibilityRole="header">
-                {title ?? (initial ? t.activitiesHub.editBookTitle : t.activitiesHub.newBook)}
+                {initial ? t.activitiesHub.editBookTitle : t.activitiesHub.newBook}
               </Text>
               <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' }}>
                 <View style={{ borderRadius: radius.sm, overflow: 'hidden' }}>
@@ -308,7 +303,7 @@ export function NotebookEditor({
                 </View>
                 <View style={{ flex: 1 }}>
                   <TextField
-                    label={nameLabel ?? t.activitiesHub.bookName}
+                    label={t.activitiesHub.bookName}
                     placeholder={t.activitiesHub.subjectPh}
                     value={name}
                     onChangeText={(v) => {

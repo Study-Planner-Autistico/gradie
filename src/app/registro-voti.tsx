@@ -2,7 +2,6 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Circle, Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { COVER_SWATCH } from '../components/coverArt';
 import { tap } from '../components/haptics';
 import { Icon } from '../components/icons';
@@ -13,9 +12,6 @@ import { useTheme } from '../theme';
 
 const CHART_H = 140;
 const COL_W = 30;
-const GREEN = '#22C55E';
-const GREEN_DARK = '#15803D';
-const GREEN_SOFT = '#BBF7D0';
 
 /** Etichetta corta sotto la colonna: "Pro", "Geo"; "Ana I", "Ing B2" se la seconda parola è corta; altrimenti le iniziali ("SM"). */
 const short = (name: string) => {
@@ -25,10 +21,10 @@ const short = (name: string) => {
 };
 
 /**
- * Registro voti (dec. 195): in alto il grafico delle medie (una colonna per materia, più alta = media più alta,
- * il nome sotto) con la media generale; sotto una finestra per materia con la media e un anello.
- * Si apre dal menu laterale e dalla media della Panoramica in Profilo. Voti in trentesimi (dec. 196): il "+" in alto
- * a destra aggiunge un voto, una finestra apre tutti i voti di quella materia.
+ * Registro voti (dec. 195, 229): nello stile del resto dell'app (dec. 223). In alto il titolo grande e il "+"; una card
+ * con bordo con la media generale e il grafico delle medie (una colonna per materia nel colore della materia, più alta
+ * = media più alta); sotto le materie in un elenco con bordo: media, numero di voti e barra fino a 30. Voti in
+ * trentesimi (dec. 196); una riga apre tutti i voti di quella materia.
  */
 export default function RegistroVoti() {
   const { colors, typography, spacing, radius, layout } = useTheme();
@@ -43,6 +39,7 @@ export default function RegistroVoti() {
   };
   const best = book.rows.filter((r) => r.count).reduce<SubjectAverage | undefined>((a, b) => (!a || b.average > a.average ? b : a), undefined);
   const [selected, setSelected] = useState<string | undefined>(best?.subject);
+  const current = book.rows.find((r) => r.subject === selected);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top }}>
@@ -53,44 +50,51 @@ export default function RegistroVoti() {
           accessibilityLabel={T.back}
           style={({ pressed }) => ({ width: layout.iconButton, height: layout.iconButton, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}
         >
-          <Icon name="chevron-back" size={26} color={colors.text} />
-        </Pressable>
-        <Text accessibilityRole="header" style={[typography.headline, { flex: 1, textAlign: 'center', color: colors.text }]}>
-          {T.title}
-        </Text>
-        <Pressable
-          onPress={() => {
-            tap();
-            router.push('/nuovo-voto');
-          }}
-          accessibilityRole="button"
-          accessibilityLabel={T.add}
-          style={({ pressed }) => ({ width: layout.iconButton, height: layout.iconButton, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}
-        >
-          <Icon name="plus" size={26} color={colors.text} />
+          <Icon name="chevron-back" size={28} color={colors.text} />
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + spacing.xxl, gap: spacing.lg, maxWidth: 720, width: '100%', alignSelf: 'center' }}>
+      <ScrollView contentContainerStyle={{ padding: spacing.xl, paddingTop: spacing.sm, paddingBottom: insets.bottom + spacing.giant, gap: spacing.xl, maxWidth: 720, width: '100%', alignSelf: 'center' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text accessibilityRole="header" style={[typography.title1, { flex: 1, color: colors.heading }]}>
+            {T.title}
+          </Text>
+          <Pressable
+            onPress={() => {
+              tap();
+              router.push('/nuovo-voto');
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={T.add}
+            style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.selected, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}
+          >
+            <Icon name="plus" size={22} color={colors.selectedText} />
+          </Pressable>
+        </View>
+
         {/* Media generale e grafico delle medie per materia. */}
-        <View style={{ backgroundColor: colors.surface, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.md }}>
-          <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+        <View style={{ borderRadius: radius.xl, borderWidth: 2, borderBottomWidth: 4, borderColor: colors.border, backgroundColor: colors.surface, padding: spacing.lg, gap: spacing.lg }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: spacing.md }}>
             <View style={{ gap: spacing.xxs }}>
-              <Text style={[typography.callout, { color: colors.textSecondary }]}>{T.overall}</Text>
-              <Text style={[typography.hero, { color: colors.text, fontVariant: ['tabular-nums'] }]}>
+              <Text style={[typography.overline, { color: colors.textSecondary }]}>{T.overall}</Text>
+              <Text style={[typography.hero, { color: colors.heading, fontVariant: ['tabular-nums'] }]}>
                 {book.count ? formatAvg(book.average) : '—'}
                 <Text style={[typography.title2, { color: colors.textTertiary }]}>/30</Text>
               </Text>
             </View>
-            <Text style={[typography.callout, { color: colors.textTertiary, marginBottom: spacing.sm }]}>{T.count(book.count)}</Text>
+            <View style={{ paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.pill, backgroundColor: colors.selected, marginBottom: spacing.sm }}>
+              <Text style={[typography.overline, { color: colors.selectedText }]}>{T.count(book.count)}</Text>
+            </View>
           </View>
+
+          <View style={{ height: 2, backgroundColor: colors.border }} />
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1, justifyContent: 'space-between', gap: spacing.sm, paddingTop: 34 }}>
             {book.rows.map((r) => {
               const on = r.subject === selected;
+              const color = colorOf(r.subject);
               // Trentesimi: la colonna parte dal 18 (dec. 196); senza voti resta un gradino grigio.
-              const h = r.count ? Math.max(0.12, (r.average - MIN_GRADE) / (MAX_GRADE - MIN_GRADE)) * CHART_H : 6;
-              const id = `g-${r.subject.replace(/\W/g, '')}`;
+              const h = r.count ? Math.max(0.12, (r.average - MIN_GRADE) / (MAX_GRADE - MIN_GRADE)) * CHART_H : 8;
               return (
                 <Pressable
                   key={r.subject}
@@ -105,42 +109,56 @@ export default function RegistroVoti() {
                 >
                   <View style={{ height: CHART_H, justifyContent: 'flex-end', alignItems: 'center' }}>
                     {on && r.count > 0 && (
-                      <View style={{ position: 'absolute', bottom: h + 6, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill, backgroundColor: GREEN_DARK }}>
+                      <View style={{ position: 'absolute', bottom: h + 6, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill, backgroundColor: color }}>
                         <Text style={[typography.caption, { color: '#fff', fontWeight: '700' }]}>{formatAvg(r.average)}</Text>
                       </View>
                     )}
-                    <Svg width={COL_W} height={h}>
-                      <Defs>
-                        <LinearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-                          <Stop offset="0" stopColor={on ? GREEN : GREEN_SOFT} />
-                          <Stop offset="1" stopColor={on ? GREEN : GREEN_SOFT} />
-                        </LinearGradient>
-                      </Defs>
-                      <Rect x={0} y={0} width={COL_W} height={h} rx={8} fill={`url(#${id})`} />
-                    </Svg>
+                    {/* Colonna tridimensionale come i pulsanti (dec. 223): piena se scelta, tenue le altre. */}
+                    <View
+                      style={{
+                        width: COL_W,
+                        height: h,
+                        borderRadius: radius.md,
+                        backgroundColor: r.count ? (on ? color : color + '40') : colors.surfaceMuted,
+                        borderWidth: 2,
+                        borderBottomWidth: 4,
+                        borderColor: r.count ? (on ? color : color + '66') : colors.border,
+                      }}
+                    />
                   </View>
-                  <Text numberOfLines={1} style={[typography.caption, { color: on ? colors.text : colors.textSecondary, fontWeight: on ? '700' : '400' }]}>
+                  <Text numberOfLines={1} style={[typography.caption, { color: on ? colors.text : colors.textTertiary, fontWeight: on ? '700' : '400' }]}>
                     {short(r.subject)}
                   </Text>
                 </Pressable>
               );
             })}
           </ScrollView>
+          {current && (
+            <Text style={[typography.callout, { color: colors.textSecondary, textAlign: 'center' }]} numberOfLines={1}>
+              {current.subject} · {current.count ? `${T.average} ${formatAvg(current.average)}` : T.empty}
+            </Text>
+          )}
         </View>
 
-        {/* Una finestra per materia: media e anello pieno quanto la media (su 10). */}
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md }}>
-          {book.rows.map((r) => (
-            <SubjectCard key={r.subject} row={r} color={colorOf(r.subject)} />
-          ))}
+        {/* Materie in un elenco con bordo (DESIGN.md §5.4). */}
+        <View style={{ gap: spacing.sm }}>
+          <Text accessibilityRole="header" style={[typography.overline, { color: colors.textSecondary, marginLeft: spacing.xs }]}>
+            {T.bySubject}
+          </Text>
+          <View style={{ borderRadius: radius.xl, borderWidth: 2, borderColor: colors.border, backgroundColor: colors.surface, overflow: 'hidden' }}>
+            {book.rows.map((r, i) => (
+              <SubjectRow key={r.subject} row={r} color={colorOf(r.subject)} first={i === 0} />
+            ))}
+          </View>
         </View>
       </ScrollView>
     </View>
   );
 }
 
-function SubjectCard({ row, color }: { row: SubjectAverage; color: string }) {
+function SubjectRow({ row, color, first }: { row: SubjectAverage; color: string; first: boolean }) {
   const { colors, typography, spacing, radius } = useTheme();
+  const fill = row.count ? Math.max(0.04, row.average / MAX_GRADE) : 0;
   return (
     <Pressable
       onPress={() => {
@@ -149,32 +167,36 @@ function SubjectCard({ row, color }: { row: SubjectAverage; color: string }) {
       }}
       accessibilityRole="button"
       accessibilityLabel={`${row.subject}: ${row.count ? `${t.grades.average} ${formatAvg(row.average)}` : t.grades.empty}, ${t.grades.count(row.count)}`}
-      style={({ pressed }) => ({ flexGrow: 1, flexBasis: '45%', minWidth: 150, borderRadius: radius.xl, padding: spacing.md, gap: spacing.md, backgroundColor: color + '1F', overflow: 'hidden', opacity: pressed ? 0.75 : 1 })}
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+        minHeight: 72,
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.md,
+        borderTopWidth: first ? 0 : 2,
+        borderTopColor: colors.border,
+        backgroundColor: pressed ? colors.surfaceMuted : 'transparent',
+      })}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-        <Icon name="book" size={18} color={color} />
-        <Text numberOfLines={1} style={[typography.headline, { flex: 1, color: colors.text }]}>{row.subject}</Text>
+      <View style={{ width: 44, height: 44, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center', backgroundColor: color + '26', borderWidth: 2, borderBottomWidth: 4, borderColor: color + '66' }}>
+        <Icon name="book" size={20} color={color} />
       </View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <View>
-          <Text style={[typography.title1, { color: colors.text, fontVariant: ['tabular-nums'] }]}>{row.count ? formatAvg(row.average) : '—'}</Text>
-          <Text style={[typography.caption, { color: colors.textSecondary }]}>{t.grades.count(row.count)}</Text>
+      <View style={{ flex: 1, gap: spacing.xs }}>
+        <Text numberOfLines={1} style={[typography.headline, { color: colors.text }]}>
+          {row.subject}
+        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+          <View style={{ flex: 1, height: 10, borderRadius: 5, backgroundColor: colors.surfaceMuted, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' }}>
+            <View style={{ width: `${fill * 100}%`, height: '100%', borderRadius: 5, backgroundColor: color }} />
+          </View>
+          <Text style={[typography.caption, { color: colors.textTertiary }]}>{t.grades.count(row.count)}</Text>
         </View>
-        <Ring value={row.average / MAX_GRADE} color={color} track={colors.bg} />
       </View>
+      <View style={{ minWidth: 56, height: 40, paddingHorizontal: spacing.sm, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center', backgroundColor: row.count ? colors.selected : colors.surfaceMuted }}>
+        <Text style={[typography.headline, { color: row.count ? colors.selectedText : colors.textTertiary, fontVariant: ['tabular-nums'] }]}>{row.count ? formatAvg(row.average) : '—'}</Text>
+      </View>
+      <Icon name="chevron-forward" size={20} color={colors.borderBold} />
     </Pressable>
-  );
-}
-
-function Ring({ value, color, track }: { value: number; color: string; track: string }) {
-  const size = 46;
-  const w = 6;
-  const r = (size - w) / 2;
-  const c = 2 * Math.PI * r;
-  return (
-    <Svg width={size} height={size} style={{ transform: [{ rotate: '-90deg' }] }}>
-      <Circle cx={size / 2} cy={size / 2} r={r} stroke={track} strokeWidth={w} fill="none" />
-      <Circle cx={size / 2} cy={size / 2} r={r} stroke={color} strokeWidth={w} fill="none" strokeLinecap="round" strokeDasharray={`${c * value} ${c}`} />
-    </Svg>
   );
 }

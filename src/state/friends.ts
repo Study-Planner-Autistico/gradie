@@ -1,7 +1,7 @@
 // Amici (dec. 183, 187): chi hai smesso di seguire e chi hai bloccato, le richieste d'amicizia ricevute e inviate,
 // gli amici aggiunti col codice o col QR. Stato solo in memoria: nessun backend (dec. 53).
 import { useSyncExternalStore } from 'react';
-import { demoFriends } from '../data/demo';
+import { demoFollowers, demoFollowing, demoFriends, demoPeople } from '../data/demo';
 import { myTag } from './profile';
 
 export type Person = { id: string; name: string; initials: string; color: string; code: string };
@@ -14,6 +14,7 @@ const people: Person[] = [
   { id: 'p3', name: 'Elena', initials: 'ER', color: '#A33B6B', code: '7177' },
   { id: 'p4', name: 'Davide', initials: 'DS', color: '#5B6B2E', code: '8250' },
   { id: 'p5', name: 'Aurora', initials: 'AL', color: '#B5602E', code: '9312' },
+  ...demoPeople,
 ];
 
 type FriendsState = {
@@ -46,6 +47,10 @@ const byIds = (ids: string[]) => ids.map(findPerson).filter((p): p is Person => 
 export function friendsOf(s: FriendsState) {
   return byIds([...demoFriends.map((f) => f.id), ...s.added]).filter((p) => !s.blocked.includes(p.id));
 }
+/** Chi segui (dec. 229): senza chi hai smesso di seguire e senza i bloccati. */
+export const followingOf = (s: FriendsState) => byIds(demoFollowing).filter((p) => !s.unfollowed.includes(p.id) && !s.blocked.includes(p.id));
+/** Chi ti segue (dec. 229), senza i bloccati. */
+export const followersOf = (s: FriendsState) => byIds(demoFollowers).filter((p) => !s.blocked.includes(p.id));
 export const incomingOf = (s: FriendsState) => byIds(s.incoming);
 export const outgoingOf = (s: FriendsState) => byIds(s.outgoing);
 
